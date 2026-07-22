@@ -4,7 +4,8 @@ import { ondine } from "@/content/ondine";
 import { formatPrice, formatLeadTime } from "@/lib/format";
 import { ColorwayGallery } from "@/components/shop/ColorwayGallery";
 import { AvailabilityBadge } from "@/components/shop/AvailabilityBadge";
-import { CheckoutButton } from "@/components/checkout/CheckoutButton";
+import { AddToBagButton } from "@/components/shop/AddToBagButton";
+import { FavoriteButton } from "@/components/shop/FavoriteButton";
 
 export function generateStaticParams() {
   return getAllColorways().map((c) => ({ colorway: c.slug }));
@@ -29,13 +30,19 @@ export default async function ColorwayPage({
       <div className="mx-auto grid max-w-6xl gap-10 px-6 py-16 sm:grid-cols-2">
         <ColorwayGallery colorway={colorway} />
         <div className="flex flex-col gap-5">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-widest text-accent">
-              {colorway.tier === "signature"
-                ? `Drop ${String(colorway.dropNumber).padStart(2, "0")} — ${ondine.name}`
-                : ondine.name}
-            </p>
-            <h1 className="font-display text-4xl font-bold">{colorway.name}</h1>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-widest text-accent">
+                {colorway.tier === "signature"
+                  ? `Drop ${String(colorway.dropNumber).padStart(2, "0")} — ${ondine.name}`
+                  : ondine.name}
+              </p>
+              <h1 className="font-display text-4xl font-bold">{colorway.name}</h1>
+            </div>
+            <FavoriteButton
+              slug={colorway.slug}
+              className="rounded-full border border-border p-2.5 text-foreground hover:bg-border/40"
+            />
           </div>
 
           <AvailabilityBadge
@@ -59,11 +66,12 @@ export default async function ColorwayPage({
           <p className="text-muted">{ondine.description}</p>
 
           <div className="mt-4">
-            <CheckoutButton
-              colorwayName={colorway.name}
+            <AddToBagButton
+              slug={colorway.slug}
+              name={colorway.name}
               price={ondine.basePrice}
               currency={ondine.currency}
-              sku={`ondine-${colorway.slug}`}
+              image={colorway.images[0]}
               availability={colorway.availability}
               piecesRemaining={colorway.piecesRemaining}
             />

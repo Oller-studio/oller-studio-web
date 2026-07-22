@@ -2,22 +2,13 @@
 
 import { useState } from "react";
 import { PayPalButtons, PayPalScriptProvider } from "@paypal/react-paypal-js";
+import { useCart } from "./cart-context";
 
-type PayPalCheckoutProps = {
-  colorwayName: string;
-  price: number;
-  currency: string;
-  sku: string;
-};
-
-export function PayPalCheckout({
-  colorwayName,
-  price,
-  currency,
-  sku,
-}: PayPalCheckoutProps) {
+export function CartCheckout() {
+  const { items, subtotal, clear } = useCart();
   const [completed, setCompleted] = useState(false);
   const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
+  const currency = items[0]?.currency ?? "USD";
 
   if (completed) {
     return (
@@ -44,12 +35,18 @@ export function PayPalCheckout({
             intent: "CAPTURE",
             purchase_units: [
               {
-                description: `ONDINE — ${colorwayName}`,
-                custom_id: sku,
                 amount: {
                   currency_code: currency,
-                  value: price.toFixed(2),
+                  value: subtotal.toFixed(2),
+                  breakdown: {
+                    item_total: { currency_code: currency, value: subtotal.toFixed(2) },
+                  },
                 },
+                items: items.map((i) => ({
+                  name: `ONDINE — ${i.name}`,
+                  unit_amount: { currency_code: currency, value: i.price.toFixed(2) },
+                  quantity: String(i.quantity),
+                })),
               },
             ],
           })
@@ -58,6 +55,7 @@ export function PayPalCheckout({
           if (!actions.order) return;
           await actions.order.capture();
           setCompleted(true);
+          clear();
         }}
       />
     </PayPalScriptProvider>

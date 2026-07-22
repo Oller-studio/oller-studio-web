@@ -40,3 +40,12 @@ export type Product = {
   currency: string;
   leadTimeDays: [number, number];
 };
+
+export type CartItem = {
+  slug: string;
+  name: string;
+  price: number;
+  currency: string;
+  image?: string;
+  quantity: number;
+};

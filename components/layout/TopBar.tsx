@@ -1,17 +1,21 @@
 import Link from "next/link";
 import { site } from "@/content/site";
 import { ondine } from "@/content/ondine";
+import { AccountControl } from "./AccountControl";
+import { WishlistControl } from "./WishlistControl";
 
 type TopBarProps = {
   variant?: "solid" | "overlay";
 };
+
+const clerkConfigured = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
 
 export function TopBar({ variant = "solid" }: TopBarProps) {
   const isOverlay = variant === "overlay";
 
   return (
     <div
-      className={`relative h-9 px-6 text-xs font-semibold uppercase tracking-wide ${
+      className={`relative z-30 h-9 px-6 text-xs font-semibold uppercase tracking-wide ${
         isOverlay
           ? "border-b border-white/20 bg-transparent text-white"
           : "bg-foreground text-background"
@@ -27,10 +31,14 @@ export function TopBar({ variant = "solid" }: TopBarProps) {
         {site.campaignLine} — Shop the {ondine.name} Bag
       </Link>
       <div className="absolute right-6 top-1/2 flex -translate-y-1/2 items-center gap-4 whitespace-nowrap opacity-70">
-        <span aria-hidden="true" className="text-base leading-none">
-          ♡
-        </span>
-        <span>Login</span>
+        {clerkConfigured ? (
+          <WishlistControl className="text-base leading-none hover:opacity-80" />
+        ) : (
+          <span aria-hidden="true" className="text-base leading-none">
+            ♡
+          </span>
+        )}
+        {clerkConfigured ? <AccountControl /> : <span>Login</span>}
       </div>
     </div>
   );

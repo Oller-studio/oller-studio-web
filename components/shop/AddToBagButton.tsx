@@ -1,24 +1,29 @@
+"use client";
+
 import type { Availability } from "@/lib/types";
 import { formatShipsFrom } from "@/lib/format";
-import { PayPalCheckout } from "./PayPalCheckout";
+import { useCart } from "@/components/cart/cart-context";
 
-type CheckoutButtonProps = {
-  colorwayName: string;
+type AddToBagButtonProps = {
+  slug: string;
+  name: string;
   price: number;
   currency: string;
-  sku: string;
+  image?: string;
   availability: Availability;
   piecesRemaining?: number;
 };
 
-export function CheckoutButton({
-  colorwayName,
+export function AddToBagButton({
+  slug,
+  name,
   price,
   currency,
-  sku,
+  image,
   availability,
   piecesRemaining,
-}: CheckoutButtonProps) {
+}: AddToBagButtonProps) {
+  const { addItem } = useCart();
   const isSoldOut =
     availability.status === "sold_out" ||
     (piecesRemaining !== undefined && piecesRemaining <= 0);
@@ -38,12 +43,13 @@ export function CheckoutButton({
           {formatShipsFrom(availability.shipsFrom)}
         </p>
       )}
-      <PayPalCheckout
-        colorwayName={colorwayName}
-        price={price}
-        currency={currency}
-        sku={sku}
-      />
+      <button
+        type="button"
+        onClick={() => addItem({ slug, name, price, currency, image })}
+        className="block w-full rounded-full bg-foreground py-4 text-center text-sm font-semibold uppercase tracking-wide text-background hover:opacity-90"
+      >
+        Add to Bag
+      </button>
     </div>
   );
 }

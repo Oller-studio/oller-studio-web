@@ -10,7 +10,7 @@ export function InfoBar() {
             <p className="text-sm font-bold uppercase tracking-wide">
               Worldwide shipping
             </p>
-            <p className="mt-1 text-sm">Made to order, ships in 5–7 days</p>
+            <p className="mt-1 text-sm">Made to order, ships within 24–48 hours</p>
           </div>
           <div>
             <p className="text-sm font-bold uppercase tracking-wide">
