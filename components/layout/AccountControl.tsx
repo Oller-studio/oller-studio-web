@@ -49,6 +49,15 @@ export function AccountControl({ className }: AccountControlProps) {
             >
               Overview
             </Link>
+            {user.publicMetadata?.role === "admin" && (
+              <Link
+                href="/admin"
+                onClick={() => setMenuOpen(false)}
+                className="block px-4 py-2 text-sm font-normal hover:bg-border/40"
+              >
+                Admin
+              </Link>
+            )}
             <button
               type="button"
               onClick={() => {
