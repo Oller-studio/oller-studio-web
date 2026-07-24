@@ -2,13 +2,18 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Colorway } from "@/lib/types";
 import { AvailabilityBadge } from "./AvailabilityBadge";
+import { FavoriteButton } from "./FavoriteButton";
 
 export function ColorwaySwatchCard({ colorway }: { colorway: Colorway }) {
   const image = colorway.images[0];
 
   return (
     <Link href={`/shop/${colorway.slug}`} className="group flex flex-col gap-3">
-      <div className="aspect-[4/5] overflow-hidden rounded-2xl bg-border">
+      <div className="relative aspect-[4/5] overflow-hidden rounded-2xl bg-border">
+        <FavoriteButton
+          slug={colorway.slug}
+          className="absolute right-3 top-3 z-10 rounded-full bg-background/80 p-2 text-foreground backdrop-blur-sm hover:bg-background"
+        />
         {image ? (
           <Image
             src={image}

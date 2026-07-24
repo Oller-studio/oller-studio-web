@@ -16,7 +16,7 @@ export const site = {
   faq: [
     {
       q: "How long does it take to receive my piece?",
-      a: "Every piece is made individually in my studio, to order — nothing sits on a shelf waiting. Standard lead time is 5–7 days from order to shipment. If a drop is running on a different timeline, that's shown on its page before you check out.",
+      a: "Most orders are shipped within 24–48 hours of purchase, subject to availability and payment verification. Once shipped, delivery typically takes 6–10 business days, depending on destination.",
     },
     {
       q: "How do I pay?",
@@ -24,15 +24,11 @@ export const site = {
     },
     {
       q: "Do you accept returns?",
-      a: "Each piece is made specifically for you, so I don't accept returns for change of mind. If yours arrives damaged or defective, reach out and I'll make it right.",
+      a: "Returns are accepted within 14 days of delivery. For any questions, please contact ollerthestudio@gmail.com.",
     },
     {
-      q: "Is this sustainable?",
-      a: "The material (TPU) isn't biodegradable, but it's built to last years, not seasons — it doesn't crack, peel, or deform. I think real sustainability starts with not making disposable things in the first place, not with a label.",
-    },
-    {
-      q: "Can I request a piece matched to my car?",
-      a: "That's the whole idea. Reach out through the Contact page with your car's paint color and let's see if it can become the next signature.",
+      q: "What about customs, duties, or import taxes?",
+      a: "For orders shipped outside the EU, customs duties, taxes, and import fees may apply upon arrival and are the responsibility of the customer.",
     },
   ],
 };
