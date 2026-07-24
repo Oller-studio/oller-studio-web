@@ -30,7 +30,7 @@ export function AddToBagButton({
 
   if (isSoldOut) {
     return (
-      <span className="block w-full rounded-full border border-foreground/20 py-4 text-center text-sm font-semibold uppercase tracking-wide text-foreground/50">
+      <span className="block w-full border border-foreground/20 py-3.5 text-center text-sm font-semibold uppercase tracking-wide text-foreground/50">
         Sold out
       </span>
     );
@@ -46,7 +46,7 @@ export function AddToBagButton({
       <button
         type="button"
         onClick={() => addItem({ slug, name, price, currency, image })}
-        className="block w-full rounded-full bg-foreground py-4 text-center text-sm font-semibold uppercase tracking-wide text-background hover:opacity-90"
+        className="block w-full border border-foreground py-3.5 text-center text-sm font-semibold uppercase tracking-wide text-foreground transition-colors hover:bg-foreground hover:text-background"
       >
         Add to Bag
       </button>

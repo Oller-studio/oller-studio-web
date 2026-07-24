@@ -1,21 +1,23 @@
 import fs from "node:fs";
 import path from "node:path";
+import { getAllColorways } from "@/lib/colorways";
 
 export function hasHeroVideo(): boolean {
   return fs.existsSync(path.join(process.cwd(), "public", "videos", "hero.mp4"));
 }
 
-export type CarouselSlide = { images: string[]; alt: string };
+export type CarouselSlide = { images: string[]; alt: string; href?: string };
 
-// 4-up product carousel below the hero. Each slide can hold up to 2 images
-// (e.g. front/back) — drop them at public/images/home/product-{1..4}-{1,2}.jpg
-// and they show up automatically; tapping/swiping a slide toggles between them.
+// 4-up product carousel below the hero. Real colorways fill the first slots;
+// remaining slots preview as "Coming soon" until more colorways exist.
 export function getHomeCarouselSlides(): CarouselSlide[] {
-  return [1, 2, 3, 4].map((n) => {
-    const images = [1, 2]
-      .map((v) => `/images/home/product-${n}-${v}.jpg`)
-      .filter((rel) => fs.existsSync(path.join(process.cwd(), "public", rel)));
-    return { images, alt: `OLLER piece ${n}` };
+  const colorways = getAllColorways();
+  return Array.from({ length: 4 }, (_, i) => {
+    const colorway = colorways[i];
+    if (colorway) {
+      return { images: colorway.images, alt: colorway.name, href: `/shop/${colorway.slug}` };
+    }
+    return { images: [], alt: "New colorway" };
   });
 }
 

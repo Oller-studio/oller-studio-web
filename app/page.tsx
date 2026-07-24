@@ -59,7 +59,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="border-b border-border">
+      <section>
         <ProductCarousel slides={carouselSlides} />
       </section>
 

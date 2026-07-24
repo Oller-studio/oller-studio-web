@@ -25,7 +25,7 @@ function FavoriteButtonInner({
   const { isLoaded, isFavorite, toggleFavorite } = useFavorites();
   const active = isFavorite(slug);
 
-  if (!isLoaded) return <span className={className} aria-hidden="true" />;
+  if (!isLoaded) return null;
 
   return (
     <button
@@ -37,19 +37,20 @@ function FavoriteButtonInner({
         e.stopPropagation();
         toggleFavorite(slug);
       }}
-      className={className}
+      className={`group/fav ${className ?? ""}`}
     >
       <svg
-        width="20"
-        height="20"
+        width="19"
+        height="19"
         viewBox="0 0 24 24"
         fill={active ? "currentColor" : "none"}
         stroke="currentColor"
-        strokeWidth="1.75"
+        strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
+        className="transition-colors group-hover/fav:fill-current"
       >
-        <path d="M12 21s-7.5-4.9-10-9.3C.5 8.4 2.3 5 5.7 5c1.8 0 3.3 1 4.3 2.4C11 6 12.5 5 14.3 5c3.4 0 5.2 3.4 3.7 6.7C19.5 16.1 12 21 12 21Z" />
+        <path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
       </svg>
     </button>
   );

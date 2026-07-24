@@ -20,7 +20,7 @@ export function CartDrawer() {
           <button type="button" aria-label="Close bag" onClick={close} className="text-xl">
             ✕
           </button>
-          <p className="font-display text-2xl font-semibold leading-tight">In the Bag</p>
+          <p className="font-display text-2xl font-semibold leading-tight">Your Bag</p>
           <div className="flex items-center gap-1" aria-hidden="true">
             <BagIcon />
             {count > 0 && <span className="text-sm">{count}</span>}

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAllColorways, getColorwayBySlug } from "@/lib/colorways";
 import { ondine } from "@/content/ondine";
@@ -5,7 +6,12 @@ import { formatPrice, formatLeadTime } from "@/lib/format";
 import { ColorwayGallery } from "@/components/shop/ColorwayGallery";
 import { AvailabilityBadge } from "@/components/shop/AvailabilityBadge";
 import { AddToBagButton } from "@/components/shop/AddToBagButton";
-import { FavoriteButton } from "@/components/shop/FavoriteButton";
+
+const DEFAULT_BULLETS = [
+  "Made to order, one at a time, in-studio",
+  "TPU — flexible and durable, won't crack or peel",
+  "Lightweight sculptural silhouette",
+];
 
 export function generateStaticParams() {
   return getAllColorways().map((c) => ({ colorway: c.slug }));
@@ -24,48 +30,86 @@ export default async function ColorwayPage({
   }
 
   const storyParagraphs = colorway.story?.split("\n\n") ?? [];
+  const bullets = colorway.whyPoints ?? DEFAULT_BULLETS;
+  const otherColorways = getAllColorways().filter((c) => c.slug !== colorway.slug);
 
   return (
     <main>
-      <div className="mx-auto grid max-w-6xl gap-10 px-6 py-16 sm:grid-cols-2">
-        <ColorwayGallery colorway={colorway} />
-        <div className="flex flex-col gap-5">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-widest text-accent">
-                {colorway.tier === "signature"
-                  ? `Drop ${String(colorway.dropNumber).padStart(2, "0")} — ${ondine.name}`
-                  : ondine.name}
-              </p>
-              <h1 className="font-display text-4xl font-bold">{colorway.name}</h1>
-            </div>
-            <FavoriteButton
-              slug={colorway.slug}
-              className="rounded-full border border-border p-2.5 text-foreground hover:bg-border/40"
-            />
-          </div>
+      <div className="max-w-7xl px-6 pt-4">
+        <p className="text-xs text-muted">
+          <Link href="/" className="hover:text-foreground">
+            Home
+          </Link>{" "}
+          /{" "}
+          <Link href="/shop" className="hover:text-foreground">
+            Bags
+          </Link>{" "}
+          / <span className="uppercase">{colorway.name}</span>
+        </p>
+      </div>
 
-          <AvailabilityBadge
-            availability={colorway.availability}
-            piecesRemaining={colorway.piecesRemaining}
-            totalPieces={colorway.totalPieces}
-          />
+      <div className="mx-auto max-w-7xl px-6 pb-10 pt-8">
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,380px)_1fr]">
+          <div className="order-2 flex flex-col gap-5 lg:order-1">
+            <h1 className="font-display text-5xl font-bold uppercase leading-none">
+              {colorway.name}
+            </h1>
 
-          {colorway.matchedCar && (
-            <p className="text-muted">
-              Matched to {colorway.matchedCar.make} {colorway.matchedCar.model}{" "}
-              — {colorway.matchedCar.colorName}
+            <p className="text-lg font-normal text-muted">
+              {formatPrice(ondine.basePrice, ondine.currency)}
             </p>
-          )}
 
-          <p className="font-display text-3xl font-bold">
-            {formatPrice(ondine.basePrice, ondine.currency)}
-          </p>
-          <p className="text-sm text-muted">{formatLeadTime(ondine.leadTimeDays)}</p>
+            <AvailabilityBadge
+              availability={colorway.availability}
+              piecesRemaining={colorway.piecesRemaining}
+              totalPieces={colorway.totalPieces}
+            />
 
-          <p className="text-muted">{ondine.description}</p>
+            {colorway.matchedCar && (
+              <p className="text-sm text-muted">
+                Matched to {colorway.matchedCar.make} {colorway.matchedCar.model}{" "}
+                — {colorway.matchedCar.colorName}
+              </p>
+            )}
 
-          <div className="mt-4">
+            <p className="text-muted">{ondine.description}</p>
+
+            <ul className="flex flex-col gap-2 text-sm text-muted">
+              {bullets.map((point) => (
+                <li key={point}>— {point}</li>
+              ))}
+            </ul>
+
+            <div className="border-t border-border pt-5">
+              <p className="text-xs uppercase tracking-wide text-foreground">
+                Color <span className="text-muted">{colorway.name}</span>
+              </p>
+              <div className="mt-3 flex gap-3">
+                <div className="flex flex-col items-center gap-1.5">
+                  <span
+                    aria-label={colorway.name}
+                    className="h-9 w-9 rounded-b-full border border-foreground/20"
+                    style={{ backgroundColor: colorway.swatchColor }}
+                  />
+                  <span className="h-0.5 w-6 bg-foreground" />
+                </div>
+                {otherColorways.map((other) => (
+                  <Link
+                    key={other.slug}
+                    href={`/shop/${other.slug}`}
+                    aria-label={other.name}
+                    className="flex flex-col items-center gap-1.5"
+                  >
+                    <span
+                      className="h-9 w-9 rounded-b-full border border-border transition-colors hover:border-foreground/40"
+                      style={{ backgroundColor: other.swatchColor }}
+                    />
+                    <span className="h-0.5 w-6 bg-transparent" />
+                  </Link>
+                ))}
+              </div>
+            </div>
+
             <AddToBagButton
               slug={colorway.slug}
               name={colorway.name}
@@ -75,6 +119,17 @@ export default async function ColorwayPage({
               availability={colorway.availability}
               piecesRemaining={colorway.piecesRemaining}
             />
+
+            <div className="flex gap-4 text-xs">
+              <span className="text-muted">{formatLeadTime(ondine.leadTimeDays)}</span>
+              <Link href="/faq" className="underline underline-offset-4 hover:text-foreground">
+                Shipping & Returns
+              </Link>
+            </div>
+          </div>
+
+          <div className="order-1 lg:order-2">
+            <ColorwayGallery colorway={colorway} />
           </div>
         </div>
       </div>
@@ -85,23 +140,6 @@ export default async function ColorwayPage({
             {storyParagraphs.map((paragraph, i) => (
               <p key={i}>{paragraph}</p>
             ))}
-          </div>
-        </section>
-      )}
-
-      {colorway.whyPoints && colorway.whyPoints.length > 0 && (
-        <section className="border-t border-border">
-          <div className="mx-auto max-w-3xl px-6 py-16">
-            <h2 className="font-display text-sm font-semibold uppercase tracking-widest text-accent">
-              Why {colorway.name}
-            </h2>
-            <ul className="mt-6 flex flex-col gap-3">
-              {colorway.whyPoints.map((point) => (
-                <li key={point} className="text-lg">
-                  {point}
-                </li>
-              ))}
-            </ul>
           </div>
         </section>
       )}

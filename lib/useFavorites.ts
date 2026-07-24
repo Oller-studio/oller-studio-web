@@ -27,7 +27,12 @@ export function useFavorites() {
     const next = isFavorite(slug)
       ? favorites.filter((s) => s !== slug)
       : [...favorites, slug];
-    await user.update({ unsafeMetadata: { ...user.unsafeMetadata, favorites: next } });
+    try {
+      await user.update({ unsafeMetadata: { ...user.unsafeMetadata, favorites: next } });
+      await user.reload();
+    } catch (error) {
+      console.error("Failed to update favorites", error);
+    }
   }
 
   return { isLoaded, isSignedIn, favorites, isFavorite, toggleFavorite };

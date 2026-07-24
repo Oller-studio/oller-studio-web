@@ -8,6 +8,7 @@ export const colorways: Colorway[] = [
     slug: "multicolor",
     name: "Multicolor",
     tier: "collection",
+    swatchColor: "#8a4a3a",
     images: [
       "/images/ondine/multicolor/1.png",
       "/images/ondine/multicolor/2.png",
@@ -24,6 +25,7 @@ export const colorways: Colorway[] = [
     dropNumber: 1,
     totalPieces: 10, // TODO (founder): confirm real batch size for this drop
     piecesRemaining: 10,
+    swatchColor: "#c81e2c",
     images: [],
     matchedCar: {
       make: "Ferrari",

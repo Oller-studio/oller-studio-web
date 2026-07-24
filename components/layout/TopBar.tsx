@@ -15,10 +15,10 @@ export function TopBar({ variant = "solid" }: TopBarProps) {
 
   return (
     <div
-      className={`relative z-30 h-9 px-6 text-xs font-semibold uppercase tracking-wide ${
+      className={`relative z-30 h-9 border-b px-6 text-xs font-semibold uppercase tracking-wide ${
         isOverlay
-          ? "border-b border-white/20 bg-transparent text-white"
-          : "bg-foreground text-background"
+          ? "border-white/20 bg-transparent text-white"
+          : "border-border bg-background text-foreground"
       }`}
     >
       <p className="absolute left-6 top-1/2 -translate-y-1/2 whitespace-nowrap">

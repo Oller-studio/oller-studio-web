@@ -23,6 +23,7 @@ export type Colorway = {
   totalPieces?: number;
   piecesRemaining?: number;
   images: string[];
+  swatchColor: string;
   matchedCar?: Car;
   story?: string;
   whyPoints?: string[];
