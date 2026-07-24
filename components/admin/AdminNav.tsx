@@ -4,12 +4,14 @@ import Link from "next/link";
 import { useClerk } from "@clerk/nextjs";
 
 const sections: { href: string; label: string; comingSoon?: boolean }[] = [
-  { href: "/admin", label: "Overview" },
+  { href: "/admin", label: "Dashboard" },
+  { href: "/admin/production", label: "Production" },
+  { href: "/admin/orders", label: "Orders" },
   { href: "/admin/colorways", label: "Colorways", comingSoon: true },
-  { href: "/admin/offers", label: "Ofertas", comingSoon: true },
-  { href: "/admin/orders", label: "Pedidos", comingSoon: true },
-  { href: "/admin/analytics", label: "Analíticas", comingSoon: true },
-  { href: "/admin/support", label: "Soporte", comingSoon: true },
+  { href: "/admin/offers", label: "Offers", comingSoon: true },
+  { href: "/admin/finance", label: "Finance" },
+  { href: "/admin/analytics", label: "Analytics", comingSoon: true },
+  { href: "/admin/support", label: "Support", comingSoon: true },
 ];
 
 export function AdminNav({ name }: { name: string }) {
@@ -24,7 +26,7 @@ export function AdminNav({ name }: { name: string }) {
         s.comingSoon ? (
           <span
             key={s.href}
-            title="Próximamente"
+            title="Coming soon"
             className="cursor-not-allowed rounded-lg px-2 py-2 text-sm text-muted/50"
           >
             {s.label}

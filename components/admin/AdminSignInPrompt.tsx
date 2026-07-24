@@ -18,7 +18,7 @@ export function AdminSignInPrompt() {
     <main className="mx-auto flex max-w-lg flex-col items-center gap-4 px-6 py-24 text-center">
       <h1 className="font-display text-3xl font-semibold">Admin</h1>
       <p className="text-muted">
-        Inicia sesión con tu email para entrar al panel de administración.
+        Log in with your email to access the admin panel.
       </p>
       <button
         type="button"

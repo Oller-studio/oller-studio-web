@@ -1,0 +1,81 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// Created PENDING the moment checkout starts (so we can see abandoned
+// checkouts), then flipped to COMPLETED by the PayPal webhook — never by the
+// browser — so "sales" reflects money that actually moved.
+// Fulfillment stages for a handmade, built-to-order piece — tracks studio
+// production, not just shipping.
+// NEW_ORDER -> PRINTING -> PRINTED -> PACKED -> SENT -> DELIVERED
+model Order {
+  id                String      @id @default(cuid())
+  paypalOrderId     String      @unique
+  captureId         String?     @unique
+  status            String
+  amountCents       Int
+  refundedCents     Int         @default(0)
+  currency          String
+  payerEmail        String?
+  payerName         String?
+  payerCountry      String?
+  paypalFeeCents    Int         @default(0)
+  shippingName      String?
+  shippingAddress   String?
+  source            String?
+  fulfillmentStatus String      @default("NEW_ORDER")
+  startedPrintingAt DateTime?
+  rawPayload        String?
+  createdAt         DateTime    @default(now())
+  completedAt       DateTime?
+  refundedAt        DateTime?
+  shippedAt         DateTime?
+  deliveredAt       DateTime?
+  items             OrderItem[]
+}
+
+model OrderItem {
+  id              String @id @default(cuid())
+  order           Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId         String
+  colorwaySlug    String
+  name            String
+  quantity        Int
+  unitAmountCents Int
+}
+
+// One row per browsing session (deduped via a 30-minute cookie in proxy.ts),
+// not per page view — this is what "Sessions" on the dashboard counts.
+model Visit {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+}
+
+// What it costs to actually make one piece (materials + time), entered by
+// hand — there's no integration that can detect this. Keyed by colorway slug
+// rather than a product relation since Colorways still live in content/*.ts.
+model ProductCost {
+  colorwaySlug String   @id
+  name         String
+  costCents    Int
+  printMinutes Int?
+  updatedAt    DateTime @updatedAt
+}
+
+// Recurring costs (rent, tools, subscriptions) — prorated by day when shown
+// over a date range.
+model FixedCost {
+  id                 String    @id @default(cuid())
+  label              String
+  amountCentsPerMonth Int
+  startDate          DateTime  @default(now())
+  endDate            DateTime?
+}

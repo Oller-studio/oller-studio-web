@@ -30,8 +30,8 @@ export function CartCheckout() {
     <PayPalScriptProvider options={{ clientId, currency, intent: "capture" }}>
       <PayPalButtons
         style={{ layout: "vertical", shape: "pill", label: "pay" }}
-        createOrder={(_, actions) =>
-          actions.order.create({
+        createOrder={async (_, actions) => {
+          const paypalOrderId = await actions.order.create({
             intent: "CAPTURE",
             purchase_units: [
               {
@@ -49,8 +49,19 @@ export function CartCheckout() {
                 })),
               },
             ],
-          })
-        }
+          });
+
+          // Record the cart now, before payment — lets the admin dashboard see
+          // abandoned checkouts, not just completed ones (the webhook flips
+          // this to COMPLETED once PayPal confirms the capture).
+          fetch("/api/orders/start", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ paypalOrderId, currency, items }),
+          }).catch(() => {});
+
+          return paypalOrderId;
+        }}
         onApprove={async (_, actions) => {
           if (!actions.order) return;
           await actions.order.capture();
