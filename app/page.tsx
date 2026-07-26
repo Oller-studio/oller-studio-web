@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getFeaturedColorway } from "@/lib/colorways";
 import {
   hasHeroVideo,
+  getHeroImage,
   getHomeCarouselSlides,
   getHomeEditorialImages,
 } from "@/lib/media";
@@ -12,7 +13,7 @@ import { ProductCarousel } from "@/components/home/ProductCarousel";
 
 export default async function Home() {
   const featured = await getFeaturedColorway();
-  const heroImage = featured.images[0];
+  const heroImage = getHeroImage() ?? featured.images[0];
   const showVideo = hasHeroVideo();
   const carouselSlides = await getHomeCarouselSlides();
   const editorialImages = getHomeEditorialImages();
@@ -32,13 +33,7 @@ export default async function Home() {
               playsInline
             />
           ) : heroImage ? (
-            <Image
-              src={heroImage}
-              alt={featured.name}
-              fill
-              priority
-              className="object-cover"
-            />
+            <Image src={heroImage} alt="OLLER" fill priority className="object-cover" />
           ) : null}
           <div className="absolute inset-0 bg-black/35" />
         </div>

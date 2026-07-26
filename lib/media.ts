@@ -6,6 +6,18 @@ export function hasHeroVideo(): boolean {
   return fs.existsSync(path.join(process.cwd(), "public", "videos", "hero.mp4"));
 }
 
+// A dedicated editorial hero photo — takes priority over a product photo
+// fallback, so the homepage doesn't have to lead with plain product
+// photography before a hero video/shoot exists.
+// Drop a file at public/images/home/hero.jpg (or .png) to use it.
+export function getHeroImage(): string | null {
+  for (const ext of ["jpg", "jpeg", "png"]) {
+    const rel = `/images/home/hero.${ext}`;
+    if (fs.existsSync(path.join(process.cwd(), "public", rel))) return rel;
+  }
+  return null;
+}
+
 export type CarouselSlide = { images: string[]; alt: string; href?: string };
 
 // 4-up product carousel below the hero. Real colorways fill the first slots;
