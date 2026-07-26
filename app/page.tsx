@@ -10,11 +10,11 @@ import { TopBar } from "@/components/layout/TopBar";
 import { Header } from "@/components/layout/Header";
 import { ProductCarousel } from "@/components/home/ProductCarousel";
 
-export default function Home() {
-  const featured = getFeaturedColorway();
+export default async function Home() {
+  const featured = await getFeaturedColorway();
   const heroImage = featured.images[0];
   const showVideo = hasHeroVideo();
-  const carouselSlides = getHomeCarouselSlides();
+  const carouselSlides = await getHomeCarouselSlides();
   const editorialImages = getHomeEditorialImages();
 
   return (

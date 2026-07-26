@@ -1,6 +1,3 @@
-import { ondine } from "@/content/ondine";
-import { formatPrice } from "@/lib/format";
-
 export function ColorwayPlaceholderCard() {
   return (
     <div className="flex flex-col gap-2">
@@ -15,9 +12,6 @@ export function ColorwayPlaceholderCard() {
         </p>
         <span className="text-xs font-normal uppercase tracking-wide text-muted">
           New colorway
-        </span>
-        <span className="text-sm font-normal text-muted">
-          {formatPrice(ondine.basePrice, ondine.currency)}
         </span>
       </div>
     </div>

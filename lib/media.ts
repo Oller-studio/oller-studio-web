@@ -10,8 +10,8 @@ export type CarouselSlide = { images: string[]; alt: string; href?: string };
 
 // 4-up product carousel below the hero. Real colorways fill the first slots;
 // remaining slots preview as "Coming soon" until more colorways exist.
-export function getHomeCarouselSlides(): CarouselSlide[] {
-  const colorways = getAllColorways();
+export async function getHomeCarouselSlides(): Promise<CarouselSlide[]> {
+  const colorways = await getAllColorways({ publishedOnly: true });
   return Array.from({ length: 4 }, (_, i) => {
     const colorway = colorways[i];
     if (colorway) {

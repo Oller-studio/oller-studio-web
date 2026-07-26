@@ -5,8 +5,8 @@ import { ColorwayPlaceholderCard } from "@/components/shop/ColorwayPlaceholderCa
 
 const GRID_SLOTS = 4;
 
-export default function ShopPage() {
-  const colorways = getAllColorways();
+export default async function ShopPage() {
+  const colorways = await getAllColorways({ publishedOnly: true });
   const placeholders = Math.max(0, GRID_SLOTS - colorways.length);
 
   return (

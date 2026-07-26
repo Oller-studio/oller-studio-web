@@ -2,8 +2,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { getAllColorways, getColorwayBySlug } from "@/lib/colorways";
-import { ondine } from "@/content/ondine";
-import { site } from "@/content/site";
 import { formatPrice } from "@/lib/format";
 import { ColorwayGallery } from "@/components/shop/ColorwayGallery";
 import { AvailabilityBadge } from "@/components/shop/AvailabilityBadge";
@@ -16,8 +14,9 @@ const DEFAULT_BULLETS = [
   "Lightweight sculptural silhouette",
 ];
 
-export function generateStaticParams() {
-  return getAllColorways().map((c) => ({ colorway: c.slug }));
+export async function generateStaticParams() {
+  const colorways = await getAllColorways({ publishedOnly: true });
+  return colorways.map((c) => ({ colorway: c.slug }));
 }
 
 export default async function ColorwayPage({
@@ -26,38 +25,41 @@ export default async function ColorwayPage({
   params: Promise<{ colorway: string }>;
 }) {
   const { colorway: slug } = await params;
-  const colorway = getColorwayBySlug(slug);
+  const colorway = await getColorwayBySlug(slug);
 
   if (!colorway) {
     notFound();
   }
 
   const bullets = colorway.whyPoints ?? DEFAULT_BULLETS;
-  const allColorways = getAllColorways();
+  const allColorways = await getAllColorways({ publishedOnly: true });
 
   const accordionItems: { label: string; content: ReactNode }[] = [];
 
-  if (ondine.sizeAndFit) {
+  if (colorway.product.sizeAndFit.dimensions || colorway.product.sizeAndFit.weight) {
     accordionItems.push({
       label: "Size & Fit Notes",
       content: (
         <>
-          <p>{ondine.sizeAndFit.dimensions}</p>
-          <p>{ondine.sizeAndFit.weight}</p>
-          {ondine.sizeAndFit.note && <p>{ondine.sizeAndFit.note}</p>}
+          {colorway.product.sizeAndFit.dimensions && (
+            <p>{colorway.product.sizeAndFit.dimensions}</p>
+          )}
+          {colorway.product.sizeAndFit.weight && <p>{colorway.product.sizeAndFit.weight}</p>}
+          {colorway.product.sizeAndFit.note && <p>{colorway.product.sizeAndFit.note}</p>}
         </>
       ),
     });
   }
 
-  if (colorway.composition) {
+  if (colorway.product.compositionCare) {
     accordionItems.push({
       label: "Composition and Care",
       content: (
         <>
-          <p className="font-medium text-foreground">{colorway.composition.material}</p>
-          {colorway.composition.description.split("\n\n").map((paragraph, i) => (
-            <p key={i}>{paragraph}</p>
+          {colorway.product.compositionCare.split("\n\n").map((paragraph, i) => (
+            <p key={i} className={i === 0 ? "font-medium text-foreground" : undefined}>
+              {paragraph}
+            </p>
           ))}
         </>
       ),
@@ -68,7 +70,7 @@ export default async function ColorwayPage({
     label: "Delivery, Exchanges and Returns",
     content: (
       <>
-        {site.deliveryPolicy.map((paragraph, i) => (
+        {colorway.product.deliveryReturns.split("\n\n").map((paragraph, i) => (
           <p key={i}>{paragraph}</p>
         ))}
       </>
@@ -94,11 +96,11 @@ export default async function ColorwayPage({
         <div className="grid gap-10 lg:grid-cols-2">
           <div className="order-2 flex flex-col gap-5 lg:order-1">
             <h1 className="font-display text-5xl font-bold uppercase leading-none">
-              {ondine.name}
+              {colorway.product.name}
             </h1>
 
             <p className="text-lg font-normal text-muted">
-              {formatPrice(ondine.basePrice, ondine.currency)}
+              {formatPrice(colorway.price, colorway.product.currency)}
             </p>
 
             {colorway.availability.status !== "available" && (
@@ -116,7 +118,7 @@ export default async function ColorwayPage({
               </p>
             )}
 
-            <p className="text-muted">{ondine.description}</p>
+            <p className="text-muted">{colorway.product.description}</p>
 
             <ul className="flex flex-col gap-2 text-sm text-muted">
               {bullets.map((point) => (
@@ -142,7 +144,7 @@ export default async function ColorwayPage({
                         className={`h-3.5 w-3.5 rounded-b-full border transition-colors ${
                           isActive ? "border-foreground/20" : "border-border hover:border-foreground/40"
                         }`}
-                        style={{ backgroundColor: c.swatchColor }}
+                        style={{ backgroundColor: c.swatchColor ?? "#e5e5e5" }}
                       />
                       <span className={`h-px w-3 ${isActive ? "bg-foreground" : "bg-transparent"}`} />
                     </Link>
@@ -154,8 +156,8 @@ export default async function ColorwayPage({
             <AddToBagButton
               slug={colorway.slug}
               name={colorway.name}
-              price={ondine.basePrice}
-              currency={ondine.currency}
+              price={colorway.price}
+              currency={colorway.product.currency}
               image={colorway.images[0]}
               availability={colorway.availability}
               piecesRemaining={colorway.piecesRemaining}
@@ -169,7 +171,6 @@ export default async function ColorwayPage({
           </div>
         </div>
       </div>
-
     </main>
   );
 }

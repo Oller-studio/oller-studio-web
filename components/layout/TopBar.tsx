@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { site } from "@/content/site";
-import { ondine } from "@/content/ondine";
 import { AccountControl } from "./AccountControl";
 import { WishlistControl } from "./WishlistControl";
 
@@ -28,7 +27,7 @@ export function TopBar({ variant = "solid" }: TopBarProps) {
         href="/shop"
         className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 truncate text-center hover:opacity-80"
       >
-        {site.campaignLine} — Shop the {ondine.name} Bag
+        {site.campaignLine} — Shop the Collection
       </Link>
       <div className="absolute right-6 top-1/2 flex -translate-y-1/2 items-center gap-4 whitespace-nowrap opacity-70">
         {clerkConfigured ? (

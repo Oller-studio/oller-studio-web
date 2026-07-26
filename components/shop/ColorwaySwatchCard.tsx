@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Colorway } from "@/lib/types";
-import { ondine } from "@/content/ondine";
 import { formatPrice } from "@/lib/format";
 import { AvailabilityBadge } from "./AvailabilityBadge";
 import { FavoriteButton } from "./FavoriteButton";
@@ -52,8 +51,8 @@ export function ColorwaySwatchCard({ colorway }: { colorway: Colorway }) {
           <QuickAddButton
             slug={colorway.slug}
             name={colorway.name}
-            price={ondine.basePrice}
-            currency={ondine.currency}
+            price={colorway.price}
+            currency={colorway.product.currency}
             image={primaryImage}
           />
         )}
@@ -68,7 +67,7 @@ export function ColorwaySwatchCard({ colorway }: { colorway: Colorway }) {
           {colorway.name}
         </span>
         <span className="text-sm font-normal text-muted">
-          {formatPrice(ondine.basePrice, ondine.currency)}
+          {formatPrice(colorway.price, colorway.product.currency)}
         </span>
       </Link>
     </div>

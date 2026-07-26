@@ -1,0 +1,182 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// Created PENDING the moment checkout starts (so we can see abandoned
+// checkouts), then flipped to COMPLETED by the PayPal webhook — never by the
+// browser — so "sales" reflects money that actually moved.
+// Fulfillment stages for a handmade, built-to-order piece — tracks studio
+// production, not just shipping.
+// NEW_ORDER -> PRINTING -> PRINTED -> PACKED -> SENT -> DELIVERED
+model Order {
+  id                String      @id @default(cuid())
+  paypalOrderId     String      @unique
+  captureId         String?     @unique
+  status            String
+  amountCents       Int
+  refundedCents     Int         @default(0)
+  currency          String
+  payerEmail        String?
+  payerName         String?
+  payerCountry      String?
+  paypalFeeCents    Int         @default(0)
+  shippingName      String?
+  shippingAddress   String?
+  shippingCity      String?
+  source            String?
+  fulfillmentStatus String      @default("NEW_ORDER")
+  startedPrintingAt DateTime?
+  rawPayload        String?
+  createdAt         DateTime    @default(now())
+  completedAt       DateTime?
+  refundedAt        DateTime?
+  shippedAt         DateTime?
+  deliveredAt       DateTime?
+  items             OrderItem[]
+}
+
+model OrderItem {
+  id              String @id @default(cuid())
+  order           Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId         String
+  colorwaySlug    String
+  name            String
+  quantity        Int
+  unitAmountCents Int
+}
+
+// One row per browsing session (deduped via a 30-minute cookie in proxy.ts),
+// not per page view — this is what "Sessions" on the dashboard counts.
+model Visit {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+}
+
+// A bag model (ONDINE, ORBE, Object 01...) — name, price, and lead time are
+// shared by every variant underneath it. Editable from /admin/products.
+model Product {
+  slug          String     @id
+  name          String
+  description   String
+  // Fallback price when a color/edition doesn't set its own priceCents —
+  // editions are expected to set their own now, this is a safety net.
+  basePriceCents Int       @default(0)
+  // "Was X" price shown struck through next to Price for a sale/promo — has
+  // no effect unless it's set higher than basePriceCents.
+  compareAtPriceCents Int?
+  // Pieces included in one listing at that price — 1 for a single bag, more
+  // if it's ever sold as a set/pack. Unit price = basePriceCents / unitCount.
+  unitCount     Int        @default(1)
+  weightGrams   Int?
+  heightCm      Float?
+  widthCm       Float?
+  depthCm       Float?
+  sizeAndFitNote String?
+  // Override for the "Composition and Care" storefront section — if unset,
+  // the storefront shows a default generated from `material` instead.
+  compositionCareNote String?
+  // Override for "Delivery, Exchanges and Returns" — same text on every
+  // product unless this specific one needs different terms.
+  deliveryReturnsNote String?
+  material      String?
+  printMinutes  Int?
+  currency      String     @default("USD")
+  leadTimeMinDays Int
+  leadTimeMaxDays Int
+  sortOrder     Int        @default(0)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  variants      Colorway[]
+  packaging     Packaging? @relation(fields: [packagingId], references: [id], onDelete: SetNull)
+  packagingId   String?
+}
+
+// A reusable box/packaging preset (name + size) — set up once under
+// Production, then picked per-product instead of typing dimensions each time.
+model Packaging {
+  id        String    @id @default(cuid())
+  name      String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
+}
+
+// One color/drop variant of a Product — what shows up as a shop listing.
+// Editable from /admin/products/[slug]. Array/object fields (images,
+// whyPoints, matchedCar, campaignNote) are stored as JSON strings, same
+// pattern as Order.rawPayload.
+model Colorway {
+  slug                   String   @id
+  product                Product  @relation(fields: [productSlug], references: [slug], onDelete: Cascade)
+  productSlug            String
+  name                   String
+  swatchColor            String?
+  // Overrides Product.basePriceCents for this specific color — null means
+  // "use the product's price" (most colors won't need their own).
+  priceCents             Int?
+  // "Was X" price shown struck through next to Price for a sale/promo — has
+  // no effect unless it's set higher than priceCents.
+  compareAtPriceCents    Int?
+  // Pieces included in one listing at that price — 1 for a single bag, more
+  // if it's ever sold as a set/pack. Unit price = priceCents / unitCount.
+  unitCount              Int      @default(1)
+  compositionMaterial    String?
+  compositionDescription String?
+  tier                   String
+  dropNumber             Int?
+  dropEndsAt             String?
+  totalPieces            Int?
+  piecesRemaining        Int?
+  images                 String   @default("[]")
+  matchedCarMake         String?
+  matchedCarModel        String?
+  matchedCarColorName    String?
+  matchedCarImageUrl     String?
+  matchedCarOwnerNote    String?
+  story                  String?
+  whyPoints              String   @default("[]")
+  campaignQuote          String?
+  campaignName           String?
+  campaignRole           String?
+  availabilityStatus     String   @default("available")
+  availabilityShipsFrom  String?
+  // Ready-to-ship pieces already sitting in the studio, separate from
+  // availabilityStatus (which is the manual customer-facing "sold out"
+  // flag) — this is purely internal, for deciding what still needs printing.
+  stockOnHand            Int      @default(0)
+  status                 String   @default("draft")
+  isFeatured             Boolean  @default(false)
+  launchedAt             String
+  sortOrder              Int      @default(0)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+// What it costs to actually make one piece (materials only — print time is
+// a product spec, see Product.printMinutes), entered by hand since there's
+// no integration that can detect this. Keyed by colorway slug rather than a
+// relation to keep cost-tracking independent of catalog edits.
+model ProductCost {
+  colorwaySlug String   @id
+  name         String
+  costCents    Int
+  updatedAt    DateTime @updatedAt
+}
+
+// Recurring costs (rent, tools, subscriptions) — prorated by day when shown
+// over a date range.
+model FixedCost {
+  id                 String    @id @default(cuid())
+  label              String
+  amountCentsPerMonth Int
+  startDate          DateTime  @default(now())
+  endDate            DateTime?
+}

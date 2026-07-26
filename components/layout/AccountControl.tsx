@@ -14,6 +14,7 @@ export function AccountControl({ className }: AccountControlProps) {
   const { signOut } = useClerk();
   const { open } = useAuthModal();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -26,6 +27,23 @@ export function AccountControl({ className }: AccountControlProps) {
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, [menuOpen]);
+
+  useEffect(() => {
+    if (!isSignedIn) {
+      setIsAdmin(false);
+      return;
+    }
+    let cancelled = false;
+    fetch("/api/admin/status")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled) setIsAdmin(Boolean(data.isAdmin));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [isSignedIn]);
 
   if (!isLoaded) {
     return <span className={className} aria-hidden="true" />;
@@ -42,6 +60,15 @@ export function AccountControl({ className }: AccountControlProps) {
             <p className="px-4 py-2 text-sm font-semibold">
               Hi, {user.firstName ?? "there"}
             </p>
+            {isAdmin && (
+              <Link
+                href="/admin"
+                onClick={() => setMenuOpen(false)}
+                className="block px-4 py-2 text-sm font-normal hover:bg-border/40"
+              >
+                Admin
+              </Link>
+            )}
             <Link
               href="/account"
               onClick={() => setMenuOpen(false)}
