@@ -16,6 +16,11 @@ export const colorways: Colorway[] = [
     ],
     availability: { status: "available" },
     story: "The piece that started it all — OLLER's original signature, made to order.",
+    composition: {
+      material: "PLA (Polylactic Acid)",
+      description:
+        "Sustainable — made from corn. A lightweight plant-based material known for its lower environmental impact and solid, structured finish.\n\nEach piece is 3D-printed and finished in-studio. Slight variations may occur as part of the process, making every object unique.",
+    },
     launchedAt: "2026-04-14",
   },
   {
@@ -34,6 +39,11 @@ export const colorways: Colorway[] = [
     },
     availability: { status: "sold_out" },
     isFeatured: true,
+    composition: {
+      material: "TPU (Thermoplastic Polyurethane)",
+      description:
+        "A flexible, durable material that won't crack or peel with everyday use.\n\nEach piece is 3D-printed and finished in-studio. Slight variations may occur as part of the process, making every object unique.",
+    },
     launchedAt: "2026-07-20",
     story:
       "For decades, handbags have followed the same conventions: familiar silhouettes, expected materials, predictable rules. OLLER exists to break that loop — not by chasing trends, but by building forms that couldn't exist before.\n\nEvery signature starts as a file. Designed digitally, then built layer by layer and finished by hand in my studio. This isn't conventional manufacturing — it's construction as art. What once couldn't be shaped in a traditional atelier becomes possible this way.\n\nEach piece takes over 24 hours to build, which is why every drop stays intentionally small — no excess stock, no permanent restock. Small variations may appear from piece to piece. Not a flaw — a signature of something made by hand, not stamped from a mold.",

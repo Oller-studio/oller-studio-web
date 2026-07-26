@@ -8,4 +8,9 @@ export const ondine: Product = {
   basePrice: 220,
   currency: "USD",
   leadTimeDays: [5, 7],
+  sizeAndFit: {
+    dimensions: "H 28 × W 22 × D 12 cm",
+    weight: "300g",
+    note: "Fits an iPhone + essentials.",
+  },
 };

@@ -43,10 +43,10 @@ export function CartDrawer() {
         ) : (
           <>
             <div className="flex-1 overflow-y-auto px-6 py-6">
-              <ul className="flex flex-col gap-6">
+              <ul className="flex flex-col divide-y divide-border">
                 {items.map((item) => (
-                  <li key={item.slug} className="flex gap-4">
-                    <div className="h-24 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-border">
+                  <li key={item.slug} className="flex gap-5 py-6 first:pt-0 last:pb-0">
+                    <div className="h-36 w-28 flex-shrink-0 overflow-hidden bg-border">
                       {item.image && (
                         <Image
                           src={item.image}
@@ -57,13 +57,13 @@ export function CartDrawer() {
                         />
                       )}
                     </div>
-                    <div className="flex flex-1 flex-col gap-2">
+                    <div className="flex flex-1 flex-col justify-between py-1">
                       <div className="flex items-start justify-between gap-2">
                         <div>
                           <p className="text-sm font-semibold uppercase tracking-wide">
                             ONDINE
                           </p>
-                          <p className="text-sm text-muted">{item.name}</p>
+                          <p className="mt-1 text-sm text-muted">{item.name}</p>
                         </div>
                         <button
                           type="button"
@@ -73,23 +73,26 @@ export function CartDrawer() {
                           Remove
                         </button>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3 border border-border px-3 py-1 text-sm">
-                          <button
-                            type="button"
-                            aria-label="Decrease quantity"
-                            onClick={() => setQuantity(item.slug, item.quantity - 1)}
-                          >
-                            –
-                          </button>
-                          <span>{item.quantity}</span>
-                          <button
-                            type="button"
-                            aria-label="Increase quantity"
-                            onClick={() => setQuantity(item.slug, item.quantity + 1)}
-                          >
-                            +
-                          </button>
+                      <div className="flex items-end justify-between">
+                        <div className="flex items-center gap-3 text-sm text-muted">
+                          <span className="text-xs uppercase tracking-wide">Qty</span>
+                          <div className="flex items-center gap-3 border border-border px-3 py-1 text-foreground">
+                            <button
+                              type="button"
+                              aria-label="Decrease quantity"
+                              onClick={() => setQuantity(item.slug, item.quantity - 1)}
+                            >
+                              –
+                            </button>
+                            <span>{item.quantity}</span>
+                            <button
+                              type="button"
+                              aria-label="Increase quantity"
+                              onClick={() => setQuantity(item.slug, item.quantity + 1)}
+                            >
+                              +
+                            </button>
+                          </div>
                         </div>
                         <p className="text-sm font-medium">
                           {formatPrice(item.price * item.quantity, item.currency)}

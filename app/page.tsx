@@ -9,7 +9,6 @@ import {
 import { TopBar } from "@/components/layout/TopBar";
 import { Header } from "@/components/layout/Header";
 import { ProductCarousel } from "@/components/home/ProductCarousel";
-import { InfoBar } from "@/components/home/InfoBar";
 
 export default function Home() {
   const featured = getFeaturedColorway();
@@ -87,8 +86,6 @@ export default function Home() {
           ))}
         </div>
       </section>
-
-      <InfoBar />
     </main>
   );
 }

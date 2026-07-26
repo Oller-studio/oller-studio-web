@@ -15,6 +15,11 @@ export type Availability =
 // "signature" = a one-off drop tied to a specific story (e.g. a car match) — real numbered scarcity, closes for good.
 export type ColorwayTier = "collection" | "signature";
 
+export type Composition = {
+  material: string;
+  description: string;
+};
+
 export type Colorway = {
   slug: string;
   name: string;
@@ -28,9 +33,16 @@ export type Colorway = {
   story?: string;
   whyPoints?: string[];
   campaignNote?: { quote: string; name: string; role: string };
+  composition?: Composition;
   availability: Availability;
   isFeatured?: boolean;
   launchedAt: string;
+};
+
+export type SizeAndFit = {
+  dimensions: string;
+  weight: string;
+  note?: string;
 };
 
 export type Product = {
@@ -40,6 +52,7 @@ export type Product = {
   basePrice: number;
   currency: string;
   leadTimeDays: [number, number];
+  sizeAndFit?: SizeAndFit;
 };
 
 export type CartItem = {

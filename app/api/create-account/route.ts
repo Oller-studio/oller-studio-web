@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { sendWelcomeEmail } from "@/lib/resend";
 
 export async function POST(request: Request) {
   const secretKey = process.env.CLERK_SECRET_KEY;
@@ -27,6 +28,7 @@ export async function POST(request: Request) {
   });
 
   if (response.ok) {
+    await sendWelcomeEmail(email, firstName);
     return NextResponse.json({ ok: true, created: true });
   }
 

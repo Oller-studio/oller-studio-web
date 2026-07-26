@@ -1,6 +1,6 @@
 export const site = {
   name: "OLLER",
-  email: "ollerthestudio@gmail.com",
+  email: "hello@oller.studio",
   hook: "Bags should match your car, not your outfit.",
   campaignLine: "Escape the ordinary",
   heroSub:
@@ -13,6 +13,11 @@ export const site = {
     quote:
       "My new obsession is creating forms that feel new. Every signature starts as an obsession — a shape I can't stop thinking about — until I build it myself, layer by layer. Not made for everyone. Made for the few who get it.",
   },
+  deliveryPolicy: [
+    "Most orders are shipped within 24–48 hours of purchase, subject to availability and payment verification. Once shipped, delivery typically takes 6–10 business days, depending on destination.",
+    "Returns are accepted within 14 days of delivery. For any questions, please contact hello@oller.studio.",
+    "For orders shipped outside the EU, customs duties, taxes, and import fees may apply upon arrival and are the responsibility of the customer.",
+  ],
   faq: [
     {
       q: "How long does it take to receive my piece?",
@@ -24,7 +29,7 @@ export const site = {
     },
     {
       q: "Do you accept returns?",
-      a: "Returns are accepted within 14 days of delivery. For any questions, please contact ollerthestudio@gmail.com.",
+      a: "Returns are accepted within 14 days of delivery. For any questions, please contact hello@oller.studio.",
     },
     {
       q: "What about customs, duties, or import taxes?",
