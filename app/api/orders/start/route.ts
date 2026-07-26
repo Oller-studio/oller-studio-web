@@ -6,6 +6,7 @@ type StartOrderBody = {
   paypalOrderId: string;
   currency: string;
   items: { slug: string; name: string; price: number; quantity: number }[];
+  payerEmail?: string;
 };
 
 export async function POST(request: Request) {
@@ -28,6 +29,7 @@ export async function POST(request: Request) {
       amountCents,
       currency: body.currency,
       source,
+      payerEmail: body.payerEmail || null,
       items: {
         create: body.items.map((i) => ({
           colorwaySlug: i.slug,

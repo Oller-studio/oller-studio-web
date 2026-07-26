@@ -68,7 +68,12 @@ async function handleCaptureCompleted(event: PaypalCaptureCompletedEvent) {
   const details = await getOrderDetails(orderId);
   const payerEmail = details.email ?? resource.payer?.email_address ?? null;
 
-  await prisma.order.upsert({
+  // PayPal can redeliver this webhook — only decrement stock the first time
+  // an order actually transitions into COMPLETED.
+  const existing = await prisma.order.findUnique({ where: { paypalOrderId: orderId } });
+  const alreadyCompleted = existing?.status === "COMPLETED";
+
+  const order = await prisma.order.upsert({
     where: { paypalOrderId: orderId },
     update: {
       status: resource.status,
@@ -81,6 +86,7 @@ async function handleCaptureCompleted(event: PaypalCaptureCompletedEvent) {
       payerCountry: details.country,
       shippingName: details.shippingName,
       shippingAddress: details.shippingAddress,
+      shippingCity: details.shippingCity,
       rawPayload: JSON.stringify(event),
       completedAt: new Date(),
     },
@@ -98,10 +104,26 @@ async function handleCaptureCompleted(event: PaypalCaptureCompletedEvent) {
       payerCountry: details.country,
       shippingName: details.shippingName,
       shippingAddress: details.shippingAddress,
+      shippingCity: details.shippingCity,
       rawPayload: JSON.stringify(event),
       completedAt: new Date(),
     },
+    include: { items: true },
   });
+
+  // Internal stock tracking only — never lets a color go below 0, and is
+  // independent of the manual "Sold out" flag admins set by hand.
+  if (!alreadyCompleted && resource.status === "COMPLETED") {
+    for (const item of order.items) {
+      const colorway = await prisma.colorway.findUnique({ where: { slug: item.colorwaySlug } });
+      if (colorway && colorway.stockOnHand > 0) {
+        await prisma.colorway.update({
+          where: { slug: item.colorwaySlug },
+          data: { stockOnHand: Math.max(0, colorway.stockOnHand - item.quantity) },
+        });
+      }
+    }
+  }
 
   return NextResponse.json({ received: true });
 }

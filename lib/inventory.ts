@@ -1,6 +1,7 @@
-import { colorways } from "@/content/colorways";
+import { getAllColorways } from "@/lib/colorways";
 
-export function getSignatureInventory() {
+export async function getSignatureInventory() {
+  const colorways = await getAllColorways();
   return colorways
     .filter((c) => c.tier === "signature")
     .map((c) => ({

@@ -11,8 +11,8 @@ import { Header } from "@/components/layout/Header";
 import { ProductCarousel } from "@/components/home/ProductCarousel";
 import { InfoBar } from "@/components/home/InfoBar";
 
-export default function Home() {
-  const featured = getFeaturedColorway();
+export default async function Home() {
+  const featured = await getFeaturedColorway();
   const heroImage = featured.images[0];
   const showVideo = hasHeroVideo();
   const carouselSlides = getHomeCarouselSlides();

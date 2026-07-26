@@ -101,7 +101,8 @@ export default async function AdminFinancePage({
       <section className="flex flex-col gap-3">
         <h2 className="font-display text-lg font-semibold">Cost per piece</h2>
         <p className="text-sm text-muted">
-          What it actually costs you to make each piece (materials + time).
+          What it actually costs you in materials to make each piece. Print time now
+          lives on the product itself, under Products.
         </p>
         <ProductCostEditor rows={productCosts} />
       </section>

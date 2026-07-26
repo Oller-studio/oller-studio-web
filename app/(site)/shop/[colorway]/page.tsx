@@ -1,14 +1,14 @@
 import { notFound } from "next/navigation";
 import { getAllColorways, getColorwayBySlug } from "@/lib/colorways";
-import { ondine } from "@/content/ondine";
 import { formatPrice, formatLeadTime } from "@/lib/format";
 import { ColorwayGallery } from "@/components/shop/ColorwayGallery";
 import { AvailabilityBadge } from "@/components/shop/AvailabilityBadge";
 import { AddToBagButton } from "@/components/shop/AddToBagButton";
 import { FavoriteButton } from "@/components/shop/FavoriteButton";
 
-export function generateStaticParams() {
-  return getAllColorways().map((c) => ({ colorway: c.slug }));
+export async function generateStaticParams() {
+  const colorways = await getAllColorways({ publishedOnly: true });
+  return colorways.map((c) => ({ colorway: c.slug }));
 }
 
 export default async function ColorwayPage({
@@ -17,7 +17,7 @@ export default async function ColorwayPage({
   params: Promise<{ colorway: string }>;
 }) {
   const { colorway: slug } = await params;
-  const colorway = getColorwayBySlug(slug);
+  const colorway = await getColorwayBySlug(slug);
 
   if (!colorway) {
     notFound();
@@ -34,8 +34,8 @@ export default async function ColorwayPage({
             <div>
               <p className="text-sm font-semibold uppercase tracking-widest text-accent">
                 {colorway.tier === "signature"
-                  ? `Drop ${String(colorway.dropNumber).padStart(2, "0")} — ${ondine.name}`
-                  : ondine.name}
+                  ? `Drop ${String(colorway.dropNumber).padStart(2, "0")} — ${colorway.product.name}`
+                  : colorway.product.name}
               </p>
               <h1 className="font-display text-4xl font-bold">{colorway.name}</h1>
             </div>
@@ -59,18 +59,18 @@ export default async function ColorwayPage({
           )}
 
           <p className="font-display text-3xl font-bold">
-            {formatPrice(ondine.basePrice, ondine.currency)}
+            {formatPrice(colorway.price, colorway.product.currency)}
           </p>
-          <p className="text-sm text-muted">{formatLeadTime(ondine.leadTimeDays)}</p>
+          <p className="text-sm text-muted">{formatLeadTime(colorway.product.leadTimeDays)}</p>
 
-          <p className="text-muted">{ondine.description}</p>
+          <p className="text-muted">{colorway.product.description}</p>
 
           <div className="mt-4">
             <AddToBagButton
               slug={colorway.slug}
               name={colorway.name}
-              price={ondine.basePrice}
-              currency={ondine.currency}
+              price={colorway.price}
+              currency={colorway.product.currency}
               image={colorway.images[0]}
               availability={colorway.availability}
               piecesRemaining={colorway.piecesRemaining}

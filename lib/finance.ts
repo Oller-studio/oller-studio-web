@@ -1,20 +1,25 @@
 import { prisma } from "@/lib/db";
-import { colorways } from "@/content/colorways";
+import { getAllColorways } from "@/lib/colorways";
 
 export async function getProductCosts() {
-  const costs = await prisma.productCost.findMany();
+  const [costs, colorways] = await Promise.all([prisma.productCost.findMany(), getAllColorways()]);
   const bySlug = new Map(costs.map((c) => [c.colorwaySlug, c]));
   return colorways.map((c) => ({
     slug: c.slug,
     name: c.name,
     costCents: bySlug.get(c.slug)?.costCents ?? 0,
-    printMinutes: bySlug.get(c.slug)?.printMinutes ?? null,
   }));
 }
 
+// Print time is a product spec (Product.printMinutes), not a cost — every
+// colorway under that product shares it, so we key the result by colorway
+// slug purely for convenience at the call sites (production queue lookups).
 export async function getPrintMinutes(): Promise<Record<string, number>> {
-  const costs = await prisma.productCost.findMany({ where: { printMinutes: { not: null } } });
-  return Object.fromEntries(costs.map((c) => [c.colorwaySlug, c.printMinutes as number]));
+  const colorways = await prisma.colorway.findMany({
+    where: { product: { printMinutes: { not: null } } },
+    include: { product: true },
+  });
+  return Object.fromEntries(colorways.map((c) => [c.slug, c.product.printMinutes as number]));
 }
 
 export async function getFixedCosts() {

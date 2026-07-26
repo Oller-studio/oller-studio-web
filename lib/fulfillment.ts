@@ -62,3 +62,27 @@ export function getPreviousStage(stage: string): FulfillmentStage | null {
   if (index <= 0) return null;
   return FULFILLMENT_STAGES[index - 1];
 }
+
+// Single customer-facing status combining payment + production — a refund
+// overrides whatever production stage it was at, since work should stop.
+export function getOrderStatus(
+  paymentStatus: string,
+  fulfillmentStatus: string
+): { label: string; className: string } {
+  if (paymentStatus === "REFUNDED") {
+    return { label: "Refunded", className: "text-muted" };
+  }
+  if (fulfillmentStatus === "DELIVERED") {
+    return { label: "Completed", className: "text-green-600 font-semibold" };
+  }
+  if (fulfillmentStatus === "SENT") {
+    return { label: "Sending", className: "text-muted" };
+  }
+  if (fulfillmentStatus === "PACKED") {
+    return { label: "Packaging", className: "text-muted" };
+  }
+  if (fulfillmentStatus === "PRINTING" || fulfillmentStatus === "PRINTED") {
+    return { label: "Printing", className: "text-muted" };
+  }
+  return { label: "Ordered", className: "text-muted" };
+}

@@ -8,23 +8,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, reason: "not authorized" }, { status: 403 });
   }
 
-  const { slug, name, costCents, printMinutes } = (await request.json()) as {
+  const { slug, name, costCents } = (await request.json()) as {
     slug?: string;
     name?: string;
     costCents?: number;
-    printMinutes?: number | null;
   };
   if (!slug || !name || typeof costCents !== "number" || costCents < 0) {
     return NextResponse.json({ ok: false, reason: "invalid body" }, { status: 400 });
   }
-  if (printMinutes != null && (typeof printMinutes !== "number" || printMinutes < 0)) {
-    return NextResponse.json({ ok: false, reason: "invalid printMinutes" }, { status: 400 });
-  }
 
   await prisma.productCost.upsert({
     where: { colorwaySlug: slug },
-    update: { costCents, name, printMinutes: printMinutes ?? null },
-    create: { colorwaySlug: slug, name, costCents, printMinutes: printMinutes ?? null },
+    update: { costCents, name },
+    create: { colorwaySlug: slug, name, costCents },
   });
 
   return NextResponse.json({ ok: true });

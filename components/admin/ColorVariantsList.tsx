@@ -1,0 +1,391 @@
+"use client";
+
+import { Fragment, useEffect, useRef, useState } from "react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { ColorwayForm, type ColorwayFormState } from "./ColorwayForm";
+import { COLORWAY_STATUSES, STATUS_BADGE, STATUS_LABELS } from "@/lib/colorwayStatus";
+import { formatMoneyCents } from "@/lib/format";
+
+const TIER_LABELS = { collection: "Collection", signature: "Signature" } as const;
+
+export type VariantRow = {
+  slug: string;
+  name: string;
+  tier: "collection" | "signature";
+  status: "draft" | "active" | "unlisted" | "inactive";
+  availabilityStatus: "available" | "away" | "sold_out";
+  availabilityShipsFrom: string | null;
+  piecesRemaining: number | null;
+  totalPieces: number | null;
+  stockOnHand: number;
+  priceCents: number;
+  currency: string;
+  image?: string;
+  initial: Partial<ColorwayFormState>;
+};
+
+function Chevron({ open }: { open: boolean }) {
+  return (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 12 12"
+      fill="none"
+      className={`shrink-0 transition-transform ${open ? "rotate-90" : ""}`}
+      aria-hidden="true"
+    >
+      <path d="M4 2l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function SearchIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+      <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M9.5 9.5L13 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function PlusIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M8 5v6M5 8h6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function FilterIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+      <path
+        d="M1 2h12M3.5 7h7M6 12h2"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+// Inventory is a per-color concept, so it's edited here — right on the
+// color's own row — rather than as some bulk number up on the Models table.
+function StockCell({ slug, stockOnHand }: { slug: string; stockOnHand: number }) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(stockOnHand.toString());
+  const [saving, setSaving] = useState(false);
+  const router = useRouter();
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    const num = Number(value);
+    if (!Number.isFinite(num) || num < 0) return;
+    setSaving(true);
+    await fetch(`/api/admin/colorways/${slug}/stock`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ stockOnHand: num }),
+    }).catch(() => {});
+    setSaving(false);
+    setEditing(false);
+    router.refresh();
+  }
+
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setEditing(true);
+        }}
+        className="underline decoration-dotted underline-offset-2 hover:text-foreground"
+      >
+        {stockOnHand === 0 ? "Print to order" : `${stockOnHand} in stock`}
+      </button>
+    );
+  }
+
+  return (
+    <form onClick={(e) => e.stopPropagation()} onSubmit={save} className="flex items-center gap-1">
+      <input
+        type="number"
+        min={0}
+        autoFocus
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        className="w-16 rounded border border-border bg-background px-1.5 py-0.5 text-xs"
+      />
+      <button
+        type="submit"
+        disabled={saving}
+        className="text-xs font-semibold underline underline-offset-2 disabled:opacity-50"
+      >
+        {saving ? "…" : "Save"}
+      </button>
+    </form>
+  );
+}
+
+export function ColorVariantsList({
+  productSlug,
+  variants,
+}: {
+  productSlug: string;
+  variants: VariantRow[];
+}) {
+  const [openSlug, setOpenSlug] = useState<string | null>(null);
+  const [addingNew, setAddingNew] = useState(false);
+  const [query, setQuery] = useState("");
+  const [tierFilter, setTierFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const filtersRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!filtersOpen) return;
+    function onClickOutside(e: MouseEvent) {
+      if (filtersRef.current && !filtersRef.current.contains(e.target as Node)) {
+        setFiltersOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [filtersOpen]);
+
+  const q = query.trim().toLowerCase();
+  const advancedActive = Boolean(tierFilter || statusFilter);
+  const filtered = variants.filter((v) => {
+    if (tierFilter && v.tier !== tierFilter) return false;
+    if (statusFilter && v.status !== statusFilter) return false;
+    if (!q) return true;
+    return (
+      v.name.toLowerCase().includes(q) ||
+      TIER_LABELS[v.tier].toLowerCase().includes(q) ||
+      STATUS_LABELS[v.status].toLowerCase().includes(q)
+    );
+  });
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex w-full flex-col gap-3">
+        <div className="flex w-full items-center justify-between">
+          <h2 className="text-sm font-semibold">Editions</h2>
+          {variants.length > 0 && (
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5">
+                <SearchIcon />
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search by color…"
+                  className="w-40 bg-transparent text-sm outline-none placeholder:text-muted"
+                />
+              </div>
+              <div ref={filtersRef} className="relative">
+                <button
+                  type="button"
+                  onClick={() => setFiltersOpen((v) => !v)}
+                  aria-label="More filters"
+                  title="More filters"
+                  className="flex items-center gap-1 rounded-full border border-border bg-background p-2 hover:bg-border/40"
+                >
+                  <FilterIcon />
+                  {advancedActive && (
+                    <span className="h-1.5 w-1.5 rounded-full bg-foreground" aria-hidden="true" />
+                  )}
+                </button>
+                {filtersOpen && (
+                  <div className="absolute left-0 top-full z-40 mt-2 w-56 rounded-xl border border-border bg-background p-4 shadow-xl">
+                    <div className="flex flex-col gap-3">
+                      <div className="flex flex-col gap-1">
+                        <label className="text-xs uppercase tracking-wide text-muted">Tier</label>
+                        <select
+                          value={tierFilter}
+                          onChange={(e) => setTierFilter(e.target.value)}
+                          className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                        >
+                          <option value="">All tiers</option>
+                          <option value="collection">Collection</option>
+                          <option value="signature">Signature</option>
+                        </select>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-xs uppercase tracking-wide text-muted">
+                          Status
+                        </label>
+                        <select
+                          value={statusFilter}
+                          onChange={(e) => setStatusFilter(e.target.value)}
+                          className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                        >
+                          <option value="">All statuses</option>
+                          {COLORWAY_STATUSES.map((s) => (
+                            <option key={s} value={s}>
+                              {STATUS_LABELS[s]}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      {advancedActive && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setTierFilter("");
+                            setStatusFilter("");
+                          }}
+                          className="self-start text-xs text-muted underline underline-offset-2 hover:text-foreground"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {variants.length === 0 ? (
+          <button
+            type="button"
+            onClick={() => {
+              setAddingNew((v) => !v);
+              setOpenSlug(null);
+            }}
+            className="flex items-center gap-2 text-sm font-medium text-muted hover:text-foreground"
+          >
+            <PlusIcon />
+            {addingNew ? "Cancel" : "Add edition"}
+          </button>
+        ) : (
+          <div className="overflow-hidden rounded-xl border border-border">
+            <button
+              type="button"
+              onClick={() => {
+                setAddingNew((v) => !v);
+                setOpenSlug(null);
+              }}
+              className="flex w-full items-center gap-2 border-b border-border px-4 py-2.5 text-sm font-medium text-muted hover:bg-border/10 hover:text-foreground"
+            >
+              <PlusIcon />
+              {addingNew ? "Cancel" : "Add another edition"}
+            </button>
+            <div className="overflow-x-auto">
+            <table className="border-collapse">
+            <thead>
+              <tr className="bg-border/20 text-xs font-semibold uppercase tracking-wide text-muted">
+                <th className="whitespace-nowrap py-2 pl-5 pr-7 text-left"></th>
+                <th className="whitespace-nowrap py-2 pr-7 text-left"></th>
+                <th className="whitespace-nowrap py-2 pr-7 text-left">Color</th>
+                <th className="whitespace-nowrap py-2 pr-7 text-left">Price</th>
+                <th className="whitespace-nowrap py-2 pr-7 text-left">Tier</th>
+                <th className="whitespace-nowrap py-2 pr-7 text-left">Availability</th>
+                <th className="whitespace-nowrap py-2 pr-7 text-left">Stock</th>
+                <th className="whitespace-nowrap py-2 pr-6 text-left">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="py-4 text-center text-sm text-muted">
+                    No editions match &ldquo;{query}&rdquo;.
+                  </td>
+                </tr>
+              )}
+              {filtered.map((v) => {
+                const open = openSlug === v.slug;
+                return (
+                  <Fragment key={v.slug}>
+                    <tr
+                      onClick={() => {
+                        setOpenSlug(open ? null : v.slug);
+                        setAddingNew(false);
+                      }}
+                      className="cursor-pointer hover:bg-border/10"
+                    >
+                      <td className="py-3 pl-5 pr-3 text-muted">
+                        <Chevron open={open} />
+                      </td>
+                      <td className="py-3 pr-7">
+                        {v.image ? (
+                          <Image
+                            src={v.image}
+                            alt=""
+                            width={36}
+                            height={36}
+                            className="h-9 w-9 rounded-lg border border-border object-cover"
+                          />
+                        ) : (
+                          <span className="block h-9 w-9 rounded-lg bg-border/40" />
+                        )}
+                      </td>
+                      <td className="whitespace-nowrap py-3 pr-7 text-sm font-semibold">
+                        {v.name}
+                      </td>
+                      <td className="whitespace-nowrap py-3 pr-7 text-sm font-medium">
+                        {formatMoneyCents(v.priceCents, v.currency)}
+                      </td>
+                      <td className="whitespace-nowrap py-3 pr-7 text-xs text-muted">
+                        {TIER_LABELS[v.tier]}
+                      </td>
+                      <td className="whitespace-nowrap py-3 pr-7 text-xs text-muted">
+                        {v.availabilityStatus === "available" && "Available"}
+                        {v.availabilityStatus === "sold_out" && "Sold out"}
+                        {v.availabilityStatus === "away" &&
+                          `Away (${v.availabilityShipsFrom})`}
+                      </td>
+                      <td className="whitespace-nowrap py-3 pr-7 text-xs text-muted">
+                        <StockCell slug={v.slug} stockOnHand={v.stockOnHand} />
+                      </td>
+                      <td className="whitespace-nowrap py-3 pr-6 text-xs">
+                        <span className={`rounded-full px-2 py-0.5 ${STATUS_BADGE[v.status]}`}>
+                          {STATUS_LABELS[v.status]}
+                        </span>
+                      </td>
+                    </tr>
+                    {open && (
+                      <tr>
+                        <td colSpan={8} className="border-t border-border bg-border/5 p-5">
+                          <ColorwayForm
+                            mode="edit"
+                            productSlug={productSlug}
+                            initial={v.initial}
+                            onSaved={() => {
+                              setOpenSlug(null);
+                              router.refresh();
+                            }}
+                            onDeleted={() => setOpenSlug(null)}
+                          />
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {addingNew && (
+        <div className="rounded-xl border border-border p-4">
+          <ColorwayForm
+            mode="create"
+            productSlug={productSlug}
+            onSaved={() => setAddingNew(false)}
+          />
+        </div>
+      )}
+    </div>
+  );
+}

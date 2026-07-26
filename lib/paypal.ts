@@ -58,6 +58,7 @@ export type OrderDetails = {
   country: string | null;
   shippingName: string | null;
   shippingAddress: string | null;
+  shippingCity: string | null;
 };
 
 // The capture webhook doesn't reliably include payer/shipping details —
@@ -68,7 +69,14 @@ export async function getOrderDetails(orderId: string): Promise<OrderDetails> {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
   if (!res.ok) {
-    return { name: null, email: null, country: null, shippingName: null, shippingAddress: null };
+    return {
+      name: null,
+      email: null,
+      country: null,
+      shippingName: null,
+      shippingAddress: null,
+      shippingCity: null,
+    };
   }
 
   const data = (await res.json()) as {
@@ -110,5 +118,6 @@ export async function getOrderDetails(orderId: string): Promise<OrderDetails> {
     country: data.payer?.address?.country_code ?? addr?.country_code ?? null,
     shippingName: shipping?.name?.full_name ?? null,
     shippingAddress,
+    shippingCity: addr?.admin_area_2 ?? null,
   };
 }

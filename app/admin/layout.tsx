@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import "flag-icons/css/flag-icons.min.css";
 import { getAdminViewer } from "@/lib/admin";
 import { AdminSignInPrompt } from "@/components/admin/AdminSignInPrompt";
 import { AdminNav } from "@/components/admin/AdminNav";
@@ -33,7 +34,7 @@ export default async function AdminLayout({
       <AdminNav
         name={user.firstName ?? user.primaryEmailAddress?.emailAddress ?? "Admin"}
       />
-      <div className="flex-1 px-8 py-10">{children}</div>
+      <div className="flex-1 bg-[#f7f6f3] px-8 py-10">{children}</div>
     </div>
   );
 }

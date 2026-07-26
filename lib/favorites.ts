@@ -1,5 +1,5 @@
 import { clerkClient } from "@clerk/nextjs/server";
-import { colorways } from "@/content/colorways";
+import { getAllColorways } from "@/lib/colorways";
 
 export async function getFavoriteRanking() {
   const client = await clerkClient();
@@ -15,6 +15,7 @@ export async function getFavoriteRanking() {
     }
   }
 
+  const colorways = await getAllColorways();
   return colorways
     .map((c) => ({ slug: c.slug, name: c.name, count: counts.get(c.slug) ?? 0 }))
     .sort((a, b) => b.count - a.count);

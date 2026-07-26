@@ -134,8 +134,7 @@ export default async function AdminDashboardPage({
       </section>
 
       <p className="max-w-xl text-muted">
-        Coming soon: uploading photos and managing colorways, creating
-        offers, and answering support messages.
+        Coming soon: creating offers and answering support messages.
       </p>
     </div>
   );
