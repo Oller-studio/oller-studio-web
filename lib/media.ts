@@ -33,11 +33,23 @@ export async function getHomeCarouselSlides(): Promise<CarouselSlide[]> {
   });
 }
 
-// Editorial diptych (Cult Gaia style) — drop photos at
-// public/images/home/model-1.jpg and model-2.jpg.
-export function getHomeEditorialImages(): (string | null)[] {
+export type EditorialMedia = { type: "video" | "image"; src: string };
+
+// Editorial diptych (Cult Gaia style) — drop a video at
+// public/videos/home/editorial-1.mp4 (or -2.mp4), or a photo at
+// public/images/home/model-1.jpg (or model-2.jpg). Video takes priority.
+export function getHomeEditorialImages(): (EditorialMedia | null)[] {
   return [1, 2].map((n) => {
-    const rel = `/images/home/model-${n}.jpg`;
-    return fs.existsSync(path.join(process.cwd(), "public", rel)) ? rel : null;
+    const videoRel = `/videos/home/editorial-${n}.mp4`;
+    if (fs.existsSync(path.join(process.cwd(), "public", videoRel))) {
+      return { type: "video", src: videoRel };
+    }
+    for (const ext of ["jpg", "jpeg", "png"]) {
+      const rel = `/images/home/model-${n}.${ext}`;
+      if (fs.existsSync(path.join(process.cwd(), "public", rel))) {
+        return { type: "image", src: rel };
+      }
+    }
+    return null;
   });
 }
