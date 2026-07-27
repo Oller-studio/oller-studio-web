@@ -20,10 +20,13 @@ export default async function AdminProductsPage({
   const { q, tier, status, material, modelStatus } = await searchParams;
   const query = q?.trim().toLowerCase() ?? "";
 
-  const allVariants = await prisma.colorway.findMany({
-    include: { product: true },
-    orderBy: [{ product: { sortOrder: "asc" } }, { sortOrder: "asc" }],
-  });
+  const [allVariants, allProducts] = await Promise.all([
+    prisma.colorway.findMany({
+      include: { product: true },
+      orderBy: [{ product: { sortOrder: "asc" } }, { sortOrder: "asc" }],
+    }),
+    prisma.product.findMany({ orderBy: { sortOrder: "asc" } }),
+  ]);
 
   let variants = query
     ? allVariants.filter(
@@ -41,9 +44,20 @@ export default async function AdminProductsPage({
     : [];
   const costBySlug = new Map(costs.map((c) => [c.colorwaySlug, c.costCents]));
 
-  // One row per unique bag model — built from every variant (not the "All
-  // bags" filter above), since Main Models has its own Status/Material filter.
+  // One row per unique bag model — seeded from every product (so one with
+  // no colors yet still shows up, reachable to add its first edition), then
+  // filled in with its variants (not the "All bags" filter above, since Main
+  // Models has its own Status/Material filter).
   const allModels = new Map<string, ProductRow>();
+  for (const p of allProducts) {
+    allModels.set(p.slug, {
+      slug: p.slug,
+      name: p.name,
+      material: p.material,
+      swatches: [],
+      variants: [],
+    });
+  }
   for (const v of allVariants) {
     const existing = allModels.get(v.productSlug);
     const variantRow = rowToVariantRow(v, costBySlug.get(v.slug), {
@@ -68,7 +82,8 @@ export default async function AdminProductsPage({
   if (material) models = models.filter((m) => m.material === material);
   if (modelStatus) {
     models = models.filter((m) => {
-      const allInactive = m.variants.every((v) => v.status === "inactive");
+      const allInactive =
+        m.variants.length > 0 && m.variants.every((v) => v.status === "inactive");
       return modelStatus === "inactive" ? allInactive : !allInactive;
     });
   }

@@ -40,7 +40,8 @@ function ProductRowItem({ product }: { product: ProductRow }) {
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const router = useRouter();
 
-  const allInactive = product.variants.every((v) => v.status === "inactive");
+  const allInactive =
+    product.variants.length > 0 && product.variants.every((v) => v.status === "inactive");
 
   async function toggleStatus(e: React.MouseEvent) {
     e.stopPropagation();
