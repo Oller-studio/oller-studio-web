@@ -91,14 +91,16 @@ export default async function AdminProductsPage({
       <div className="flex w-fit flex-col gap-3">
         <h2 className="font-display text-lg font-semibold">Main Models</h2>
 
-        <Link
-          href="/admin/products/new"
-          className="w-fit rounded-full bg-foreground px-4 py-2 text-sm font-semibold text-background hover:opacity-90"
-        >
-          Add product
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/admin/products/new"
+            className="w-fit rounded-full bg-foreground px-4 py-2 text-sm font-semibold text-background hover:opacity-90"
+          >
+            Add product
+          </Link>
 
-        <ModelsFilters material={material ?? ""} status={modelStatus ?? ""} />
+          <ModelsFilters material={material ?? ""} status={modelStatus ?? ""} />
+        </div>
 
         {models.length === 0 ? (
           <p className="text-sm text-muted">
