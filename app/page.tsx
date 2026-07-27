@@ -57,12 +57,12 @@ export default async function Home() {
         <ProductCarousel slides={carouselSlides} />
       </section>
 
-      <section>
-        <div className="grid grid-cols-1 sm:grid-cols-2">
+      <section className="bg-background">
+        <div className="flex gap-1 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
           {editorialImages.map((media, i) => (
             <div
               key={i}
-              className="aspect-[4/5] w-full overflow-hidden bg-border"
+              className="relative aspect-[2/3] w-1/2 flex-shrink-0 overflow-hidden bg-border sm:w-1/4"
             >
               {media?.type === "video" ? (
                 <video
@@ -82,7 +82,7 @@ export default async function Home() {
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-sm text-muted">
+                <div className="flex h-full w-full items-center justify-center text-center text-xs text-muted">
                   Editorial photo coming soon
                 </div>
               )}

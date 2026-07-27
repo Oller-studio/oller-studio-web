@@ -35,11 +35,12 @@ export async function getHomeCarouselSlides(): Promise<CarouselSlide[]> {
 
 export type EditorialMedia = { type: "video" | "image"; src: string };
 
-// Editorial diptych (Cult Gaia style) — drop a video at
-// public/videos/home/editorial-1.mp4 (or -2.mp4), or a photo at
-// public/images/home/model-1.jpg (or model-2.jpg). Video takes priority.
+// 4-up editorial strip, same layout as the product carousel above it.
+// Display order is 1, 3, 2, 4 — not filename order — per founder preference.
+// Drop a video at public/videos/home/editorial-N.mp4, or a photo at
+// public/images/home/model-N.jpg. Video takes priority.
 export function getHomeEditorialImages(): (EditorialMedia | null)[] {
-  return [1, 2].map((n) => {
+  return [1, 3, 2, 4].map((n) => {
     const videoRel = `/videos/home/editorial-${n}.mp4`;
     if (fs.existsSync(path.join(process.cwd(), "public", videoRel))) {
       return { type: "video", src: videoRel };
