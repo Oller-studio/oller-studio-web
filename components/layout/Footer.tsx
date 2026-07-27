@@ -43,7 +43,7 @@ export function Footer() {
             ))}
           </div>
 
-          <div className="mx-auto max-w-[108rem] px-6">
+          <div className="mx-auto max-w-[120rem] px-6">
             <div className="flex flex-col gap-10 sm:flex-row sm:justify-between">
               <div className="flex flex-wrap gap-12 sm:gap-16">
                 <div>

@@ -36,11 +36,11 @@ export async function getHomeCarouselSlides(): Promise<CarouselSlide[]> {
 export type EditorialMedia = { type: "video" | "image"; src: string };
 
 // 4-up editorial strip, same layout as the product carousel above it.
-// Display order is 1, 3, 2, 4 — not filename order — per founder preference.
+// Display order is 3, 1, 2, 4 — not filename order — per founder preference.
 // Drop a video at public/videos/home/editorial-N.mp4, or a photo at
 // public/images/home/model-N.jpg. Video takes priority.
 export function getHomeEditorialImages(): (EditorialMedia | null)[] {
-  return [1, 3, 2, 4].map((n) => {
+  return [3, 1, 2, 4].map((n) => {
     const videoRel = `/videos/home/editorial-${n}.mp4`;
     if (fs.existsSync(path.join(process.cwd(), "public", videoRel))) {
       return { type: "video", src: videoRel };

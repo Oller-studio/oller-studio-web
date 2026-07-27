@@ -43,7 +43,7 @@ export function Header({ variant = "solid" }: HeaderProps) {
       <div className="relative hidden h-24 px-6 sm:block">
         <Link
           href="/"
-          className={`font-wordmark absolute left-6 top-1/2 -translate-y-1/2 text-3xl font-extrabold sm:text-4xl ${text}`}
+          className={`font-wordmark absolute left-6 top-1/2 -translate-y-1/2 text-4xl font-extrabold sm:text-5xl ${text}`}
         >
           {site.name}
         </Link>

@@ -4,7 +4,7 @@ import { site } from "@/content/site";
 export function InfoBar() {
   return (
     <div className="bg-background py-14 text-foreground">
-      <div className="mx-auto max-w-[90rem] px-6">
+      <div className="mx-auto max-w-[85rem] px-6">
         <div className="grid grid-cols-1 gap-8 text-center sm:grid-cols-[1fr_auto_1fr] sm:items-start">
           <div className="sm:justify-self-start">
             <p className="text-sm font-bold uppercase tracking-wide">Free shipping</p>

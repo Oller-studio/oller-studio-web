@@ -43,10 +43,10 @@ export default async function Home() {
           <Header variant="overlay" />
         </div>
 
-        <div className="mx-auto mt-auto flex w-full max-w-6xl flex-col gap-3 px-6 pb-12 pt-16">
+        <div className="mt-auto flex w-full flex-col gap-3 px-6 pb-12 pt-16">
           <Link
             href="/shop"
-            className="mt-3 inline-flex w-fit items-center gap-2 text-sm font-semibold uppercase tracking-wide text-white hover:opacity-80"
+            className="mt-3 inline-flex w-fit items-center gap-2 text-base font-semibold uppercase tracking-wide text-white hover:opacity-80"
           >
             <span aria-hidden="true">→</span> Shop the Collection
           </Link>
