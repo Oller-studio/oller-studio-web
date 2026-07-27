@@ -219,6 +219,8 @@ export function ProductForm({
   const [displayStatus, setDisplayStatus] = useState<ColorwayStatus>(initialStatus ?? "draft");
   const [moreActionsOpen, setMoreActionsOpen] = useState(false);
   const [duplicating, setDuplicating] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const router = useRouter();
   const dimensionRefs = useRef<Array<HTMLInputElement | null>>([]);
   const printHoursRef = useRef<HTMLInputElement | null>(null);
@@ -295,11 +297,21 @@ export function ProductForm({
     router.refresh();
   }
 
-  async function remove() {
-    const editionsNote = variantCount
-      ? ` and its ${variantCount} edition${variantCount === 1 ? "" : "s"}`
-      : "";
-    if (!confirm(`Delete "${form.name}"${editionsNote}? This can't be undone.`)) return;
+  function remove() {
+    // Deleting the product cascades to every color/edition under it — for a
+    // product that still has editions, require typing the name so this can't
+    // happen from a stray click. Nothing to lose yet (no editions) just gets
+    // a plain confirm.
+    if (!variantCount) {
+      if (!confirm(`Delete "${form.name}"? This can't be undone.`)) return;
+      void performDelete();
+      return;
+    }
+    setDeleteConfirmText("");
+    setDeleteConfirmOpen(true);
+  }
+
+  async function performDelete() {
     setSaving(true);
     await fetch(`/api/admin/products/${form.slug}`, { method: "DELETE" }).catch(() => {});
     router.push("/admin/products");
@@ -328,6 +340,8 @@ export function ProductForm({
     router.refresh();
   }
 
+  const variantColorNames = (variants ?? []).map((v) => v.name);
+
   const inputClass =
     "rounded-lg border border-border bg-background px-3 py-1.5 text-sm [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none";
   const labelClass = "text-sm font-semibold";
@@ -337,6 +351,7 @@ export function ProductForm({
   const [printHoursPart, printMinutesPart = ""] = form.printTime.split(":");
 
   return (
+    <>
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
         <AdminBreadcrumb href="/admin/products" icon={ProductsIcon} />
@@ -692,5 +707,51 @@ export function ProductForm({
 
       </div>
     </div>
+
+    {deleteConfirmOpen && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+        <div className="w-full max-w-sm rounded-2xl border border-border bg-background p-6">
+          <h2 className="font-display text-lg font-bold">Delete {form.name}?</h2>
+          <p className="mt-2 text-sm text-muted">
+            This deletes the product and all {variantCount} of its color
+            {variantCount === 1 ? "" : "s"} ({variantColorNames.join(", ")}). This can&apos;t be
+            undone.
+          </p>
+          <label className="mt-4 flex flex-col gap-1">
+            <span className="text-xs uppercase tracking-wide text-muted">
+              Type <strong>{form.name}</strong> to confirm
+            </span>
+            <input
+              type="text"
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              autoFocus
+              className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            />
+          </label>
+          <div className="mt-5 flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setDeleteConfirmOpen(false)}
+              className="rounded-full border border-border px-4 py-2 text-sm font-semibold hover:bg-border/40"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={deleteConfirmText !== form.name || saving}
+              onClick={() => {
+                setDeleteConfirmOpen(false);
+                void performDelete();
+              }}
+              className="rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
