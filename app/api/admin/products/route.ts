@@ -13,6 +13,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, reason: "slug and name are required" }, { status: 400 });
   }
 
-  await createProduct(input);
+  try {
+    await createProduct(input);
+  } catch (error) {
+    const isDuplicateSlug =
+      typeof error === "object" && error !== null && "code" in error && error.code === "P2002";
+    return NextResponse.json(
+      {
+        ok: false,
+        reason: isDuplicateSlug
+          ? `A product named "${input.name}" already exists — pick a different name.`
+          : "Something went wrong creating this product.",
+      },
+      { status: isDuplicateSlug ? 409 : 500 },
+    );
+  }
   return NextResponse.json({ ok: true });
 }

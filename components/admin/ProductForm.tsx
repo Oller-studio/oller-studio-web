@@ -284,7 +284,10 @@ export function ProductForm({
     }).catch(() => null);
 
     if (!res || !res.ok) {
-      setError("Something went wrong saving this product.");
+      const body = await res
+        ?.json()
+        .catch(() => null) as { reason?: string } | null;
+      setError(body?.reason ?? "Something went wrong saving this product.");
       setSaving(false);
       return;
     }
@@ -376,7 +379,7 @@ export function ProductForm({
               type="text"
               value={form.name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Ondine"
+              placeholder="Product name"
               className="h-8 rounded-lg border border-border bg-background px-3 text-base font-semibold"
             />
           </label>
