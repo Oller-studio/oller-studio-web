@@ -211,16 +211,22 @@ export function ColorwayForm({
     setSaving(true);
     setError(null);
 
+    // Save must always succeed as a draft, even half-filled — a blank
+    // Color label shouldn't block persisting whatever was already entered.
+    const name = form.name.trim() || "Untitled color";
+    const slug = form.slug.trim() || `${slugify(name)}-${Date.now().toString(36)}`;
+    const draftForm = { ...form, name, slug };
+
     const url =
       mode === "create"
         ? `/api/admin/products/${productSlug}/variants`
-        : `/api/admin/products/${productSlug}/variants/${form.slug}`;
+        : `/api/admin/products/${productSlug}/variants/${draftForm.slug}`;
     const method = mode === "create" ? "POST" : "PATCH";
 
     const res = await fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(toInput(form, productSlug)),
+      body: JSON.stringify(toInput(draftForm, productSlug)),
     }).catch(() => null);
 
     if (!res || !res.ok) {
@@ -229,6 +235,7 @@ export function ColorwayForm({
       return;
     }
 
+    setForm(draftForm);
     onSaved?.();
     router.push(`/admin/products/${productSlug}`);
     router.refresh();
@@ -313,7 +320,7 @@ export function ColorwayForm({
         <input
           ref={nameInputRef}
           type="text"
-          required
+          placeholder="Untitled color"
           value={form.name}
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => {
@@ -692,18 +699,18 @@ export function ColorwayForm({
         </div>
 
         {stockMode === "stock_in_hand" && (
-          <div className="flex flex-col gap-3 sm:ml-[152px]">
-            <div className="flex flex-wrap items-center gap-4">
-              <label className="flex flex-col gap-1">
-                <span className="text-xs text-muted">Stock on hand</span>
-                <input
-                  type="number"
-                  min={0}
-                  value={form.stockOnHand}
-                  onChange={(e) => set("stockOnHand", e.target.value)}
-                  className={`${inputClass} w-28`}
-                />
-              </label>
+          <div className="flex flex-wrap items-start gap-4 sm:ml-[152px]">
+            <label className="flex flex-col gap-1">
+              <span className="text-xs text-muted">Stock on hand</span>
+              <input
+                type="number"
+                min={0}
+                value={form.stockOnHand}
+                onChange={(e) => set("stockOnHand", e.target.value)}
+                className={`${inputClass} w-28`}
+              />
+            </label>
+            <div className="flex flex-col gap-1">
               <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
@@ -713,12 +720,12 @@ export function ColorwayForm({
                 />
                 Display on website
               </label>
+              <p className="text-xs text-muted">
+                {form.showStockOnStorefront
+                  ? `Shows as "Only ${form.stockOnHand || 0} left, won't restock" on the product page.`
+                  : "Internal use only unless you check this box."}
+              </p>
             </div>
-            <p className="text-xs text-muted">
-              {form.showStockOnStorefront
-                ? `Shows as "Only ${form.stockOnHand || 0} left, won't restock" on the product page.`
-                : "Internal use only unless you check this box — stock will only display on the website if you mark it."}
-            </p>
           </div>
         )}
       </div>
