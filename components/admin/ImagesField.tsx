@@ -39,29 +39,39 @@ export function ImagesField({
   }
 
   async function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+    const files = Array.from(e.target.files ?? []);
     e.target.value = "";
-    if (!file) return;
+    if (!files.length) return;
 
     setUploading(true);
     setError(null);
 
-    const formData = new FormData();
-    formData.append("file", file);
-    const res = await fetch("/api/admin/upload", { method: "POST", body: formData }).catch(
-      () => null
-    );
-    const data = res ? ((await res.json().catch(() => null)) as { url?: string } | null) : null;
+    let next = [...images];
+    let index = uploadTargetIndex.current;
+    let failed = false;
 
-    if (!res || !res.ok || !data?.url) {
-      setError("Couldn't upload that photo.");
-    } else {
-      const index = uploadTargetIndex.current;
-      const next = [...images];
+    for (const file of files) {
+      if (index >= max) break;
+
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/admin/upload", { method: "POST", body: formData }).catch(
+        () => null
+      );
+      const data = res ? ((await res.json().catch(() => null)) as { url?: string } | null) : null;
+
+      if (!res || !res.ok || !data?.url) {
+        failed = true;
+        break;
+      }
+
       if (index < next.length) next[index] = data.url;
       else next.push(data.url);
-      onChange(next);
+      index += 1;
     }
+
+    onChange(next);
+    if (failed) setError("Couldn't upload one of those photos.");
     setUploading(false);
   }
 
@@ -136,6 +146,7 @@ export function ImagesField({
         ref={fileInputRef}
         type="file"
         accept="image/png,image/jpeg,image/webp"
+        multiple
         onChange={handleFileSelected}
         className="hidden"
       />
