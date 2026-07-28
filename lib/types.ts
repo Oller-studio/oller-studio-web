@@ -61,6 +61,8 @@ export type Colorway = {
   availability: Availability;
   isFeatured?: boolean;
   launchedAt: string;
+  stockOnHand: number;
+  showStockOnStorefront: boolean;
 };
 
 export type CartItem = {

@@ -55,6 +55,7 @@ export function rowToVariantRow(
       availabilityStatus: row.availabilityStatus as "available" | "away" | "sold_out",
       availabilityShipsFrom: row.availabilityShipsFrom ?? "",
       stockOnHand: row.stockOnHand.toString(),
+      showStockOnStorefront: row.showStockOnStorefront,
       isFeatured: row.isFeatured,
       launchedAt: row.launchedAt,
       sortOrder: row.sortOrder.toString(),

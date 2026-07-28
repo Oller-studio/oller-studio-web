@@ -155,6 +155,11 @@ model Colorway {
   // availabilityStatus (which is the manual customer-facing "sold out"
   // flag) — this is purely internal, for deciding what still needs printing.
   stockOnHand            Int      @default(0)
+  // Opt-in exception to the "stockOnHand is internal only" rule above — when
+  // true, the storefront shows a "only N left" line built from stockOnHand.
+  // Meant for Collection-tier pieces where the founder wants to create real
+  // urgency around a small batch, without switching the whole tier model.
+  showStockOnStorefront  Boolean  @default(false)
   status                 String   @default("draft")
   isFeatured             Boolean  @default(false)
   launchedAt             String

@@ -75,6 +75,8 @@ function rowToColorway(row: ColorwayRow & { product: ProductModel }): Colorway {
     availability,
     isFeatured: row.isFeatured,
     launchedAt: row.launchedAt,
+    stockOnHand: row.stockOnHand,
+    showStockOnStorefront: row.showStockOnStorefront,
   };
 }
 
@@ -147,6 +149,7 @@ export type ColorwayInput = {
   availabilityStatus: "available" | "away" | "sold_out";
   availabilityShipsFrom: string | null;
   stockOnHand: number;
+  showStockOnStorefront: boolean;
   isFeatured: boolean;
   launchedAt: string;
   sortOrder: number;
@@ -182,6 +185,7 @@ function toRowData(input: ColorwayInput) {
     availabilityStatus: input.availabilityStatus,
     availabilityShipsFrom: input.availabilityShipsFrom,
     stockOnHand: input.stockOnHand,
+    showStockOnStorefront: input.showStockOnStorefront,
     isFeatured: input.isFeatured,
     launchedAt: input.launchedAt,
     sortOrder: input.sortOrder,

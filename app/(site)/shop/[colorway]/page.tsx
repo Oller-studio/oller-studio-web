@@ -112,6 +112,14 @@ export default async function ColorwayPage({
               />
             )}
 
+            {colorway.availability.status === "available" &&
+              colorway.showStockOnStorefront &&
+              colorway.stockOnHand > 0 && (
+                <span className="text-[11px] font-bold uppercase tracking-wide text-foreground">
+                  Only {colorway.stockOnHand} left, won&apos;t restock
+                </span>
+              )}
+
             {colorway.matchedCar && (
               <p className="text-sm text-muted">
                 Matched to {colorway.matchedCar.make} {colorway.matchedCar.model}{" "}

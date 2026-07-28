@@ -60,6 +60,7 @@ export type ColorwayFormState = {
   availabilityStatus: "available" | "away" | "sold_out";
   availabilityShipsFrom: string;
   stockOnHand: string;
+  showStockOnStorefront: boolean;
   isFeatured: boolean;
   launchedAt: string;
   sortOrder: string;
@@ -96,6 +97,7 @@ function initialState(existing?: Partial<ColorwayFormState>): ColorwayFormState 
     availabilityStatus: existing?.availabilityStatus ?? "available",
     availabilityShipsFrom: existing?.availabilityShipsFrom ?? "",
     stockOnHand: existing?.stockOnHand ?? "0",
+    showStockOnStorefront: existing?.showStockOnStorefront ?? false,
     isFeatured: existing?.isFeatured ?? false,
     launchedAt: existing?.launchedAt ?? new Date().toISOString().slice(0, 10),
     sortOrder: existing?.sortOrder ?? "0",
@@ -144,6 +146,9 @@ function toInput(form: ColorwayFormState, productSlug: string): ColorwayInput {
     availabilityStatus: form.availabilityStatus,
     availabilityShipsFrom: form.availabilityShipsFrom.trim() || null,
     stockOnHand: Number(form.stockOnHand) || 0,
+    // Signature drops already show a public piecesRemaining/totalPieces
+    // countdown, so this only applies to Collection tier.
+    showStockOnStorefront: isLimited ? false : form.showStockOnStorefront,
     isFeatured: form.isFeatured,
     launchedAt: form.launchedAt,
     sortOrder: Number(form.sortOrder) || 0,
@@ -310,6 +315,21 @@ export function ColorwayForm({
         />
         <span className="text-xs text-muted">Internal only, doesn&apos;t affect Sold out.</span>
       </div>
+      {form.tier === "collection" && (
+        <div className="flex items-center gap-4">
+          <span className={rowLabelClass} aria-hidden="true" />
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={form.showStockOnStorefront}
+              onChange={(e) => set("showStockOnStorefront", e.target.checked)}
+              className="h-4 w-4"
+            />
+            Show stock publicly (e.g. &ldquo;Only {form.stockOnHand || 0} left, won&apos;t
+            restock&rdquo;)
+          </label>
+        </div>
+      )}
       {form.availabilityStatus === "away" && (
         <div className="flex items-center gap-4">
           <span className={rowLabelClass}>Ships from (when back)</span>
