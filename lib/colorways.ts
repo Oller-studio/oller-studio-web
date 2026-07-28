@@ -101,9 +101,17 @@ export async function getColorwaysByProduct(productSlug: string): Promise<Colorw
 // Public-facing lookup (storefront product page) — resolves active AND
 // unlisted variants (unlisted = reachable by direct link, just hidden from
 // browsing), so only draft/inactive slugs 404 like they don't exist.
-export async function getColorwayBySlug(slug: string): Promise<Colorway | undefined> {
+// `previewAsAdmin` lets an authenticated admin open the "View" link on a
+// draft/inactive color from the admin panel without publishing it first.
+export async function getColorwayBySlug(
+  slug: string,
+  options?: { previewAsAdmin?: boolean }
+): Promise<Colorway | undefined> {
   const row = await prisma.colorway.findUnique({ where: { slug }, include: { product: true } });
-  if (!row || (row.status !== "active" && row.status !== "unlisted")) return undefined;
+  if (!row) return undefined;
+  if (!options?.previewAsAdmin && row.status !== "active" && row.status !== "unlisted") {
+    return undefined;
+  }
   return rowToColorway(row);
 }
 

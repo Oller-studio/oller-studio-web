@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { getAllColorways, getColorwayBySlug } from "@/lib/colorways";
+import { getAdminViewer } from "@/lib/admin";
 import { formatPrice } from "@/lib/format";
 import { swatchBackground } from "@/lib/swatch";
 import { ColorwayGallery } from "@/components/shop/ColorwayGallery";
@@ -26,7 +27,8 @@ export default async function ColorwayPage({
   params: Promise<{ colorway: string }>;
 }) {
   const { colorway: slug } = await params;
-  const colorway = await getColorwayBySlug(slug);
+  const { isAdmin } = await getAdminViewer();
+  const colorway = await getColorwayBySlug(slug, { previewAsAdmin: isAdmin });
 
   if (!colorway) {
     notFound();
@@ -80,6 +82,11 @@ export default async function ColorwayPage({
 
   return (
     <main>
+      {isAdmin && colorway.status !== "active" && colorway.status !== "unlisted" && (
+        <div className="bg-foreground px-6 py-2 text-center text-xs font-semibold uppercase tracking-wide text-background">
+          Preview only — status: {colorway.status}. Not visible to customers.
+        </div>
+      )}
       <div className="max-w-7xl px-6 pt-4">
         <p className="text-xs text-muted">
           <Link href="/" className="hover:text-foreground">

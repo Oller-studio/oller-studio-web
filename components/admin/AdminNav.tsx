@@ -132,6 +132,24 @@ export function AdminNav({ name }: { name: string }) {
           </div>
         );
       })}
+      <a
+        href="/"
+        target="_blank"
+        rel="noopener noreferrer"
+        title="View site"
+        className="mt-6 flex items-center justify-center gap-2 rounded-lg px-2 py-2 text-sm text-muted hover:bg-border/40 lg:justify-start"
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path
+            d="M6 3H3v10h10v-3M9.5 2.5H13.5V6.5M13 3L7 9"
+            stroke="currentColor"
+            strokeWidth="1.3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+        <span className="hidden lg:inline">View site</span>
+      </a>
       <button
         type="button"
         onClick={() => signOut()}
