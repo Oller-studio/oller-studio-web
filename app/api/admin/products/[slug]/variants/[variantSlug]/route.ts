@@ -13,7 +13,19 @@ export async function PATCH(
 
   const { slug: productSlug, variantSlug } = await params;
   const input = (await request.json()) as ColorwayInput;
-  await updateColorway(variantSlug, { ...input, productSlug });
+
+  try {
+    await updateColorway(variantSlug, { ...input, productSlug });
+  } catch (error) {
+    const code = typeof error === "object" && error !== null && "code" in error ? error.code : null;
+    const reason =
+      code === "P2025"
+        ? "This color no longer exists — it may have been deleted or renamed elsewhere. Refresh the page and try again."
+        : code === "P2002"
+          ? `A color named "${input.name}" already exists on this product — pick a different name.`
+          : "Something went wrong saving this color variant.";
+    return NextResponse.json({ ok: false, reason }, { status: code === "P2025" ? 404 : 500 });
+  }
   return NextResponse.json({ ok: true });
 }
 

@@ -14,6 +14,20 @@ export async function POST(request: Request, { params }: { params: Promise<{ slu
     return NextResponse.json({ ok: false, reason: "slug and name are required" }, { status: 400 });
   }
 
-  await createColorway({ ...input, productSlug });
+  try {
+    await createColorway({ ...input, productSlug });
+  } catch (error) {
+    const isDuplicateSlug =
+      typeof error === "object" && error !== null && "code" in error && error.code === "P2002";
+    return NextResponse.json(
+      {
+        ok: false,
+        reason: isDuplicateSlug
+          ? `A color named "${input.name}" already exists on this product — pick a different name.`
+          : "Something went wrong creating this color variant.",
+      },
+      { status: isDuplicateSlug ? 409 : 500 },
+    );
+  }
   return NextResponse.json({ ok: true });
 }

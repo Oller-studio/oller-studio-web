@@ -230,7 +230,8 @@ export function ColorwayForm({
     }).catch(() => null);
 
     if (!res || !res.ok) {
-      setError("Something went wrong saving this color variant.");
+      const data = res ? ((await res.json().catch(() => null)) as { reason?: string } | null) : null;
+      setError(data?.reason ?? "Something went wrong saving this color variant.");
       setSaving(false);
       return;
     }
@@ -671,9 +672,9 @@ export function ColorwayForm({
           </div>
         )}
 
-        <div className="flex flex-col gap-2 border-t border-border pt-3 sm:flex-row sm:items-center sm:gap-4">
+        <div className="flex flex-col gap-2 border-t border-border pt-3 sm:flex-row sm:items-start sm:gap-4">
           <span className={rowLabelClass}>Inventory</span>
-          <div className="flex flex-wrap items-center gap-1">
+          <div className="flex flex-col items-start gap-1">
             <button
               type="button"
               onClick={() => selectStockMode("printed_on_demand")}
@@ -685,50 +686,49 @@ export function ColorwayForm({
             >
               Printed on demand
             </button>
-            <button
-              type="button"
-              onClick={() => selectStockMode("stock_in_hand")}
-              className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                stockMode === "stock_in_hand"
-                  ? "bg-foreground text-background"
-                  : "text-muted hover:bg-border/40"
-              }`}
-            >
-              Stock in hand
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => selectStockMode("stock_in_hand")}
+                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                  stockMode === "stock_in_hand"
+                    ? "bg-foreground text-background"
+                    : "text-muted hover:bg-border/40"
+                }`}
+              >
+                Stock in hand
+              </button>
+              {stockMode === "stock_in_hand" && (
+                <>
+                  <input
+                    type="number"
+                    min={0}
+                    value={form.stockOnHand}
+                    onChange={(e) => set("stockOnHand", e.target.value)}
+                    aria-label="Stock on hand"
+                    className={`${inputClass} w-14`}
+                  />
+                  <label className="flex items-center gap-1.5 text-xs">
+                    <input
+                      type="checkbox"
+                      checked={form.showStockOnStorefront}
+                      onChange={(e) => set("showStockOnStorefront", e.target.checked)}
+                      className="h-3.5 w-3.5"
+                    />
+                    Display on website
+                  </label>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
         {stockMode === "stock_in_hand" && (
-          <div className="flex flex-wrap items-start gap-4 sm:ml-40">
-            <label className="flex flex-col gap-1">
-              <span className="text-xs text-muted">Stock on hand</span>
-              <input
-                type="number"
-                min={0}
-                value={form.stockOnHand}
-                onChange={(e) => set("stockOnHand", e.target.value)}
-                className={`${inputClass} w-28`}
-              />
-            </label>
-            <div className="flex flex-col gap-1">
-              <span className="invisible text-xs">spacer</span>
-              <label className="flex h-9 items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={form.showStockOnStorefront}
-                  onChange={(e) => set("showStockOnStorefront", e.target.checked)}
-                  className="h-4 w-4"
-                />
-                Display on website
-              </label>
-              <p className="text-xs text-muted">
-                {form.showStockOnStorefront
-                  ? `Shows as "Only ${form.stockOnHand || 0} left, won't restock" on the product page.`
-                  : "Internal use only unless you check this box."}
-              </p>
-            </div>
-          </div>
+          <p className="text-xs text-muted sm:ml-40">
+            {form.showStockOnStorefront
+              ? `Shows as "Only ${form.stockOnHand || 0} left, won't restock" on the product page.`
+              : "Internal use only unless you check this box."}
+          </p>
         )}
       </div>
       </div>
