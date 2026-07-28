@@ -224,7 +224,7 @@ export function ColorwayForm({
     }).catch(() => null);
 
     if (!res || !res.ok) {
-      setError("Something went wrong saving this edition.");
+      setError("Something went wrong saving this color variant.");
       setSaving(false);
       return;
     }
@@ -276,7 +276,7 @@ export function ColorwayForm({
             disabled={saving}
             className="text-sm text-muted underline underline-offset-2 hover:text-foreground disabled:opacity-50"
           >
-            Delete edition
+            Delete color variant
           </button>
         </div>
       )}
@@ -308,174 +308,25 @@ export function ColorwayForm({
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-        <span className={rowLabelClass}>Tier</span>
-        <select
-          value={form.tier}
-          onChange={(e) => set("tier", e.target.value as ColorwayFormState["tier"])}
-          className={`${inputClass} w-56`}
-        >
-          <option value="collection">Collection</option>
-          <option value="signature">Limited Edition</option>
-        </select>
-      </div>
-
-      {form.tier === "signature" && (
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-          <span className={rowLabelClass}>Limited by</span>
-          <div className="flex flex-wrap items-center gap-1">
-            <button
-              type="button"
-              onClick={() => setScarcityType("units")}
-              className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                scarcityType === "units"
-                  ? "bg-foreground text-background"
-                  : "text-muted hover:bg-border/40"
-              }`}
-            >
-              Units
-            </button>
-            <button
-              type="button"
-              onClick={() => setScarcityType("dates")}
-              className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                scarcityType === "dates"
-                  ? "bg-foreground text-background"
-                  : "text-muted hover:bg-border/40"
-              }`}
-            >
-              Dates
-            </button>
-            <button
-              type="button"
-              onClick={() => setScarcityType("both")}
-              className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                scarcityType === "both"
-                  ? "bg-foreground text-background"
-                  : "text-muted hover:bg-border/40"
-              }`}
-            >
-              Both
-            </button>
-          </div>
-        </div>
-      )}
-
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-        <span className={rowLabelClass}>Inventory</span>
-        <div className="flex flex-wrap items-center gap-1">
-          <button
-            type="button"
-            onClick={() => selectStockMode("printed_on_demand")}
-            className={`rounded-full px-3 py-1 text-xs font-semibold ${
-              stockMode === "printed_on_demand"
-                ? "bg-foreground text-background"
-                : "text-muted hover:bg-border/40"
-            }`}
-          >
-            Printed on demand
-          </button>
-          <button
-            type="button"
-            onClick={() => selectStockMode("stock_in_hand")}
-            className={`rounded-full px-3 py-1 text-xs font-semibold ${
-              stockMode === "stock_in_hand"
-                ? "bg-foreground text-background"
-                : "text-muted hover:bg-border/40"
-            }`}
-          >
-            Stock in hand
-          </button>
-        </div>
-      </div>
-
-      {form.tier === "signature" && (
-        <div className="flex flex-col gap-3 sm:ml-[152px]">
-          {(scarcityType === "units" || scarcityType === "both") && (
-            <div className="flex flex-wrap items-end gap-4">
-              <label className="flex flex-col gap-1">
-                <span className="text-xs text-muted">Total pieces</span>
-                <input
-                  type="number"
-                  min={0}
-                  value={form.totalPieces}
-                  onChange={(e) => set("totalPieces", e.target.value)}
-                  className={`${inputClass} w-28`}
-                />
-              </label>
-              <label className="flex flex-col gap-1">
-                <span className="text-xs text-muted">Pieces remaining</span>
-                <input
-                  type="number"
-                  min={0}
-                  value={form.piecesRemaining}
-                  onChange={(e) => set("piecesRemaining", e.target.value)}
-                  className={`${inputClass} w-28`}
-                />
-              </label>
-            </div>
-          )}
-          {(scarcityType === "dates" || scarcityType === "both") && (
-            <div className="flex flex-wrap items-end gap-4">
-              <label className="flex flex-col gap-1">
-                <span className="text-xs text-muted">Available from</span>
-                <input
-                  type="date"
-                  value={form.launchedAt}
-                  onChange={(e) => set("launchedAt", e.target.value)}
-                  className={inputClass}
-                />
-              </label>
-              <label className="flex flex-col gap-1">
-                <span className="text-xs text-muted">Available until</span>
-                <input
-                  type="date"
-                  value={form.dropEndsAt}
-                  onChange={(e) => set("dropEndsAt", e.target.value)}
-                  className={inputClass}
-                />
-              </label>
-            </div>
-          )}
-          <p className="text-xs text-muted">
-            This is marketing scarcity, shown to customers.
-          </p>
-        </div>
-      )}
-
-      {stockMode === "stock_in_hand" && (
-        <div className="flex flex-col gap-3 sm:ml-[152px]">
-          <div className="flex flex-wrap items-center gap-4">
-            <label className="flex flex-col gap-1">
-              <span className="text-xs text-muted">Stock on hand</span>
-              <input
-                type="number"
-                min={0}
-                value={form.stockOnHand}
-                onChange={(e) => set("stockOnHand", e.target.value)}
-                className={`${inputClass} w-28`}
-              />
-            </label>
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={form.showStockOnStorefront}
-                onChange={(e) => set("showStockOnStorefront", e.target.checked)}
-                className="h-4 w-4"
-              />
-              Display on website
-            </label>
-          </div>
-          <p className="text-xs text-muted">
-            {form.showStockOnStorefront
-              ? `Shows as "Only ${form.stockOnHand || 0} left, won't restock" on the product page.`
-              : "Internal use only unless you check this box — stock will only display on the website if you mark it."}
-          </p>
-        </div>
-      )}
-
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-        <span className={rowLabelClass}>Availability</span>
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
+        <span className={rowLabelClass}>Color label</span>
+        <input
+          ref={nameInputRef}
+          type="text"
+          required
+          value={form.name}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => {
+            const el = e.currentTarget;
+            if (e.key === "ArrowRight" && el.selectionStart === el.value.length) {
+              e.preventDefault();
+              firstSwatchInputRef.current?.focus();
+              firstSwatchInputRef.current?.select();
+            }
+          }}
+          className={`${inputClass} w-48`}
+        />
+        <span className="text-sm font-semibold">Availability</span>
         <select
           value={form.availabilityStatus}
           onChange={(e) =>
@@ -500,25 +351,8 @@ export function ColorwayForm({
         </div>
       )}
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
-        <span className={rowLabelClass}>Color label</span>
-        <input
-          ref={nameInputRef}
-          type="text"
-          required
-          value={form.name}
-          onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => {
-            const el = e.currentTarget;
-            if (e.key === "ArrowRight" && el.selectionStart === el.value.length) {
-              e.preventDefault();
-              firstSwatchInputRef.current?.focus();
-              firstSwatchInputRef.current?.select();
-            }
-          }}
-          className={`${inputClass} w-48`}
-        />
-        <span className="text-sm font-semibold text-muted">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+        <span className={rowLabelClass}>
           Swatch{form.swatchColors.length > 1 ? " (multi-color)" : ""}
         </span>
         <div className="flex flex-wrap items-center gap-3">
@@ -719,6 +553,172 @@ export function ColorwayForm({
         )}
       </div>
 
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+        <span className={rowLabelClass}>Tier</span>
+        <select
+          value={form.tier}
+          onChange={(e) => set("tier", e.target.value as ColorwayFormState["tier"])}
+          className={`${inputClass} w-56`}
+        >
+          <option value="collection">Collection</option>
+          <option value="signature">Limited Edition</option>
+        </select>
+      </div>
+
+      {form.tier === "signature" && (
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+          <span className={rowLabelClass}>Limited by</span>
+          <div className="flex flex-wrap items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setScarcityType("units")}
+              className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                scarcityType === "units"
+                  ? "bg-foreground text-background"
+                  : "text-muted hover:bg-border/40"
+              }`}
+            >
+              Units
+            </button>
+            <button
+              type="button"
+              onClick={() => setScarcityType("dates")}
+              className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                scarcityType === "dates"
+                  ? "bg-foreground text-background"
+                  : "text-muted hover:bg-border/40"
+              }`}
+            >
+              Dates
+            </button>
+            <button
+              type="button"
+              onClick={() => setScarcityType("both")}
+              className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                scarcityType === "both"
+                  ? "bg-foreground text-background"
+                  : "text-muted hover:bg-border/40"
+              }`}
+            >
+              Both
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+        <span className={rowLabelClass}>Inventory</span>
+        <div className="flex flex-wrap items-center gap-1">
+          <button
+            type="button"
+            onClick={() => selectStockMode("printed_on_demand")}
+            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+              stockMode === "printed_on_demand"
+                ? "bg-foreground text-background"
+                : "text-muted hover:bg-border/40"
+            }`}
+          >
+            Printed on demand
+          </button>
+          <button
+            type="button"
+            onClick={() => selectStockMode("stock_in_hand")}
+            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+              stockMode === "stock_in_hand"
+                ? "bg-foreground text-background"
+                : "text-muted hover:bg-border/40"
+            }`}
+          >
+            Stock in hand
+          </button>
+        </div>
+      </div>
+
+      {form.tier === "signature" && (
+        <div className="flex flex-col gap-3 sm:ml-[152px]">
+          {(scarcityType === "units" || scarcityType === "both") && (
+            <div className="flex flex-wrap items-end gap-4">
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-muted">Total pieces</span>
+                <input
+                  type="number"
+                  min={0}
+                  value={form.totalPieces}
+                  onChange={(e) => set("totalPieces", e.target.value)}
+                  className={`${inputClass} w-28`}
+                />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-muted">Pieces remaining</span>
+                <input
+                  type="number"
+                  min={0}
+                  value={form.piecesRemaining}
+                  onChange={(e) => set("piecesRemaining", e.target.value)}
+                  className={`${inputClass} w-28`}
+                />
+              </label>
+            </div>
+          )}
+          {(scarcityType === "dates" || scarcityType === "both") && (
+            <div className="flex flex-wrap items-end gap-4">
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-muted">Available from</span>
+                <input
+                  type="date"
+                  value={form.launchedAt}
+                  onChange={(e) => set("launchedAt", e.target.value)}
+                  className={inputClass}
+                />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-muted">Available until</span>
+                <input
+                  type="date"
+                  value={form.dropEndsAt}
+                  onChange={(e) => set("dropEndsAt", e.target.value)}
+                  className={inputClass}
+                />
+              </label>
+            </div>
+          )}
+          <p className="text-xs text-muted">
+            This is marketing scarcity, shown to customers.
+          </p>
+        </div>
+      )}
+
+      {stockMode === "stock_in_hand" && (
+        <div className="flex flex-col gap-3 sm:ml-[152px]">
+          <div className="flex flex-wrap items-center gap-4">
+            <label className="flex flex-col gap-1">
+              <span className="text-xs text-muted">Stock on hand</span>
+              <input
+                type="number"
+                min={0}
+                value={form.stockOnHand}
+                onChange={(e) => set("stockOnHand", e.target.value)}
+                className={`${inputClass} w-28`}
+              />
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={form.showStockOnStorefront}
+                onChange={(e) => set("showStockOnStorefront", e.target.checked)}
+                className="h-4 w-4"
+              />
+              Display on website
+            </label>
+          </div>
+          <p className="text-xs text-muted">
+            {form.showStockOnStorefront
+              ? `Shows as "Only ${form.stockOnHand || 0} left, won't restock" on the product page.`
+              : "Internal use only unless you check this box — stock will only display on the website if you mark it."}
+          </p>
+        </div>
+      )}
+
       {form.tier === "signature" && (
         <>
           <div className="grid grid-cols-1 gap-4 rounded-xl border border-border p-4 sm:grid-cols-2">
@@ -821,7 +821,7 @@ export function ColorwayForm({
           disabled={saving}
           className="rounded-full bg-foreground px-5 py-2 text-sm font-semibold text-background hover:opacity-90 disabled:opacity-50"
         >
-          {saving ? "Saving…" : mode === "create" ? "Create edition" : "Save changes"}
+          {saving ? "Saving…" : mode === "create" ? "Create color variant" : "Save changes"}
         </button>
         {mode === "edit" && (
           <button
@@ -830,7 +830,7 @@ export function ColorwayForm({
             disabled={saving}
             className="text-sm text-muted underline underline-offset-2 hover:text-foreground disabled:opacity-50"
           >
-            Delete edition
+            Delete color variant
           </button>
         )}
       </div>

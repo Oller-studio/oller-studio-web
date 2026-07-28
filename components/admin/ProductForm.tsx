@@ -413,7 +413,7 @@ export function ProductForm({
                     </a>
                   ) : (
                     <span
-                      title="Add an edition first to have a page to view"
+                      title="Add a color variant first to have a page to view"
                       className="cursor-not-allowed rounded-full border border-border px-2 py-1 text-xs font-semibold text-muted"
                     >
                       View

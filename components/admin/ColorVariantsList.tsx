@@ -175,7 +175,7 @@ export function ColorVariantsList({
     <div className="flex flex-col gap-3">
       <div className="flex w-full flex-col gap-3">
         <div className="flex w-full items-center justify-between">
-          <h2 className="text-sm font-semibold">Editions</h2>
+          <h2 className="text-sm font-semibold">Color variants</h2>
           {variants.length > 0 && (
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5">
@@ -263,7 +263,7 @@ export function ColorVariantsList({
             className="flex items-center gap-2 text-sm font-medium text-muted hover:text-foreground"
           >
             <PlusIcon />
-            {addingNew ? "Cancel" : "Add edition"}
+            {addingNew ? "Cancel" : "Add color variant"}
           </button>
         ) : (
           <div className="overflow-hidden rounded-xl border border-border">
@@ -276,7 +276,7 @@ export function ColorVariantsList({
               className="flex w-full items-center gap-2 border-b border-border px-4 py-2.5 text-sm font-medium text-muted hover:bg-border/10 hover:text-foreground"
             >
               <PlusIcon />
-              {addingNew ? "Cancel" : "Add another edition"}
+              {addingNew ? "Cancel" : "Add another color variant"}
             </button>
             <div className="overflow-x-auto">
             <table className="border-collapse">
@@ -296,7 +296,7 @@ export function ColorVariantsList({
               {filtered.length === 0 && (
                 <tr>
                   <td colSpan={8} className="py-4 text-center text-sm text-muted">
-                    No editions match &ldquo;{query}&rdquo;.
+                    No color variants match &ldquo;{query}&rdquo;.
                   </td>
                 </tr>
               )}
