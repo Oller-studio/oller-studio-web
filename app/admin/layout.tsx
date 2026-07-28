@@ -34,7 +34,9 @@ export default async function AdminLayout({
       <AdminNav
         name={user.firstName ?? user.primaryEmailAddress?.emailAddress ?? "Admin"}
       />
-      <div className="flex-1 bg-[#f7f6f3] px-8 py-10">{children}</div>
+      <div className="min-w-0 flex-1 overflow-x-auto bg-[#f7f6f3] px-4 py-10 sm:px-8">
+        {children}
+      </div>
     </div>
   );
 }

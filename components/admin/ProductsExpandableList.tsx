@@ -133,8 +133,8 @@ function ProductRowItem({ product }: { product: ProductRow }) {
 
 export function ProductsExpandableList({ products }: { products: ProductRow[] }) {
   return (
-    <div className="w-fit overflow-hidden rounded-xl border border-border bg-background">
-      <table className="border-collapse">
+    <div className="w-full max-w-full overflow-x-auto rounded-xl border border-border bg-background">
+      <table className="w-max min-w-full border-collapse">
         <thead>
           <tr className="bg-border/20 text-xs font-semibold uppercase tracking-wide text-muted">
             <th className="whitespace-nowrap py-2 pl-5 pr-3 text-left"></th>

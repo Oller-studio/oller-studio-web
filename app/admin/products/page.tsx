@@ -104,7 +104,7 @@ export default async function AdminProductsPage({
 
   return (
     <div className="flex flex-col gap-10">
-      <div className="flex w-fit flex-col gap-3">
+      <div className="flex w-full min-w-0 flex-col gap-3">
         <h2 className="font-display text-lg font-semibold">Main Models</h2>
 
         <div className="flex items-center gap-2">
@@ -127,7 +127,7 @@ export default async function AdminProductsPage({
         )}
       </div>
 
-      <div className="flex w-fit flex-col gap-3">
+      <div className="flex w-full min-w-0 flex-col gap-3">
         <h2 className="font-display text-lg font-semibold">All bags</h2>
 
         <ProductsFilters q={q ?? ""} tier={tier ?? ""} status={status ?? ""} />

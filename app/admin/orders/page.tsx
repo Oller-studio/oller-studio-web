@@ -62,7 +62,7 @@ export default async function AdminOrdersPage({
     <div className="flex flex-col gap-10">
       <h1 className="font-display text-3xl font-semibold">Orders</h1>
 
-      <div className="grid grid-cols-1 gap-x-6 gap-y-3 lg:grid-cols-[max-content_16rem]">
+      <div className="grid grid-cols-1 gap-x-6 gap-y-3 lg:grid-cols-[minmax(0,1fr)_16rem]">
         <div className="flex w-full flex-wrap items-center justify-between gap-3 lg:col-start-1">
           <OrdersFilters
             range={activeRange}
@@ -88,14 +88,14 @@ export default async function AdminOrdersPage({
           </div>
         </div>
 
-      <section className="flex w-fit flex-col gap-3 lg:col-start-1 lg:row-start-2">
+      <section className="flex w-full min-w-0 flex-col gap-3 lg:col-start-1 lg:row-start-2">
         {filteredOrders.length === 0 ? (
           <p className="text-sm text-muted">
             {query || item ? "No orders match that filter." : "No orders in this range yet."}
           </p>
         ) : (
-          <div className="w-fit overflow-hidden rounded-xl border border-border">
-            <table className="border-collapse">
+          <div className="w-full max-w-full overflow-x-auto rounded-xl border border-border">
+            <table className="w-max min-w-full border-collapse">
               <thead>
                 <tr className="bg-border/20 text-xs font-semibold uppercase tracking-wide text-muted">
                   <th className="whitespace-nowrap py-2 pl-5 pr-7 text-left">Order</th>
@@ -191,13 +191,13 @@ export default async function AdminOrdersPage({
       )}
       </div>
 
-      <section className="flex w-fit flex-col gap-3">
+      <section className="flex w-full min-w-0 flex-col gap-3">
         <h2 className="font-display text-lg font-semibold">Abandoned checkouts</h2>
         {abandoned.length === 0 ? (
           <p className="text-sm text-muted">No abandoned checkouts in this range.</p>
         ) : (
-          <div className="w-fit overflow-hidden rounded-xl border border-border">
-            <table className="border-collapse">
+          <div className="w-full max-w-full overflow-x-auto rounded-xl border border-border">
+            <table className="w-max min-w-full border-collapse">
               <thead>
                 <tr className="bg-border/20 text-xs font-semibold uppercase tracking-wide text-muted">
                   <th className="whitespace-nowrap py-2 pl-5 pr-7 text-left">Checkout</th>

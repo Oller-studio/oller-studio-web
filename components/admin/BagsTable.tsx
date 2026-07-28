@@ -82,9 +82,9 @@ export function BagsTable({ rows }: { rows: BagRow[] }) {
   }
 
   return (
-    <div className="flex w-fit flex-col gap-3">
+    <div className="flex w-full min-w-0 flex-col gap-3">
       {selected.size > 0 && (
-        <div className="flex items-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-sm">
+        <div className="flex w-fit flex-wrap items-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-sm">
           <button
             type="button"
             onClick={toggleAll}
@@ -148,8 +148,8 @@ export function BagsTable({ rows }: { rows: BagRow[] }) {
         </div>
       )}
 
-      <div className="w-fit overflow-hidden rounded-xl border border-border bg-background">
-        <table className="border-collapse">
+      <div className="w-full max-w-full overflow-x-auto rounded-xl border border-border bg-background">
+        <table className="w-max min-w-full border-collapse">
           <thead>
             <tr className="bg-border/20 text-xs font-semibold uppercase tracking-wide text-muted">
               <th className="whitespace-nowrap py-2 pl-5 pr-3 text-left">

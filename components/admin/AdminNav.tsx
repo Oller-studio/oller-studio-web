@@ -62,8 +62,8 @@ export function AdminNav({ name }: { name: string }) {
   const [manuallyOpen, setManuallyOpen] = useState<Record<string, boolean>>({});
 
   return (
-    <nav className="flex w-56 shrink-0 flex-col gap-1 border-r border-border px-4 py-8">
-      <p className="mb-6 truncate px-2 text-xs uppercase tracking-wide text-muted">
+    <nav className="flex w-16 shrink-0 flex-col gap-1 border-r border-border px-2 py-8 lg:w-56 lg:px-4">
+      <p className="mb-6 hidden truncate px-2 text-xs uppercase tracking-wide text-muted lg:block">
         Hi, {name}
       </p>
       {sections.map((s) => {
@@ -72,10 +72,10 @@ export function AdminNav({ name }: { name: string }) {
             <span
               key={s.href}
               title="Coming soon"
-              className="flex cursor-not-allowed items-center gap-2 rounded-lg px-2 py-2 text-sm text-muted/50"
+              className="flex cursor-not-allowed items-center justify-center gap-2 rounded-lg px-2 py-2 text-sm text-muted/50 lg:justify-start"
             >
               <s.icon />
-              {s.label}
+              <span className="hidden lg:inline">{s.label}</span>
             </span>
           );
         }
@@ -85,10 +85,11 @@ export function AdminNav({ name }: { name: string }) {
             <Link
               key={s.href}
               href={s.href}
-              className="flex items-center gap-2 rounded-lg px-2 py-2 text-sm font-medium hover:bg-border/40"
+              title={s.label}
+              className="flex items-center justify-center gap-2 rounded-lg px-2 py-2 text-sm font-medium hover:bg-border/40 lg:justify-start"
             >
               <s.icon />
-              {s.label}
+              <span className="hidden lg:inline">{s.label}</span>
             </Link>
           );
         }
@@ -98,21 +99,25 @@ export function AdminNav({ name }: { name: string }) {
         return (
           <div key={s.href} className="flex flex-col">
             <div className="flex items-center rounded-lg hover:bg-border/40">
-              <Link href={s.href} className="flex flex-1 items-center gap-2 px-2 py-2 text-sm font-medium">
+              <Link
+                href={s.href}
+                title={s.label}
+                className="flex flex-1 items-center justify-center gap-2 px-2 py-2 text-sm font-medium lg:justify-start"
+              >
                 <s.icon />
-                {s.label}
+                <span className="hidden lg:inline">{s.label}</span>
               </Link>
               <button
                 type="button"
                 onClick={() => setManuallyOpen((m) => ({ ...m, [s.href]: !isOpen }))}
                 aria-label={isOpen ? `Collapse ${s.label}` : `Expand ${s.label}`}
-                className="px-2 py-2 text-muted"
+                className="hidden px-2 py-2 text-muted lg:block"
               >
                 <Chevron open={isOpen} />
               </button>
             </div>
             {isOpen && (
-              <div className="ml-2 flex flex-col gap-1 border-l border-border pl-3">
+              <div className="ml-2 hidden flex-col gap-1 border-l border-border pl-3 lg:flex">
                 {s.children.map((c) => (
                   <Link
                     key={c.href}
@@ -130,9 +135,11 @@ export function AdminNav({ name }: { name: string }) {
       <button
         type="button"
         onClick={() => signOut()}
-        className="mt-6 rounded-lg px-2 py-2 text-left text-sm text-muted hover:bg-border/40"
+        title="Sign out"
+        className="mt-6 rounded-lg px-2 py-2 text-center text-sm text-muted hover:bg-border/40 lg:text-left"
       >
-        Sign out
+        <span className="lg:hidden">⏻</span>
+        <span className="hidden lg:inline">Sign out</span>
       </button>
     </nav>
   );

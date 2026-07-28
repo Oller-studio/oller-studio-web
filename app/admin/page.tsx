@@ -29,9 +29,9 @@ export default async function AdminDashboardPage({
     <div className="flex flex-col gap-10">
       <h1 className="font-display text-3xl font-semibold">Summary</h1>
 
-      <div className="grid grid-cols-2 gap-8">
-        <section className="flex flex-col gap-3">
-          <div className="flex w-fit gap-1 self-start rounded-full border border-border p-1 text-sm">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+        <section className="flex min-w-0 flex-col gap-3">
+          <div className="flex w-fit flex-wrap gap-1 self-start rounded-full border border-border p-1 text-sm">
             {DATE_RANGES.map((r) => (
               <Link
                 key={r.key}
@@ -47,7 +47,7 @@ export default async function AdminDashboardPage({
             ))}
           </div>
 
-          <div className="flex flex-nowrap gap-2">
+          <div className="flex flex-nowrap gap-2 overflow-x-auto">
             <div className="w-36 shrink-0 rounded-xl border border-border bg-border/10 p-3">
               <p className="whitespace-nowrap text-xs uppercase tracking-wide text-muted">Orders</p>
               <p className="mt-1 text-lg font-semibold">{orders.orderCount}</p>

@@ -40,8 +40,8 @@ export default async function AdminCustomersPage() {
       {customers.length === 0 ? (
         <p className="text-sm text-muted">No customers yet.</p>
       ) : (
-        <div className="w-fit overflow-hidden rounded-xl border border-border">
-          <table className="border-collapse">
+        <div className="w-full max-w-full overflow-x-auto rounded-xl border border-border">
+          <table className="w-max min-w-full border-collapse">
             <thead>
               <tr className="bg-border/20 text-xs font-semibold uppercase tracking-wide text-muted">
                 <th className="whitespace-nowrap py-2 pl-5 pr-7 text-left">Name</th>
