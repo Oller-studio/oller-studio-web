@@ -264,7 +264,7 @@ export function ColorwayForm({
 
   const inputClass = "rounded-lg border border-border bg-background px-3 py-2 text-sm";
   const labelClass = "text-sm font-semibold";
-  const rowLabelClass = "w-36 shrink-0 text-sm font-semibold";
+  const rowLabelClass = "text-sm font-semibold sm:w-36 sm:shrink-0";
 
   return (
     <form onSubmit={submit} className="flex w-full flex-col gap-4">
@@ -281,9 +281,9 @@ export function ColorwayForm({
         </div>
       )}
 
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
         <span className={rowLabelClass}>Status</span>
-        <div className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center gap-1">
           {COLORWAY_STATUSES.filter((s) => s === "draft" || s === "active" || showMoreStatuses).map(
             (s) => (
               <button
@@ -308,7 +308,7 @@ export function ColorwayForm({
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
         <span className={rowLabelClass}>Tier</span>
         <select
           value={form.tier}
@@ -321,9 +321,9 @@ export function ColorwayForm({
       </div>
 
       {form.tier === "signature" && (
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
           <span className={rowLabelClass}>Limited by</span>
-          <div className="flex items-center gap-1">
+          <div className="flex flex-wrap items-center gap-1">
             <button
               type="button"
               onClick={() => setScarcityType("units")}
@@ -361,9 +361,9 @@ export function ColorwayForm({
         </div>
       )}
 
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
         <span className={rowLabelClass}>Inventory</span>
-        <div className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center gap-1">
           <button
             type="button"
             onClick={() => selectStockMode("printed_on_demand")}
@@ -390,9 +390,9 @@ export function ColorwayForm({
       </div>
 
       {form.tier === "signature" && (
-        <div className="ml-[152px] flex flex-col gap-3">
+        <div className="flex flex-col gap-3 sm:ml-[152px]">
           {(scarcityType === "units" || scarcityType === "both") && (
-            <div className="flex items-end gap-4">
+            <div className="flex flex-wrap items-end gap-4">
               <label className="flex flex-col gap-1">
                 <span className="text-xs text-muted">Total pieces</span>
                 <input
@@ -416,7 +416,7 @@ export function ColorwayForm({
             </div>
           )}
           {(scarcityType === "dates" || scarcityType === "both") && (
-            <div className="flex items-end gap-4">
+            <div className="flex flex-wrap items-end gap-4">
               <label className="flex flex-col gap-1">
                 <span className="text-xs text-muted">Available from</span>
                 <input
@@ -444,8 +444,8 @@ export function ColorwayForm({
       )}
 
       {stockMode === "stock_in_hand" && (
-        <div className="ml-[152px] flex flex-col gap-3">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-3 sm:ml-[152px]">
+          <div className="flex flex-wrap items-center gap-4">
             <label className="flex flex-col gap-1">
               <span className="text-xs text-muted">Stock on hand</span>
               <input
@@ -474,7 +474,7 @@ export function ColorwayForm({
         </div>
       )}
 
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
         <span className={rowLabelClass}>Availability</span>
         <select
           value={form.availabilityStatus}
@@ -489,7 +489,7 @@ export function ColorwayForm({
         </select>
       </div>
       {form.availabilityStatus === "away" && (
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
           <span className={rowLabelClass}>Ships from (when back)</span>
           <input
             type="text"
@@ -500,7 +500,7 @@ export function ColorwayForm({
         </div>
       )}
 
-      <div className="flex flex-wrap items-center gap-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
         <span className={rowLabelClass}>Color label</span>
         <input
           ref={nameInputRef}
@@ -721,7 +721,7 @@ export function ColorwayForm({
 
       {form.tier === "signature" && (
         <>
-          <div className="grid grid-cols-2 gap-4 rounded-xl border border-border p-4">
+          <div className="grid grid-cols-1 gap-4 rounded-xl border border-border p-4 sm:grid-cols-2">
             <p className="col-span-2 text-xs font-semibold uppercase tracking-wide text-muted">
               Drop details
             </p>
@@ -736,7 +736,7 @@ export function ColorwayForm({
             </label>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 rounded-xl border border-border p-4">
+          <div className="grid grid-cols-1 gap-4 rounded-xl border border-border p-4 sm:grid-cols-2">
             <p className="col-span-2 text-xs font-semibold uppercase tracking-wide text-muted">
               Matched car
             </p>
@@ -778,7 +778,7 @@ export function ColorwayForm({
             </label>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 rounded-xl border border-border p-4">
+          <div className="grid grid-cols-1 gap-4 rounded-xl border border-border p-4 sm:grid-cols-2">
             <p className="col-span-2 text-xs font-semibold uppercase tracking-wide text-muted">
               Campaign quote
             </p>
