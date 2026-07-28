@@ -618,7 +618,7 @@ export function ColorwayForm({
         )}
 
         {form.tier === "signature" && (
-          <div className="flex flex-col gap-3 sm:ml-[152px]">
+          <div className="flex flex-col gap-3 sm:ml-40">
             {(scarcityType === "units" || scarcityType === "both") && (
               <div className="flex flex-wrap items-end gap-4">
                 <label className="flex flex-col gap-1">
@@ -700,7 +700,7 @@ export function ColorwayForm({
         </div>
 
         {stockMode === "stock_in_hand" && (
-          <div className="flex flex-wrap items-start gap-4 sm:ml-[152px]">
+          <div className="flex flex-wrap items-start gap-4 sm:ml-40">
             <label className="flex flex-col gap-1">
               <span className="text-xs text-muted">Stock on hand</span>
               <input
