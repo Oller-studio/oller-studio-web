@@ -82,16 +82,22 @@ function ProductRowItem({ product }: { product: ProductRow }) {
           </Link>
         </td>
         <td className="whitespace-nowrap py-3 pr-7 text-xs">
-          <button
-            type="button"
-            onClick={toggleStatus}
-            disabled={updatingStatus}
-            className={`rounded-full px-2 py-0.5 font-semibold disabled:opacity-50 ${
-              allInactive ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"
-            }`}
-          >
-            {updatingStatus ? "…" : allInactive ? "Inactive" : "Active"}
-          </button>
+          {product.variants.length === 0 ? (
+            <span className="rounded-full bg-border/40 px-2 py-0.5 font-semibold text-muted">
+              No colors yet
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={toggleStatus}
+              disabled={updatingStatus}
+              className={`rounded-full px-2 py-0.5 font-semibold disabled:opacity-50 ${
+                allInactive ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"
+              }`}
+            >
+              {updatingStatus ? "…" : allInactive ? "Inactive" : "Active"}
+            </button>
+          )}
         </td>
         <td className="whitespace-nowrap py-3 pr-7 text-xs text-muted">
           <InventoryCell variants={product.variants} />
