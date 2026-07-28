@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ColorwayInput } from "@/lib/colorways";
 import { AutoTextarea } from "./AutoTextarea";
@@ -146,9 +146,7 @@ function toInput(form: ColorwayFormState, productSlug: string): ColorwayInput {
     availabilityStatus: form.availabilityStatus,
     availabilityShipsFrom: form.availabilityShipsFrom.trim() || null,
     stockOnHand: Number(form.stockOnHand) || 0,
-    // Signature drops already show a public piecesRemaining/totalPieces
-    // countdown, so this only applies to Collection tier.
-    showStockOnStorefront: isLimited ? false : form.showStockOnStorefront,
+    showStockOnStorefront: form.showStockOnStorefront,
     isFeatured: form.isFeatured,
     launchedAt: form.launchedAt,
     sortOrder: Number(form.sortOrder) || 0,
@@ -190,6 +188,8 @@ export function ColorwayForm({
   const [showCost, setShowCost] = useState(false);
   const [savingCost, setSavingCost] = useState(false);
   const router = useRouter();
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const firstSwatchInputRef = useRef<HTMLInputElement>(null);
 
   function set<K extends keyof ColorwayFormState>(key: K, value: ColorwayFormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -318,9 +318,12 @@ export function ColorwayForm({
           <option value="collection">Collection</option>
           <option value="signature">Limited Edition</option>
         </select>
-        {form.tier === "signature" && (
+      </div>
+
+      {form.tier === "signature" && (
+        <div className="flex items-center gap-4">
+          <span className={rowLabelClass}>Limited by</span>
           <div className="flex items-center gap-1">
-            <span className="mr-1 text-sm font-semibold text-muted">Limited by</span>
             <button
               type="button"
               onClick={() => setScarcityType("units")}
@@ -355,34 +358,35 @@ export function ColorwayForm({
               Both
             </button>
           </div>
-        )}
-        {form.tier === "collection" && (
-          <div className="flex items-center gap-1">
-            <span className="mr-1 text-sm font-semibold text-muted">Inventory</span>
-            <button
-              type="button"
-              onClick={() => selectStockMode("printed_on_demand")}
-              className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                stockMode === "printed_on_demand"
-                  ? "bg-foreground text-background"
-                  : "text-muted hover:bg-border/40"
-              }`}
-            >
-              Printed on demand
-            </button>
-            <button
-              type="button"
-              onClick={() => selectStockMode("stock_in_hand")}
-              className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                stockMode === "stock_in_hand"
-                  ? "bg-foreground text-background"
-                  : "text-muted hover:bg-border/40"
-              }`}
-            >
-              Stock in hand
-            </button>
-          </div>
-        )}
+        </div>
+      )}
+
+      <div className="flex items-center gap-4">
+        <span className={rowLabelClass}>Inventory</span>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => selectStockMode("printed_on_demand")}
+            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+              stockMode === "printed_on_demand"
+                ? "bg-foreground text-background"
+                : "text-muted hover:bg-border/40"
+            }`}
+          >
+            Printed on demand
+          </button>
+          <button
+            type="button"
+            onClick={() => selectStockMode("stock_in_hand")}
+            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+              stockMode === "stock_in_hand"
+                ? "bg-foreground text-background"
+                : "text-muted hover:bg-border/40"
+            }`}
+          >
+            Stock in hand
+          </button>
+        </div>
       </div>
 
       {form.tier === "signature" && (
@@ -439,7 +443,7 @@ export function ColorwayForm({
         </div>
       )}
 
-      {form.tier === "collection" && stockMode === "stock_in_hand" && (
+      {stockMode === "stock_in_hand" && (
         <div className="ml-[152px] flex flex-col gap-3">
           <div className="flex items-center gap-4">
             <label className="flex flex-col gap-1">
@@ -497,19 +501,25 @@ export function ColorwayForm({
         </div>
       )}
 
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-4">
         <span className={rowLabelClass}>Color label</span>
         <input
+          ref={nameInputRef}
           type="text"
           required
           value={form.name}
           onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => {
+            const el = e.currentTarget;
+            if (e.key === "ArrowRight" && el.selectionStart === el.value.length) {
+              e.preventDefault();
+              firstSwatchInputRef.current?.focus();
+              firstSwatchInputRef.current?.select();
+            }
+          }}
           className={`${inputClass} w-48`}
         />
-      </div>
-
-      <div className="flex items-start gap-4">
-        <span className={`${rowLabelClass} pt-2`}>
+        <span className="text-sm font-semibold text-muted">
           Swatch{form.swatchColors.length > 1 ? " (multi-color)" : ""}
         </span>
         <div className="flex flex-wrap items-center gap-3">
@@ -527,6 +537,7 @@ export function ColorwayForm({
                 className="h-9 w-9 shrink-0 rounded-lg border border-border bg-background p-1"
               />
               <input
+                ref={i === 0 ? firstSwatchInputRef : undefined}
                 type="text"
                 value={color}
                 onChange={(e) =>
@@ -534,6 +545,19 @@ export function ColorwayForm({
                     "swatchColors",
                     form.swatchColors.map((c, ci) => (ci === i ? e.target.value : c)),
                   )
+                }
+                onKeyDown={
+                  i === 0
+                    ? (e) => {
+                        const el = e.currentTarget;
+                        if (e.key === "ArrowLeft" && el.selectionStart === 0) {
+                          e.preventDefault();
+                          nameInputRef.current?.focus();
+                          const len = nameInputRef.current?.value.length ?? 0;
+                          nameInputRef.current?.setSelectionRange(len, len);
+                        }
+                      }
+                    : undefined
                 }
                 placeholder="#8a4a3a"
                 className={`${inputClass} w-28`}
@@ -570,7 +594,7 @@ export function ColorwayForm({
       </div>
 
       <label className="flex flex-col gap-1">
-        <span className={labelClass}>Media (first photo is the main one, max 4)</span>
+        <span className={labelClass}>Media (max 4)</span>
         <ImagesField images={form.images} onChange={(v) => set("images", v)} max={4} />
       </label>
 
