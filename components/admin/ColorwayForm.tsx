@@ -621,7 +621,7 @@ export function ColorwayForm({
               placeholder="0.00"
               value={form.price}
               onChange={(e) => set("price", e.target.value)}
-              className={`${inputClass} w-full pl-6`}
+              className={`${inputClass} no-spinner w-full pl-6`}
             />
           </div>
         </label>
@@ -629,7 +629,13 @@ export function ColorwayForm({
         <div className="flex flex-wrap gap-2 border-t border-border pt-3">
           <button
             type="button"
-            onClick={() => setShowCompareAt((v) => !v)}
+            onClick={() =>
+              setShowCompareAt((v) => {
+                const next = !v;
+                if (next) setShowCost(false);
+                return next;
+              })
+            }
             className={`flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium hover:opacity-80 ${
               showCompareAt ? "bg-foreground text-background" : "bg-border/40"
             }`}
@@ -639,7 +645,13 @@ export function ColorwayForm({
           </button>
           <button
             type="button"
-            onClick={() => setShowCost((v) => !v)}
+            onClick={() =>
+              setShowCost((v) => {
+                const next = !v;
+                if (next) setShowCompareAt(false);
+                return next;
+              })
+            }
             className={`flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium hover:opacity-80 ${
               showCost ? "bg-foreground text-background" : "bg-border/40"
             }`}
@@ -650,26 +662,28 @@ export function ColorwayForm({
         </div>
 
         {showCompareAt && (
-          <label className="flex w-28 flex-col gap-1 border-t border-border pt-3">
-            <span className={labelClass}>Compare-at price</span>
-            <div className="relative">
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted">
-                €
-              </span>
-              <input
-                type="number"
-                min={0}
-                step="0.01"
-                placeholder="0.00"
-                value={form.compareAtPrice}
-                onChange={(e) => set("compareAtPrice", e.target.value)}
-                className={`${inputClass} w-full pl-6`}
-              />
+          <div className="flex flex-col gap-1 border-t border-border pt-3">
+            <div className="flex items-center gap-3">
+              <span className={labelClass}>Compare-at price</span>
+              <div className="relative w-28">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted">
+                  €
+                </span>
+                <input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  placeholder="0.00"
+                  value={form.compareAtPrice}
+                  onChange={(e) => set("compareAtPrice", e.target.value)}
+                  className={`${inputClass} no-spinner w-full pl-6`}
+                />
+              </div>
             </div>
-            <span className="text-xs font-normal normal-case text-muted">
+            <span className="whitespace-nowrap text-xs font-normal normal-case text-muted">
               Only shows as a sale if it&apos;s higher than Price.
             </span>
-          </label>
+          </div>
         )}
 
         {showCost && (
@@ -687,7 +701,7 @@ export function ColorwayForm({
                   placeholder="0.00"
                   value={form.costPerItem}
                   onChange={(e) => set("costPerItem", e.target.value)}
-                  className={`${inputClass} w-full pl-6`}
+                  className={`${inputClass} no-spinner w-full pl-6`}
                 />
               </div>
               <button

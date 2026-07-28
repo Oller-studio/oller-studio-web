@@ -20,6 +20,8 @@ export function ImagesField({
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadTargetIndex = useRef<number>(0);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [overIndex, setOverIndex] = useState<number | null>(null);
 
   function remove(index: number) {
     onChange(images.filter((_, i) => i !== index));
@@ -31,6 +33,20 @@ export function ImagesField({
     const next = [...images];
     [next[index], next[target]] = [next[target], next[index]];
     onChange(next);
+  }
+
+  function reorder(from: number, to: number) {
+    if (from === to || from >= images.length || to >= images.length) return;
+    const next = [...images];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    onChange(next);
+  }
+
+  function handleDrop(i: number) {
+    if (dragIndex !== null) reorder(dragIndex, i);
+    setDragIndex(null);
+    setOverIndex(null);
   }
 
   function openPicker(index: number) {
@@ -84,11 +100,29 @@ export function ImagesField({
           src ? (
             <div
               key={i}
-              className={`group relative overflow-hidden rounded-xl border border-border bg-border/10 ${
+              draggable
+              onDragStart={() => setDragIndex(i)}
+              onDragOver={(e) => {
+                e.preventDefault();
+                if (overIndex !== i) setOverIndex(i);
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                handleDrop(i);
+              }}
+              onDragEnd={() => {
+                setDragIndex(null);
+                setOverIndex(null);
+              }}
+              className={`group relative cursor-grab overflow-hidden rounded-xl border bg-border/10 active:cursor-grabbing ${
                 i === 0 ? "h-32 w-32" : "h-20 w-20"
+              } ${dragIndex === i ? "opacity-40" : ""} ${
+                overIndex === i && dragIndex !== null && dragIndex !== i
+                  ? "border-foreground"
+                  : "border-border"
               }`}
             >
-              <Image src={src} alt="" fill className="object-cover" />
+              <Image src={src} alt="" fill draggable={false} className="object-cover" />
               <button
                 type="button"
                 onClick={() => remove(i)}

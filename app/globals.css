@@ -31,3 +31,16 @@ body {
   color: var(--color-foreground);
   font-family: var(--font-sans);
 }
+
+/* Hide the native up/down spinner on number inputs styled as plain text
+   fields (e.g. admin price inputs) — Chrome/Safari and Firefox each need
+   their own override. */
+.no-spinner::-webkit-inner-spin-button,
+.no-spinner::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.no-spinner {
+  -moz-appearance: textfield;
+}
