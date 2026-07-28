@@ -441,7 +441,7 @@ export function ColorwayForm({
       </label>
 
       <div className="flex flex-col gap-3 rounded-xl border border-border p-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted">Price</p>
+        <p className={labelClass}>Price</p>
         <label className="flex w-28 flex-col gap-1">
           <div className="relative">
             <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted">
