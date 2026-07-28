@@ -343,6 +343,14 @@ export const ColorVariantsList = forwardRef<
             >
               Set as draft
             </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => runAction("status", "active")}
+              className="rounded-full border border-border px-3 py-1.5 text-sm font-semibold hover:bg-border/40 disabled:opacity-50"
+            >
+              Set as active
+            </button>
             <div ref={moreRef} className="relative">
               <button
                 type="button"
