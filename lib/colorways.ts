@@ -59,7 +59,7 @@ function rowToColorway(row: ColorwayRow & { product: ProductModel }): Colorway {
     product: rowToColorwayProduct(row.product),
     name: row.name,
     price: (row.priceCents ?? row.product.basePriceCents) / 100,
-    swatchColor: row.swatchColor ?? undefined,
+    swatchColors: JSON.parse(row.swatchColors) as string[],
     status: row.status as Colorway["status"],
     tier: row.tier as Colorway["tier"],
     dropNumber: row.dropNumber ?? undefined,
@@ -124,7 +124,7 @@ export type ColorwayInput = {
   priceCents: number | null;
   compareAtPriceCents: number | null;
   unitCount: number;
-  swatchColor: string | null;
+  swatchColors: string[];
   compositionMaterial: string | null;
   compositionDescription: string | null;
   status: Colorway["status"];
@@ -159,7 +159,7 @@ function toRowData(input: ColorwayInput) {
     priceCents: input.priceCents,
     compareAtPriceCents: input.compareAtPriceCents,
     unitCount: input.unitCount,
-    swatchColor: input.swatchColor,
+    swatchColors: JSON.stringify(input.swatchColors),
     compositionMaterial: input.compositionMaterial,
     compositionDescription: input.compositionDescription,
     status: input.status,

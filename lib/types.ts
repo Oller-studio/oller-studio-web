@@ -44,7 +44,8 @@ export type Colorway = {
   // otherwise the product's default. Always use this, not product.basePrice,
   // when showing/charging a price for a specific listing.
   price: number;
-  swatchColor?: string;
+  // 1 hex color for a solid swatch, or up to 4 for a multi-color pie swatch.
+  swatchColors: string[];
   status: ColorwayStatus;
   tier: ColorwayTier;
   dropNumber?: number;

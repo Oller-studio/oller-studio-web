@@ -64,15 +64,16 @@ export default async function AdminProductsPage({
       basePriceCents: v.product.basePriceCents,
       currency: v.product.currency,
     });
+    const swatchColors = JSON.parse(v.swatchColors) as string[];
     if (existing) {
       existing.variants.push(variantRow);
-      if (v.swatchColor) existing.swatches.push(v.swatchColor);
+      if (swatchColors[0]) existing.swatches.push(swatchColors[0]);
     } else {
       allModels.set(v.productSlug, {
         slug: v.productSlug,
         name: v.product.name,
         material: v.product.material,
-        swatches: v.swatchColor ? [v.swatchColor] : [],
+        swatches: swatchColors[0] ? [swatchColors[0]] : [],
         variants: [variantRow],
       });
     }

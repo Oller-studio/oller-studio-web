@@ -32,7 +32,7 @@ export function rowToVariantRow(
       compareAtPrice: row.compareAtPriceCents != null ? (row.compareAtPriceCents / 100).toString() : "",
       unitCount: row.unitCount.toString(),
       costPerItem: costCents != null ? (costCents / 100).toString() : "",
-      swatchColor: row.swatchColor ?? "#000000",
+      swatchColors: JSON.parse(row.swatchColors) as string[],
       compositionMaterial: row.compositionMaterial ?? "",
       compositionDescription: row.compositionDescription ?? "",
       status: row.status as "draft" | "active" | "unlisted" | "inactive",

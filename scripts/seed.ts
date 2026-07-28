@@ -30,7 +30,7 @@ async function main() {
       slug: "multicolor",
       productSlug: "ondine",
       name: "Multicolor",
-      swatchColor: "#8a4a3a",
+      swatchColors: JSON.stringify(["#8a4a3a"]),
       tier: "collection",
       images: JSON.stringify([
         "/images/ondine/multicolor/1.png",
@@ -58,7 +58,7 @@ async function main() {
       slug: "ferrari-red",
       productSlug: "ondine",
       name: "Ferrari Red",
-      swatchColor: "#c81e2c",
+      swatchColors: JSON.stringify(["#c81e2c"]),
       tier: "signature",
       dropNumber: 1,
       totalPieces: 10,

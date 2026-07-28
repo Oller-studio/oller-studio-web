@@ -118,7 +118,10 @@ model Colorway {
   product                Product  @relation(fields: [productSlug], references: [slug], onDelete: Cascade)
   productSlug            String
   name                   String
-  swatchColor            String?
+  // JSON array of hex colors, e.g. ["#8a4a3a"] or ["#d4af37","#e8a0bf"] for a
+  // multi-color edition (rendered as a pie-slice swatch when there's more
+  // than one) — up to 4 in the admin UI.
+  swatchColors           String   @default("[]")
   // Overrides Product.basePriceCents for this specific color — null means
   // "use the product's price" (most colors won't need their own).
   priceCents             Int?

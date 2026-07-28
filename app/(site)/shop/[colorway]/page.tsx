@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { getAllColorways, getColorwayBySlug } from "@/lib/colorways";
 import { formatPrice } from "@/lib/format";
+import { swatchBackground } from "@/lib/swatch";
 import { ColorwayGallery } from "@/components/shop/ColorwayGallery";
 import { AvailabilityBadge } from "@/components/shop/AvailabilityBadge";
 import { AddToBagButton } from "@/components/shop/AddToBagButton";
@@ -144,7 +145,7 @@ export default async function ColorwayPage({
                         className={`h-3.5 w-3.5 rounded-b-full border transition-colors ${
                           isActive ? "border-foreground/20" : "border-border hover:border-foreground/40"
                         }`}
-                        style={{ backgroundColor: c.swatchColor ?? "#e5e5e5" }}
+                        style={{ background: swatchBackground(c.swatchColors) }}
                       />
                       <span className={`h-px w-3 ${isActive ? "bg-foreground" : "bg-transparent"}`} />
                     </Link>

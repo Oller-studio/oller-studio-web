@@ -37,7 +37,7 @@ export type ColorwayFormState = {
   compareAtPrice: string;
   unitCount: string;
   costPerItem: string;
-  swatchColor: string;
+  swatchColors: string[];
   compositionMaterial: string;
   compositionDescription: string;
   status: (typeof COLORWAY_STATUSES)[number];
@@ -73,7 +73,7 @@ function initialState(existing?: Partial<ColorwayFormState>): ColorwayFormState 
     compareAtPrice: existing?.compareAtPrice ?? "",
     unitCount: existing?.unitCount || "1",
     costPerItem: existing?.costPerItem ?? "",
-    swatchColor: existing?.swatchColor ?? "#000000",
+    swatchColors: existing?.swatchColors?.length ? existing.swatchColors : ["#000000"],
     compositionMaterial: existing?.compositionMaterial ?? "",
     compositionDescription: existing?.compositionDescription ?? "",
     status: existing?.status ?? "draft",
@@ -121,7 +121,7 @@ function toInput(form: ColorwayFormState, productSlug: string): ColorwayInput {
     compareAtPriceCents:
       form.compareAtPrice.trim() === "" ? null : Math.round(Number(form.compareAtPrice) * 100),
     unitCount: Math.max(1, Number.parseInt(form.unitCount, 10) || 1),
-    swatchColor: form.swatchColor.trim() || null,
+    swatchColors: form.swatchColors.map((c) => c.trim()).filter(Boolean).slice(0, 4),
     compositionMaterial: form.compositionMaterial.trim() || null,
     compositionDescription: form.compositionDescription.trim() || null,
     status: form.status,
@@ -424,21 +424,66 @@ export function ColorwayForm({
           onChange={(e) => setName(e.target.value)}
           className={`${inputClass} w-48`}
         />
-        <span className="text-sm font-semibold">Swatch</span>
-        <div className="flex items-center gap-2">
-          <input
-            type="color"
-            value={form.swatchColor}
-            onChange={(e) => set("swatchColor", e.target.value)}
-            className="h-9 w-9 shrink-0 rounded-lg border border-border bg-background p-1"
-          />
-          <input
-            type="text"
-            value={form.swatchColor}
-            onChange={(e) => set("swatchColor", e.target.value)}
-            placeholder="#8a4a3a"
-            className={`${inputClass} w-32`}
-          />
+      </div>
+
+      <div className="flex items-start gap-4">
+        <span className={`${rowLabelClass} pt-2`}>
+          Swatch{form.swatchColors.length > 1 ? " (multi-color)" : ""}
+        </span>
+        <div className="flex flex-wrap items-center gap-3">
+          {form.swatchColors.map((color, i) => (
+            <div key={i} className="flex items-center gap-1.5">
+              <input
+                type="color"
+                value={color}
+                onChange={(e) =>
+                  set(
+                    "swatchColors",
+                    form.swatchColors.map((c, ci) => (ci === i ? e.target.value : c)),
+                  )
+                }
+                className="h-9 w-9 shrink-0 rounded-lg border border-border bg-background p-1"
+              />
+              <input
+                type="text"
+                value={color}
+                onChange={(e) =>
+                  set(
+                    "swatchColors",
+                    form.swatchColors.map((c, ci) => (ci === i ? e.target.value : c)),
+                  )
+                }
+                placeholder="#8a4a3a"
+                className={`${inputClass} w-28`}
+              />
+              {form.swatchColors.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    set(
+                      "swatchColors",
+                      form.swatchColors.filter((_, ci) => ci !== i),
+                    )
+                  }
+                  aria-label="Remove color"
+                  className="text-muted hover:text-foreground"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          ))}
+          {form.swatchColors.length < 4 && (
+            <button
+              type="button"
+              onClick={() => set("swatchColors", [...form.swatchColors, "#000000"])}
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-dashed border-border text-muted hover:border-foreground hover:text-foreground"
+              aria-label="Add another color"
+              title="Add another color"
+            >
+              +
+            </button>
+          )}
         </div>
       </div>
 
