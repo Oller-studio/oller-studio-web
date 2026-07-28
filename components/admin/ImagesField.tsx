@@ -24,6 +24,7 @@ export function ImagesField({
   const [overIndex, setOverIndex] = useState<number | null>(null);
 
   function remove(index: number) {
+    if (!confirm("Remove this photo?")) return;
     onChange(images.filter((_, i) => i !== index));
   }
 
@@ -127,7 +128,8 @@ export function ImagesField({
                 type="button"
                 onClick={() => remove(i)}
                 aria-label="Remove photo"
-                className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-background/90 text-xs font-semibold text-foreground opacity-0 shadow group-hover:opacity-100"
+                title="Remove photo"
+                className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-sm font-bold text-white opacity-0 shadow-lg ring-2 ring-white group-hover:opacity-100"
               >
                 ×
               </button>
