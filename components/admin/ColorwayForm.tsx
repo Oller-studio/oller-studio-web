@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { forwardRef, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ColorwayInput } from "@/lib/colorways";
 import { AutoTextarea } from "./AutoTextarea";
@@ -153,19 +153,16 @@ function toInput(form: ColorwayFormState, productSlug: string): ColorwayInput {
   };
 }
 
-export function ColorwayForm({
-  mode,
-  productSlug,
-  initial,
-  onSaved,
-  onDeleted,
-}: {
-  mode: "create" | "edit";
-  productSlug: string;
-  initial?: Partial<ColorwayFormState>;
-  onSaved?: () => void;
-  onDeleted?: () => void;
-}) {
+export const ColorwayForm = forwardRef<
+  HTMLFormElement,
+  {
+    mode: "create" | "edit";
+    productSlug: string;
+    initial?: Partial<ColorwayFormState>;
+    onSaved?: () => void;
+    onDeleted?: () => void;
+  }
+>(function ColorwayForm({ mode, productSlug, initial, onSaved, onDeleted }, formRef) {
   const [form, setForm] = useState<ColorwayFormState>(initialState(initial));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -275,7 +272,7 @@ export function ColorwayForm({
   const rowLabelClass = "text-sm font-semibold sm:w-36 sm:shrink-0";
 
   return (
-    <form onSubmit={submit} className="flex w-full flex-col gap-4">
+    <form ref={formRef} onSubmit={submit} className="flex w-full flex-col gap-4">
       {mode === "edit" && (
         <div className="flex justify-end">
           <button
@@ -672,13 +669,13 @@ export function ColorwayForm({
           </div>
         )}
 
-        <div className="flex flex-col gap-2 border-t border-border pt-3 sm:flex-row sm:items-start sm:gap-4">
+        <div className="flex flex-col gap-2 border-t border-border pt-3 sm:flex-row sm:items-center sm:gap-4">
           <span className={rowLabelClass}>Inventory</span>
-          <div className="flex flex-col items-start gap-1">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => selectStockMode("printed_on_demand")}
-              className={`rounded-full px-3 py-1 text-xs font-semibold ${
+              className={`rounded-full px-3 py-1 text-xs font-semibold leading-none ${
                 stockMode === "printed_on_demand"
                   ? "bg-foreground text-background"
                   : "text-muted hover:bg-border/40"
@@ -686,40 +683,38 @@ export function ColorwayForm({
             >
               Printed on demand
             </button>
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={() => selectStockMode("stock_in_hand")}
-                className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                  stockMode === "stock_in_hand"
-                    ? "bg-foreground text-background"
-                    : "text-muted hover:bg-border/40"
-                }`}
-              >
-                Stock in hand
-              </button>
-              {stockMode === "stock_in_hand" && (
-                <>
+            <button
+              type="button"
+              onClick={() => selectStockMode("stock_in_hand")}
+              className={`rounded-full px-3 py-1 text-xs font-semibold leading-none ${
+                stockMode === "stock_in_hand"
+                  ? "bg-foreground text-background"
+                  : "text-muted hover:bg-border/40"
+              }`}
+            >
+              Stock in hand
+            </button>
+            {stockMode === "stock_in_hand" && (
+              <>
+                <input
+                  type="number"
+                  min={0}
+                  value={form.stockOnHand}
+                  onChange={(e) => set("stockOnHand", e.target.value)}
+                  aria-label="Stock on hand"
+                  className={`${inputClass} no-spinner w-14`}
+                />
+                <label className="flex items-center gap-1.5 text-xs">
                   <input
-                    type="number"
-                    min={0}
-                    value={form.stockOnHand}
-                    onChange={(e) => set("stockOnHand", e.target.value)}
-                    aria-label="Stock on hand"
-                    className={`${inputClass} w-14`}
+                    type="checkbox"
+                    checked={form.showStockOnStorefront}
+                    onChange={(e) => set("showStockOnStorefront", e.target.checked)}
+                    className="h-3.5 w-3.5"
                   />
-                  <label className="flex items-center gap-1.5 text-xs">
-                    <input
-                      type="checkbox"
-                      checked={form.showStockOnStorefront}
-                      onChange={(e) => set("showStockOnStorefront", e.target.checked)}
-                      className="h-3.5 w-3.5"
-                    />
-                    Display on website
-                  </label>
-                </>
-              )}
-            </div>
+                  Display on website
+                </label>
+              </>
+            )}
           </div>
         </div>
 
@@ -850,4 +845,4 @@ export function ColorwayForm({
       </div>
     </form>
   );
-}
+});

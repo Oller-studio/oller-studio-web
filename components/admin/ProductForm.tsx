@@ -10,7 +10,11 @@ import {
   STATUS_BADGE,
   type ColorwayStatus,
 } from "@/lib/colorwayStatus";
-import { ColorVariantsList, type VariantRow } from "./ColorVariantsList";
+import {
+  ColorVariantsList,
+  type ColorVariantsListHandle,
+  type VariantRow,
+} from "./ColorVariantsList";
 import { AdminBreadcrumb } from "./AdminBreadcrumb";
 import { ProductsIcon } from "./NavIcons";
 
@@ -223,6 +227,7 @@ export function ProductForm({
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const router = useRouter();
   const dimensionRefs = useRef<Array<HTMLInputElement | null>>([]);
+  const colorVariantsRef = useRef<ColorVariantsListHandle>(null);
   const printHoursRef = useRef<HTMLInputElement | null>(null);
   const printMinutesRef = useRef<HTMLInputElement | null>(null);
 
@@ -273,6 +278,11 @@ export function ProductForm({
     }
     setSaving(true);
     setError(null);
+
+    // Also save whichever color is currently open (editing or being added)
+    // — one button, two saves, so a wrong-button click can't silently drop
+    // color changes the way two separately-labeled Save buttons did.
+    colorVariantsRef.current?.saveActive();
 
     const url = mode === "create" ? "/api/admin/products" : `/api/admin/products/${form.slug}`;
     const method = mode === "create" ? "POST" : "PATCH";
@@ -643,7 +653,11 @@ export function ProductForm({
 
       {mode === "edit" && variants && (
         <div className={`${boxClass} max-w-full overflow-x-auto`}>
-          <ColorVariantsList productSlug={form.slug} variants={variants} />
+          <ColorVariantsList
+            ref={colorVariantsRef}
+            productSlug={form.slug}
+            variants={variants}
+          />
         </div>
       )}
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useRef, useState } from "react";
+import { Fragment, forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ColorwayForm, type ColorwayFormState } from "./ColorwayForm";
@@ -131,13 +131,18 @@ function StockCell({ slug, stockOnHand }: { slug: string; stockOnHand: number })
   );
 }
 
-export function ColorVariantsList({
-  productSlug,
-  variants,
-}: {
-  productSlug: string;
-  variants: VariantRow[];
-}) {
+// Exposes a way for the parent Product form's own Save button to also save
+// whichever color is currently open for editing (or being newly added),
+// so there's one obvious "save everything" action instead of two easily
+// confused buttons.
+export type ColorVariantsListHandle = {
+  saveActive: () => void;
+};
+
+export const ColorVariantsList = forwardRef<
+  ColorVariantsListHandle,
+  { productSlug: string; variants: VariantRow[] }
+>(function ColorVariantsList({ productSlug, variants }, ref) {
   const [openSlug, setOpenSlug] = useState<string | null>(null);
   const [addingNew, setAddingNew] = useState(false);
   const [query, setQuery] = useState("");
@@ -145,7 +150,16 @@ export function ColorVariantsList({
   const [statusFilter, setStatusFilter] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const filtersRef = useRef<HTMLDivElement>(null);
+  const openFormRef = useRef<HTMLFormElement>(null);
+  const newFormRef = useRef<HTMLFormElement>(null);
   const router = useRouter();
+
+  useImperativeHandle(ref, () => ({
+    saveActive: () => {
+      openFormRef.current?.requestSubmit();
+      newFormRef.current?.requestSubmit();
+    },
+  }));
 
   useEffect(() => {
     if (!filtersOpen) return;
@@ -355,6 +369,7 @@ export function ColorVariantsList({
                       <tr>
                         <td colSpan={8} className="border-t border-border bg-border/5 p-5">
                           <ColorwayForm
+                            ref={openFormRef}
                             mode="edit"
                             productSlug={productSlug}
                             initial={v.initial}
@@ -380,6 +395,7 @@ export function ColorVariantsList({
       {addingNew && (
         <div className="rounded-xl border border-border p-4">
           <ColorwayForm
+            ref={newFormRef}
             mode="create"
             productSlug={productSlug}
             onSaved={() => setAddingNew(false)}
@@ -388,4 +404,4 @@ export function ColorVariantsList({
       )}
     </div>
   );
-}
+});
