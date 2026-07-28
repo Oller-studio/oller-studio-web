@@ -58,16 +58,6 @@ function PlusIcon() {
   );
 }
 
-function MoreIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <circle cx="3" cy="8" r="1.3" fill="currentColor" />
-      <circle cx="8" cy="8" r="1.3" fill="currentColor" />
-      <circle cx="13" cy="8" r="1.3" fill="currentColor" />
-    </svg>
-  );
-}
-
 function FilterIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
@@ -166,8 +156,6 @@ export const ColorVariantsList = forwardRef<
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
-  const [moreOpen, setMoreOpen] = useState(false);
-  const moreRef = useRef<HTMLDivElement>(null);
 
   useImperativeHandle(ref, () => ({
     saveActive: () => {
@@ -186,15 +174,6 @@ export const ColorVariantsList = forwardRef<
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, [filtersOpen]);
-
-  useEffect(() => {
-    if (!moreOpen) return;
-    function onClickOutside(e: MouseEvent) {
-      if (moreRef.current && !moreRef.current.contains(e.target as Node)) setMoreOpen(false);
-    }
-    document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
-  }, [moreOpen]);
 
   const q = query.trim().toLowerCase();
   const advancedActive = Boolean(tierFilter || statusFilter);
@@ -231,7 +210,6 @@ export const ColorVariantsList = forwardRef<
       return;
     }
     setBusy(true);
-    setMoreOpen(false);
     await fetch("/api/admin/colorways/bulk", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -335,57 +313,31 @@ export const ColorVariantsList = forwardRef<
               −
             </button>
             <span className="font-medium">{selected.size} selected</span>
+            <select
+              value=""
+              disabled={busy}
+              onChange={(e) => {
+                if (e.target.value) runAction("status", e.target.value);
+              }}
+              className="rounded-full border border-border bg-background px-3 py-1.5 text-sm font-semibold hover:bg-border/40 disabled:opacity-50"
+            >
+              <option value="" disabled>
+                Change status
+              </option>
+              {COLORWAY_STATUSES.map((s) => (
+                <option key={s} value={s}>
+                  {STATUS_LABELS[s]}
+                </option>
+              ))}
+            </select>
             <button
               type="button"
               disabled={busy}
-              onClick={() => runAction("status", "draft")}
-              className="rounded-full border border-border px-3 py-1.5 text-sm font-semibold hover:bg-border/40 disabled:opacity-50"
+              onClick={() => runAction("delete")}
+              className="rounded-full border border-border px-3 py-1.5 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
             >
-              Set as draft
+              Delete
             </button>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => runAction("status", "active")}
-              className="rounded-full border border-border px-3 py-1.5 text-sm font-semibold hover:bg-border/40 disabled:opacity-50"
-            >
-              Set as active
-            </button>
-            <div ref={moreRef} className="relative">
-              <button
-                type="button"
-                onClick={() => setMoreOpen((v) => !v)}
-                aria-label="More bulk actions"
-                className="rounded-full border border-border p-2 hover:bg-border/40"
-              >
-                <MoreIcon />
-              </button>
-              {moreOpen && (
-                <div className="absolute left-0 top-full z-40 mt-2 w-48 rounded-lg border border-border bg-background py-1 shadow-lg">
-                  <button
-                    type="button"
-                    onClick={() => runAction("status", "inactive")}
-                    className="block w-full px-4 py-2 text-left text-sm hover:bg-border/40"
-                  >
-                    Archive colors
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => runAction("status", "unlisted")}
-                    className="block w-full px-4 py-2 text-left text-sm hover:bg-border/40"
-                  >
-                    Unlist colors
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => runAction("delete")}
-                    className="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
-                  >
-                    Delete colors
-                  </button>
-                </div>
-              )}
-            </div>
           </div>
         )}
 
