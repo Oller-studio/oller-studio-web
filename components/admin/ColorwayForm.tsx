@@ -171,8 +171,17 @@ export function ColorwayForm({
   const [form, setForm] = useState<ColorwayFormState>(initialState(initial));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [scarcityType, setScarcityType] = useState<"units" | "dates">(
-    initial?.dropEndsAt && !initial?.totalPieces ? "dates" : "units"
+  const [scarcityType, setScarcityType] = useState<"units" | "dates" | "both">(
+    initial?.dropEndsAt && initial?.totalPieces
+      ? "both"
+      : initial?.dropEndsAt
+        ? "dates"
+        : "units"
+  );
+  const [stockMode, setStockMode] = useState<"printed_on_demand" | "stock_in_hand">(
+    initial?.showStockOnStorefront || Number(initial?.stockOnHand) > 0
+      ? "stock_in_hand"
+      : "printed_on_demand"
   );
   const [showMoreStatuses, setShowMoreStatuses] = useState(
     initial?.status === "unlisted" || initial?.status === "inactive"
@@ -188,6 +197,13 @@ export function ColorwayForm({
 
   function setName(name: string) {
     setForm((f) => ({ ...f, name, slug: mode === "create" ? slugify(name) : f.slug }));
+  }
+
+  function selectStockMode(next: "printed_on_demand" | "stock_in_hand") {
+    setStockMode(next);
+    if (next === "printed_on_demand") {
+      setForm((f) => ({ ...f, stockOnHand: "0", showStockOnStorefront: false }));
+    }
   }
 
   async function submit(e: React.FormEvent) {
@@ -293,56 +309,6 @@ export function ColorwayForm({
       </div>
 
       <div className="flex items-center gap-4">
-        <span className={rowLabelClass}>Availability</span>
-        <select
-          value={form.availabilityStatus}
-          onChange={(e) =>
-            set("availabilityStatus", e.target.value as ColorwayFormState["availabilityStatus"])
-          }
-          className={`${inputClass} w-40`}
-        >
-          <option value="available">Available</option>
-          <option value="away">Away (temporarily unavailable)</option>
-          <option value="sold_out">Sold out</option>
-        </select>
-        <span className="text-sm font-semibold">Stock on hand</span>
-        <input
-          type="number"
-          min={0}
-          value={form.stockOnHand}
-          onChange={(e) => set("stockOnHand", e.target.value)}
-          className={`${inputClass} w-20`}
-        />
-        <span className="text-xs text-muted">Internal only, doesn&apos;t affect Sold out.</span>
-      </div>
-      {form.tier === "collection" && (
-        <div className="flex items-center gap-4">
-          <span className={rowLabelClass} aria-hidden="true" />
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={form.showStockOnStorefront}
-              onChange={(e) => set("showStockOnStorefront", e.target.checked)}
-              className="h-4 w-4"
-            />
-            Show stock publicly (e.g. &ldquo;Only {form.stockOnHand || 0} left, won&apos;t
-            restock&rdquo;)
-          </label>
-        </div>
-      )}
-      {form.availabilityStatus === "away" && (
-        <div className="flex items-center gap-4">
-          <span className={rowLabelClass}>Ships from (when back)</span>
-          <input
-            type="text"
-            value={form.availabilityShipsFrom}
-            onChange={(e) => set("availabilityShipsFrom", e.target.value)}
-            className={`${inputClass} w-56`}
-          />
-        </div>
-      )}
-
-      <div className="flex items-center gap-4">
         <span className={rowLabelClass}>Tier</span>
         <select
           value={form.tier}
@@ -377,13 +343,51 @@ export function ColorwayForm({
             >
               Dates
             </button>
+            <button
+              type="button"
+              onClick={() => setScarcityType("both")}
+              className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                scarcityType === "both"
+                  ? "bg-foreground text-background"
+                  : "text-muted hover:bg-border/40"
+              }`}
+            >
+              Both
+            </button>
+          </div>
+        )}
+        {form.tier === "collection" && (
+          <div className="flex items-center gap-1">
+            <span className="mr-1 text-sm font-semibold text-muted">Inventory</span>
+            <button
+              type="button"
+              onClick={() => selectStockMode("printed_on_demand")}
+              className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                stockMode === "printed_on_demand"
+                  ? "bg-foreground text-background"
+                  : "text-muted hover:bg-border/40"
+              }`}
+            >
+              Printed on demand
+            </button>
+            <button
+              type="button"
+              onClick={() => selectStockMode("stock_in_hand")}
+              className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                stockMode === "stock_in_hand"
+                  ? "bg-foreground text-background"
+                  : "text-muted hover:bg-border/40"
+              }`}
+            >
+              Stock in hand
+            </button>
           </div>
         )}
       </div>
 
       {form.tier === "signature" && (
         <div className="ml-[152px] flex flex-col gap-3">
-          {scarcityType === "units" ? (
+          {(scarcityType === "units" || scarcityType === "both") && (
             <div className="flex items-end gap-4">
               <label className="flex flex-col gap-1">
                 <span className="text-xs text-muted">Total pieces</span>
@@ -406,7 +410,8 @@ export function ColorwayForm({
                 />
               </label>
             </div>
-          ) : (
+          )}
+          {(scarcityType === "dates" || scarcityType === "both") && (
             <div className="flex items-end gap-4">
               <label className="flex flex-col gap-1">
                 <span className="text-xs text-muted">Available from</span>
@@ -429,9 +434,66 @@ export function ColorwayForm({
             </div>
           )}
           <p className="text-xs text-muted">
-            This is marketing scarcity, shown to customers — it&apos;s separate from Stock on
-            hand below, which is your own internal count.
+            This is marketing scarcity, shown to customers.
           </p>
+        </div>
+      )}
+
+      {form.tier === "collection" && stockMode === "stock_in_hand" && (
+        <div className="ml-[152px] flex flex-col gap-3">
+          <div className="flex items-center gap-4">
+            <label className="flex flex-col gap-1">
+              <span className="text-xs text-muted">Stock on hand</span>
+              <input
+                type="number"
+                min={0}
+                value={form.stockOnHand}
+                onChange={(e) => set("stockOnHand", e.target.value)}
+                className={`${inputClass} w-28`}
+              />
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={form.showStockOnStorefront}
+                onChange={(e) => set("showStockOnStorefront", e.target.checked)}
+                className="h-4 w-4"
+              />
+              {form.showStockOnStorefront ? "Display on website" : "Internal use only"}
+            </label>
+          </div>
+          {form.showStockOnStorefront && (
+            <p className="text-xs text-muted">
+              Shows as &ldquo;Only {form.stockOnHand || 0} left, won&apos;t restock&rdquo; on the
+              product page.
+            </p>
+          )}
+        </div>
+      )}
+
+      <div className="flex items-center gap-4">
+        <span className={rowLabelClass}>Availability</span>
+        <select
+          value={form.availabilityStatus}
+          onChange={(e) =>
+            set("availabilityStatus", e.target.value as ColorwayFormState["availabilityStatus"])
+          }
+          className={`${inputClass} w-40`}
+        >
+          <option value="available">Available</option>
+          <option value="away">Away (temporarily unavailable)</option>
+          <option value="sold_out">Sold out</option>
+        </select>
+      </div>
+      {form.availabilityStatus === "away" && (
+        <div className="flex items-center gap-4">
+          <span className={rowLabelClass}>Ships from (when back)</span>
+          <input
+            type="text"
+            value={form.availabilityShipsFrom}
+            onChange={(e) => set("availabilityShipsFrom", e.target.value)}
+            className={`${inputClass} w-56`}
+          />
         </div>
       )}
 
