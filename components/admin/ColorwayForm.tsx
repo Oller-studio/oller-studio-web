@@ -434,10 +434,10 @@ export function ColorwayForm({
         </div>
       </div>
 
-      <label className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1">
         <span className={labelClass}>Media (max 4)</span>
         <ImagesField images={form.images} onChange={(v) => set("images", v)} max={4} />
-      </label>
+      </div>
 
       <label className="flex items-center gap-2">
         <input

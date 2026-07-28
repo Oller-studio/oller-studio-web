@@ -95,8 +95,8 @@ export function ImagesField({
   const slots = Array.from({ length: max }, (_, i) => images[i]);
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex flex-wrap items-start gap-3">
+    <div className="flex w-fit flex-col gap-2">
+      <div className="flex w-fit flex-wrap items-start gap-3">
         {slots.map((src, i) =>
           src ? (
             <div
@@ -129,7 +129,7 @@ export function ImagesField({
                 onClick={() => remove(i)}
                 aria-label="Remove photo"
                 title="Remove photo"
-                className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-sm font-bold text-white opacity-0 shadow-lg ring-2 ring-white group-hover:opacity-100"
+                className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-foreground text-xs font-semibold text-background opacity-0 shadow group-hover:opacity-100"
               >
                 ×
               </button>
