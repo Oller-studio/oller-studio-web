@@ -447,6 +447,7 @@ export function ColorwayForm({
         <span className="text-sm">Featured on homepage</span>
       </label>
 
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <div className="flex flex-col gap-3 rounded-xl border border-border p-4">
         <p className={labelClass}>Price</p>
         <label className="flex w-28 flex-col gap-1">
@@ -728,6 +729,7 @@ export function ColorwayForm({
             </div>
           </div>
         )}
+      </div>
       </div>
 
       {form.tier === "signature" && (
