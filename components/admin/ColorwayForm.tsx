@@ -825,13 +825,9 @@ export const ColorwayForm = forwardRef<
       {error && <p className="text-sm text-red-600">{error}</p>}
 
       <div className="flex items-center gap-3">
-        <button
-          type="submit"
-          disabled={saving}
-          className="rounded-full bg-foreground px-5 py-2 text-sm font-semibold text-background hover:opacity-90 disabled:opacity-50"
-        >
-          {saving ? "Saving…" : mode === "create" ? "Create color variant" : "Save color"}
-        </button>
+        <p className="text-xs text-muted">
+          {saving ? "Saving…" : "Saved when you click Save product above."}
+        </p>
         {mode === "edit" && (
           <button
             type="button"

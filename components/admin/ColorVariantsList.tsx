@@ -58,6 +58,16 @@ function PlusIcon() {
   );
 }
 
+function MoreIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <circle cx="3" cy="8" r="1.3" fill="currentColor" />
+      <circle cx="8" cy="8" r="1.3" fill="currentColor" />
+      <circle cx="13" cy="8" r="1.3" fill="currentColor" />
+    </svg>
+  );
+}
+
 function FilterIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
@@ -154,6 +164,11 @@ export const ColorVariantsList = forwardRef<
   const newFormRef = useRef<HTMLFormElement>(null);
   const router = useRouter();
 
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [busy, setBusy] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreRef = useRef<HTMLDivElement>(null);
+
   useImperativeHandle(ref, () => ({
     saveActive: () => {
       openFormRef.current?.requestSubmit();
@@ -172,6 +187,15 @@ export const ColorVariantsList = forwardRef<
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, [filtersOpen]);
 
+  useEffect(() => {
+    if (!moreOpen) return;
+    function onClickOutside(e: MouseEvent) {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) setMoreOpen(false);
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, [moreOpen]);
+
   const q = query.trim().toLowerCase();
   const advancedActive = Boolean(tierFilter || statusFilter);
   const filtered = variants.filter((v) => {
@@ -184,6 +208,39 @@ export const ColorVariantsList = forwardRef<
       STATUS_LABELS[v.status].toLowerCase().includes(q)
     );
   });
+
+  const allSelected = filtered.length > 0 && filtered.every((v) => selected.has(v.slug));
+
+  function toggleAll() {
+    setSelected(allSelected ? new Set() : new Set(filtered.map((v) => v.slug)));
+  }
+
+  function toggleOne(slug: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(slug)) next.delete(slug);
+      else next.add(slug);
+      return next;
+    });
+  }
+
+  async function runAction(action: "status" | "delete", status?: string) {
+    const slugs = [...selected];
+    if (slugs.length === 0) return;
+    if (action === "delete" && !confirm(`Delete ${slugs.length} color(s)? This can't be undone.`)) {
+      return;
+    }
+    setBusy(true);
+    setMoreOpen(false);
+    await fetch("/api/admin/colorways/bulk", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slugs, action, status }),
+    }).catch(() => {});
+    setBusy(false);
+    setSelected(new Set());
+    router.refresh();
+  }
 
   return (
     <div className="flex flex-col gap-3">
@@ -216,7 +273,7 @@ export const ColorVariantsList = forwardRef<
                   )}
                 </button>
                 {filtersOpen && (
-                  <div className="absolute left-0 top-full z-40 mt-2 w-56 rounded-xl border border-border bg-background p-4 shadow-xl">
+                  <div className="absolute right-0 top-full z-40 mt-2 w-56 rounded-xl border border-border bg-background p-4 shadow-xl">
                     <div className="flex flex-col gap-3">
                       <div className="flex flex-col gap-1">
                         <label className="text-xs uppercase tracking-wide text-muted">Tier</label>
@@ -267,6 +324,63 @@ export const ColorVariantsList = forwardRef<
           )}
         </div>
 
+        {selected.size > 0 && (
+          <div className="flex w-fit flex-wrap items-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-sm">
+            <button
+              type="button"
+              onClick={toggleAll}
+              className="flex h-5 w-5 items-center justify-center rounded border border-border bg-foreground text-background"
+              aria-label="Clear selection"
+            >
+              −
+            </button>
+            <span className="font-medium">{selected.size} selected</span>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => runAction("status", "draft")}
+              className="rounded-full border border-border px-3 py-1.5 text-sm font-semibold hover:bg-border/40 disabled:opacity-50"
+            >
+              Set as draft
+            </button>
+            <div ref={moreRef} className="relative">
+              <button
+                type="button"
+                onClick={() => setMoreOpen((v) => !v)}
+                aria-label="More bulk actions"
+                className="rounded-full border border-border p-2 hover:bg-border/40"
+              >
+                <MoreIcon />
+              </button>
+              {moreOpen && (
+                <div className="absolute left-0 top-full z-40 mt-2 w-48 rounded-lg border border-border bg-background py-1 shadow-lg">
+                  <button
+                    type="button"
+                    onClick={() => runAction("status", "inactive")}
+                    className="block w-full px-4 py-2 text-left text-sm hover:bg-border/40"
+                  >
+                    Archive colors
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => runAction("status", "unlisted")}
+                    className="block w-full px-4 py-2 text-left text-sm hover:bg-border/40"
+                  >
+                    Unlist colors
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => runAction("delete")}
+                    className="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+                  >
+                    Delete colors
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {variants.length === 0 ? (
           <button
             type="button"
@@ -296,7 +410,16 @@ export const ColorVariantsList = forwardRef<
             <table className="border-collapse">
             <thead>
               <tr className="bg-border/20 text-xs font-semibold uppercase tracking-wide text-muted">
-                <th className="whitespace-nowrap py-2 pl-5 pr-7 text-left"></th>
+                <th className="whitespace-nowrap py-2 pl-5 pr-3 text-left">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={toggleAll}
+                    aria-label="Select all"
+                    className="h-4 w-4"
+                  />
+                </th>
+                <th className="whitespace-nowrap py-2 pr-7 text-left"></th>
                 <th className="whitespace-nowrap py-2 pr-7 text-left"></th>
                 <th className="whitespace-nowrap py-2 pr-7 text-left">Color</th>
                 <th className="whitespace-nowrap py-2 pr-7 text-left">Price</th>
@@ -309,7 +432,7 @@ export const ColorVariantsList = forwardRef<
             <tbody className="divide-y divide-border">
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="py-4 text-center text-sm text-muted">
+                  <td colSpan={9} className="py-4 text-center text-sm text-muted">
                     No color variants match &ldquo;{query}&rdquo;.
                   </td>
                 </tr>
@@ -323,8 +446,19 @@ export const ColorVariantsList = forwardRef<
                         setOpenSlug(open ? null : v.slug);
                         setAddingNew(false);
                       }}
-                      className="cursor-pointer hover:bg-border/10"
+                      className={`cursor-pointer hover:bg-border/10 ${
+                        selected.has(v.slug) ? "bg-border/10" : ""
+                      }`}
                     >
+                      <td className="py-3 pl-5 pr-3" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={selected.has(v.slug)}
+                          onChange={() => toggleOne(v.slug)}
+                          aria-label={`Select ${v.name}`}
+                          className="h-4 w-4"
+                        />
+                      </td>
                       <td className="py-3 pl-5 pr-3 text-muted">
                         <Chevron open={open} />
                       </td>
@@ -367,7 +501,7 @@ export const ColorVariantsList = forwardRef<
                     </tr>
                     {open && (
                       <tr>
-                        <td colSpan={8} className="border-t border-border bg-border/5 p-5">
+                        <td colSpan={9} className="border-t border-border bg-border/5 p-5">
                           <ColorwayForm
                             ref={openFormRef}
                             mode="edit"
