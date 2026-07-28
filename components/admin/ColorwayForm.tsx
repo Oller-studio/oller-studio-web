@@ -173,7 +173,6 @@ export function ColorwayForm({
     initial?.status === "unlisted" || initial?.status === "inactive"
   );
   const [showCompareAt, setShowCompareAt] = useState(false);
-  const [showUnitPrice, setShowUnitPrice] = useState(false);
   const [showCost, setShowCost] = useState(false);
   const [savingCost, setSavingCost] = useState(false);
   const router = useRouter();
@@ -489,16 +488,6 @@ export function ColorwayForm({
           </button>
           <button
             type="button"
-            onClick={() => setShowUnitPrice((v) => !v)}
-            className={`flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium hover:opacity-80 ${
-              showUnitPrice ? "bg-foreground text-background" : "bg-border/40"
-            }`}
-          >
-            Unit price
-            <PillChevron open={showUnitPrice} />
-          </button>
-          <button
-            type="button"
             onClick={() => setShowCost((v) => !v)}
             className={`flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium hover:opacity-80 ${
               showCost ? "bg-foreground text-background" : "bg-border/40"
@@ -530,33 +519,6 @@ export function ColorwayForm({
               Only shows as a sale if it&apos;s higher than Price.
             </span>
           </label>
-        )}
-
-        {showUnitPrice && (
-          <div className="flex items-end gap-4 border-t border-border pt-3">
-            <label className="flex flex-col gap-1">
-              <span className={labelClass}>Units in listing</span>
-              <input
-                type="number"
-                min={1}
-                value={form.unitCount}
-                onChange={(e) => set("unitCount", e.target.value)}
-                className={`${inputClass} w-24`}
-              />
-            </label>
-            <div className="flex flex-col gap-1">
-              <span className={labelClass}>Unit price</span>
-              <span className="flex h-9 items-center text-sm text-muted">
-                {(() => {
-                  const units = Math.max(1, Number.parseInt(form.unitCount, 10) || 1);
-                  const priceCents = Math.round((Number(form.price) || 0) * 100);
-                  return units > 1
-                    ? `€${(priceCents / units / 100).toFixed(2)} / unit`
-                    : "Same as price";
-                })()}
-              </span>
-            </div>
-          </div>
         )}
 
         {showCost && (
