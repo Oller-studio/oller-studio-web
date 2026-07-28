@@ -66,7 +66,7 @@ export function BagsTable({ rows }: { rows: BagRow[] }) {
   async function runAction(action: "status" | "delete", status?: string) {
     const slugs = [...selected];
     if (slugs.length === 0) return;
-    if (action === "delete" && !confirm(`Delete ${slugs.length} color(s)? This can't be undone.`)) {
+    if (action === "delete" && !confirm(`Delete ${slugs.length} product(s)? This can't be undone.`)) {
       return;
     }
     setBusy(true);
@@ -126,21 +126,21 @@ export function BagsTable({ rows }: { rows: BagRow[] }) {
                   onClick={() => runAction("status", "inactive")}
                   className="block w-full px-4 py-2 text-left text-sm hover:bg-border/40"
                 >
-                  Archive colors
+                  Archive product
                 </button>
                 <button
                   type="button"
                   onClick={() => runAction("status", "unlisted")}
                   className="block w-full px-4 py-2 text-left text-sm hover:bg-border/40"
                 >
-                  Unlist colors
+                  Unlist product
                 </button>
                 <button
                   type="button"
                   onClick={() => runAction("delete")}
                   className="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
                 >
-                  Delete colors
+                  Delete product
                 </button>
               </div>
             )}
