@@ -712,7 +712,8 @@ export function ColorwayForm({
               />
             </label>
             <div className="flex flex-col gap-1">
-              <label className="flex items-center gap-2 text-sm">
+              <span className="invisible text-xs">spacer</span>
+              <label className="flex h-9 items-center gap-2 text-sm">
                 <input
                   type="checkbox"
                   checked={form.showStockOnStorefront}
