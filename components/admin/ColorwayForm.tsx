@@ -463,15 +463,14 @@ export function ColorwayForm({
                 onChange={(e) => set("showStockOnStorefront", e.target.checked)}
                 className="h-4 w-4"
               />
-              {form.showStockOnStorefront ? "Display on website" : "Internal use only"}
+              Display on website
             </label>
           </div>
-          {form.showStockOnStorefront && (
-            <p className="text-xs text-muted">
-              Shows as &ldquo;Only {form.stockOnHand || 0} left, won&apos;t restock&rdquo; on the
-              product page.
-            </p>
-          )}
+          <p className="text-xs text-muted">
+            {form.showStockOnStorefront
+              ? `Shows as "Only ${form.stockOnHand || 0} left, won't restock" on the product page.`
+              : "Internal use only unless you check this box — stock will only display on the website if you mark it."}
+          </p>
         </div>
       )}
 
