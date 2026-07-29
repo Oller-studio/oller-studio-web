@@ -147,7 +147,7 @@ export default async function ColorwayPage({
             </ul>
 
             <div className="border-t border-border pt-5">
-              <p className="text-xs uppercase tracking-wide text-foreground">
+              <p className="text-xs text-foreground">
                 Color <span className="text-muted">{colorway.name}</span>
               </p>
               <div className="mt-2 flex gap-2">
