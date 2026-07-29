@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Colorway } from "@/lib/types";
 import { formatPrice } from "@/lib/format";
+import { swatchBackground } from "@/lib/swatch";
 import { AvailabilityBadge } from "./AvailabilityBadge";
 import { FavoriteButton } from "./FavoriteButton";
 import { QuickAddButton } from "./QuickAddButton";
@@ -63,8 +64,14 @@ export function ColorwaySwatchCard({ colorway }: { colorway: Colorway }) {
           piecesRemaining={colorway.piecesRemaining}
           totalPieces={colorway.totalPieces}
         />
-        <span className="text-xs font-normal uppercase tracking-wide text-muted">
-          {colorway.product.name} — {colorway.name}
+        <span className="flex items-center gap-1.5 text-xs font-normal uppercase tracking-wide text-muted">
+          {colorway.product.name}
+          <span
+            aria-label={colorway.name}
+            title={colorway.name}
+            className="h-3 w-3 shrink-0 rounded-full border border-border"
+            style={{ background: swatchBackground(colorway.swatchColors) }}
+          />
         </span>
         <span className="text-sm font-normal text-muted">
           {formatPrice(colorway.price, colorway.product.currency)}
