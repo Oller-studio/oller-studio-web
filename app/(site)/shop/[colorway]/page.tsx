@@ -157,7 +157,7 @@ export default async function ColorwayPage({
                       className="flex flex-col items-center gap-1"
                     >
                       <span
-                        className={`h-3.5 w-3.5 rounded-b-full border transition-colors ${
+                        className={`h-3.5 w-3.5 rounded-full border transition-colors ${
                           isActive ? "border-foreground/20" : "border-border hover:border-foreground/40"
                         }`}
                         style={{ background: swatchBackground(c.swatchColors) }}
