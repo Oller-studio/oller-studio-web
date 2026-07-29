@@ -13,7 +13,7 @@ export function ColorwaySwatchCard({ colorway }: { colorway: Colorway }) {
 
   return (
     <div className="group flex flex-col gap-2">
-      <div className="relative aspect-[2/3] overflow-hidden bg-border">
+      <div className="relative aspect-[3/4] overflow-hidden bg-border">
         <Link href={href} className="absolute inset-0 z-0" tabIndex={-1}>
           {primaryImage ? (
             <>
@@ -64,7 +64,7 @@ export function ColorwaySwatchCard({ colorway }: { colorway: Colorway }) {
           totalPieces={colorway.totalPieces}
         />
         <span className="text-xs font-normal uppercase tracking-wide text-muted">
-          {colorway.name}
+          {colorway.product.name} — {colorway.name}
         </span>
         <span className="text-sm font-normal text-muted">
           {formatPrice(colorway.price, colorway.product.currency)}

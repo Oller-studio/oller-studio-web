@@ -20,9 +20,9 @@ export default async function ShopPage() {
         </p>
       </div>
 
-      <h1 className="mt-3 text-center font-display text-6xl sm:text-7xl">BAGS</h1>
+      <h1 className="mt-2 text-center font-display text-5xl sm:text-6xl">BAGS</h1>
 
-      <div className="mx-auto mt-8 max-w-[100rem] px-6 sm:px-8">
+      <div className="mx-auto mt-6 max-w-[100rem] px-6 sm:px-8">
         <div className="grid grid-cols-2 gap-8 lg:grid-cols-4">
           {colorways.map((colorway) => (
             <ColorwaySwatchCard key={colorway.slug} colorway={colorway} />
