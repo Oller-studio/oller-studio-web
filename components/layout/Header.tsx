@@ -40,7 +40,7 @@ export function Header({ variant = "solid" }: HeaderProps) {
   return (
     <header className={`border-b ${isOverlay ? "border-white/20" : "border-border"}`}>
       {/* Desktop: logo pinned left, nav pinned to true page-center, icons pinned right — absolute so none depends on the others' width */}
-      <div className="relative hidden h-24 px-6 sm:block">
+      <div className="relative hidden h-20 px-6 sm:block">
         <Link
           href="/"
           className={`font-wordmark absolute left-6 top-1/2 -translate-y-1/2 text-4xl font-extrabold sm:text-5xl ${text}`}
