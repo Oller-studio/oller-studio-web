@@ -134,7 +134,11 @@ export default async function ColorwayPage({
               </p>
             )}
 
-            <p className="text-muted">{colorway.product.description}</p>
+            <div className="flex flex-col gap-3 text-muted">
+              {colorway.product.description.split("\n\n").map((paragraph, i) => (
+                <p key={i}>{paragraph}</p>
+              ))}
+            </div>
 
             <ul className="flex flex-col gap-2 text-sm text-muted">
               {bullets.map((point) => (

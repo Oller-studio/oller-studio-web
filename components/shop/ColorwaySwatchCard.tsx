@@ -45,7 +45,7 @@ export function ColorwaySwatchCard({ colorway }: { colorway: Colorway }) {
 
         <FavoriteButton
           slug={colorway.slug}
-          className="absolute left-3 top-3 z-10 text-foreground opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+          className="absolute left-3 top-3 z-10 text-foreground"
         />
         {canQuickAdd && (
           <QuickAddButton

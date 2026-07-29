@@ -37,7 +37,9 @@ function FavoriteButtonInner({
         e.stopPropagation();
         toggleFavorite(slug);
       }}
-      className={`group/fav ${className ?? ""}`}
+      className={`group/fav transition-opacity duration-200 ${
+        active ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+      } ${className ?? ""}`}
     >
       <svg
         width="19"

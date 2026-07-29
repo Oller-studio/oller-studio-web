@@ -13,7 +13,7 @@ export function ColorwayGallery({ colorway }: { colorway: Colorway }) {
 
   return (
     <div className="flex gap-3">
-      <div className="relative aspect-[4/5] flex-1 overflow-hidden bg-background">
+      <div className="group relative aspect-[4/5] flex-1 overflow-hidden bg-background">
         <FavoriteButton
           slug={colorway.slug}
           className="absolute left-3 top-3 z-10 text-foreground"
