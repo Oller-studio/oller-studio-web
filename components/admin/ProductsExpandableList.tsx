@@ -13,13 +13,6 @@ export type ProductRow = {
   variants: VariantRow[];
 };
 
-// Read-only rollup — inventory is a per-color number, edited from each
-// color's own row in the Editions list below, not bulk-edited from here.
-function InventoryCell({ variants }: { variants: VariantRow[] }) {
-  const totalStock = variants.reduce((sum, v) => sum + v.stockOnHand, 0);
-  return <span>{totalStock === 0 ? "Print to order" : `${totalStock} in stock`}</span>;
-}
-
 function Chevron({ open }: { open: boolean }) {
   return (
     <svg
@@ -100,9 +93,6 @@ function ProductRowItem({ product }: { product: ProductRow }) {
           )}
         </td>
         <td className="whitespace-nowrap py-3 pr-7 text-xs text-muted">
-          <InventoryCell variants={product.variants} />
-        </td>
-        <td className="whitespace-nowrap py-3 pr-7 text-xs text-muted">
           {product.material ?? "—"}
         </td>
         <td className="whitespace-nowrap py-3 pr-6 text-xs text-muted">
@@ -122,7 +112,7 @@ function ProductRowItem({ product }: { product: ProductRow }) {
       </tr>
       {open && (
         <tr>
-          <td colSpan={6} className="border-t border-border bg-border/5 p-5">
+          <td colSpan={5} className="border-t border-border bg-border/5 p-5">
             <ColorVariantsList productSlug={product.slug} variants={product.variants} />
           </td>
         </tr>
@@ -140,7 +130,6 @@ export function ProductsExpandableList({ products }: { products: ProductRow[] })
             <th className="whitespace-nowrap py-2 pl-5 pr-3 text-left"></th>
             <th className="whitespace-nowrap py-2 pr-7 text-left">Model</th>
             <th className="whitespace-nowrap py-2 pr-7 text-left">Status</th>
-            <th className="whitespace-nowrap py-2 pr-7 text-left">Inventory</th>
             <th className="whitespace-nowrap py-2 pr-7 text-left">Material</th>
             <th className="whitespace-nowrap py-2 pr-6 text-left">Colors</th>
           </tr>

@@ -98,7 +98,7 @@ export default async function AdminProductsPage({
     status: v.status as BagRow["status"],
     priceCents: v.priceCents ?? v.product.basePriceCents,
     currency: v.product.currency,
-    material: v.product.material,
+    stockOnHand: v.stockOnHand,
     image: (JSON.parse(v.images) as string[])[0],
   }));
 

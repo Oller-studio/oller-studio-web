@@ -23,7 +23,7 @@ export type BagRow = {
   status: ColorwayStatus;
   priceCents: number;
   currency: string;
-  material: string | null;
+  stockOnHand: number;
   image?: string;
 };
 
@@ -124,7 +124,7 @@ export function BagsTable({ rows }: { rows: BagRow[] }) {
               <th className="whitespace-nowrap py-2 pr-7 text-left">Tier</th>
               <th className="whitespace-nowrap py-2 pr-7 text-left">Status</th>
               <th className="whitespace-nowrap py-2 pr-7 text-left">Price</th>
-              <th className="whitespace-nowrap py-2 pr-6 text-left">Material</th>
+              <th className="whitespace-nowrap py-2 pr-6 text-left">Stock on hand</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -177,7 +177,7 @@ export function BagsTable({ rows }: { rows: BagRow[] }) {
                   {formatMoneyCents(v.priceCents, v.currency)}
                 </td>
                 <td className="whitespace-nowrap py-3 pr-6 text-xs text-muted">
-                  {v.material ?? "—"}
+                  {v.stockOnHand === 0 ? "Print to order" : `${v.stockOnHand} in stock`}
                 </td>
               </tr>
             ))}
