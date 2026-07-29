@@ -96,18 +96,18 @@ export default async function ColorwayPage({
           <Link href="/shop" className="hover:text-foreground">
             Bags
           </Link>{" "}
-          / <span className="uppercase">{colorway.name}</span>
+          / <span className="uppercase">{colorway.product.name}</span>
         </p>
       </div>
 
       <div className="mx-auto max-w-7xl px-6 pb-10 pt-8">
         <div className="grid gap-10 lg:grid-cols-2">
           <div className="order-2 flex flex-col gap-5 lg:order-1">
-            <h1 className="font-display text-5xl font-bold uppercase leading-none">
+            <h1 className="font-display text-4xl font-bold uppercase leading-none">
               {colorway.product.name}
             </h1>
 
-            <p className="text-lg font-normal text-muted">
+            <p className="text-base font-normal text-muted">
               {formatPrice(colorway.price, colorway.product.currency)}
             </p>
 
@@ -134,7 +134,7 @@ export default async function ColorwayPage({
               </p>
             )}
 
-            <div className="flex flex-col gap-3 text-muted">
+            <div className="flex flex-col gap-3 text-sm text-muted">
               {colorway.product.description.split("\n\n").map((paragraph, i) => (
                 <p key={i}>{paragraph}</p>
               ))}
