@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useAuthModal } from "@/components/auth/auth-modal-context";
 
@@ -12,8 +13,12 @@ function readFavorites(unsafeMetadata: unknown): string[] {
 export function useFavorites() {
   const { isLoaded, isSignedIn, user } = useUser();
   const { open } = useAuthModal();
+  // Applied immediately on click so the heart flips without waiting on the
+  // Clerk round-trip; cleared once that round-trip settles (success or not).
+  const [optimistic, setOptimistic] = useState<string[] | null>(null);
 
-  const favorites = isSignedIn ? readFavorites(user.unsafeMetadata) : [];
+  const serverFavorites = isSignedIn ? readFavorites(user.unsafeMetadata) : [];
+  const favorites = optimistic ?? serverFavorites;
 
   function isFavorite(slug: string) {
     return favorites.includes(slug);
@@ -27,11 +32,15 @@ export function useFavorites() {
     const next = isFavorite(slug)
       ? favorites.filter((s) => s !== slug)
       : [...favorites, slug];
+
+    setOptimistic(next);
     try {
       await user.update({ unsafeMetadata: { ...user.unsafeMetadata, favorites: next } });
       await user.reload();
     } catch (error) {
       console.error("Failed to update favorites", error);
+    } finally {
+      setOptimistic(null);
     }
   }
 
