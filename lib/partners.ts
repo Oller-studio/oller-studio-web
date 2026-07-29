@@ -4,6 +4,19 @@ export type PartnerType = "referral" | "influencer" | "collaborator";
 
 export { slugifyUtmSource } from "@/lib/utmSlug";
 
+// Two different partners can share a first name (e.g. a Referral and an
+// Influencer record for the same person) — if their auto-generated slug
+// would collide, append -2, -3… instead of failing outright.
+export async function uniqueUtmSource(base: string): Promise<string> {
+  let candidate = base;
+  let n = 2;
+  while (await prisma.partnerLink.findUnique({ where: { utmSource: candidate } })) {
+    candidate = `${base}-${n}`;
+    n += 1;
+  }
+  return candidate;
+}
+
 export async function getAllPartners() {
   return prisma.partner.findMany({
     orderBy: { createdAt: "desc" },

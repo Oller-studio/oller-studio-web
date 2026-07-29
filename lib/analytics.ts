@@ -450,6 +450,9 @@ export async function getSessionsByLocation(since: Date, limit = 8) {
 }
 
 export type SourcePerformance = {
+  // Raw page loads (a session browsing 5 pages counts 5 times).
+  pageViews: number;
+  // Distinct sessions (that same visitor counts once).
   sessions: number;
   checkoutsStarted: number;
   abandonedCheckouts: number;
@@ -463,7 +466,8 @@ export type SourcePerformance = {
 // each Partner's glance-level numbers on their own row in Marketing, reusing
 // the same PageView/Order data Analytics reads from (no separate tracking).
 export async function getSourcePerformance(source: string): Promise<SourcePerformance> {
-  const [sessionRows, allOrders] = await Promise.all([
+  const [pageViews, sessionRows, allOrders] = await Promise.all([
+    prisma.pageView.count({ where: { source } }),
     prisma.pageView.findMany({
       where: { source },
       distinct: ["sessionId"],
@@ -497,6 +501,7 @@ export async function getSourcePerformance(source: string): Promise<SourcePerfor
     .slice(0, 5);
 
   return {
+    pageViews,
     sessions,
     checkoutsStarted: allOrders.length,
     abandonedCheckouts: allOrders.length - orders.length,
@@ -530,6 +535,7 @@ export async function getPartnerPerformance(
 
   const overall = perLink.reduce(
     (acc, p) => ({
+      pageViews: acc.pageViews + p.pageViews,
       sessions: acc.sessions + p.sessions,
       checkoutsStarted: acc.checkoutsStarted + p.checkoutsStarted,
       abandonedCheckouts: acc.abandonedCheckouts + p.abandonedCheckouts,
@@ -539,6 +545,7 @@ export async function getPartnerPerformance(
       topProducts: [] as SourcePerformance["topProducts"],
     }),
     {
+      pageViews: 0,
       sessions: 0,
       checkoutsStarted: 0,
       abandonedCheckouts: 0,

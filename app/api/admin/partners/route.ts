@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminViewer } from "@/lib/admin";
-import { createPartner, slugifyUtmSource, type PartnerType } from "@/lib/partners";
+import { createPartner, slugifyUtmSource, uniqueUtmSource, type PartnerType } from "@/lib/partners";
 
 export async function POST(request: Request) {
   const { isAdmin } = await getAdminViewer();
@@ -30,10 +30,11 @@ export async function POST(request: Request) {
   }
 
   const nameSlug = slugifyUtmSource(body.firstName);
-  const links = platforms.map((platform) => ({
-    platform,
-    utmSource: `${nameSlug}_${slugifyUtmSource(platform)}`,
-  }));
+  const links = [];
+  for (const platform of platforms) {
+    const utmSource = await uniqueUtmSource(`${nameSlug}_${slugifyUtmSource(platform)}`);
+    links.push({ platform, utmSource });
+  }
 
   try {
     await createPartner({

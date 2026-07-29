@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminViewer } from "@/lib/admin";
 import { prisma } from "@/lib/db";
-import { addPartnerLink, slugifyUtmSource } from "@/lib/partners";
+import { addPartnerLink, slugifyUtmSource, uniqueUtmSource } from "@/lib/partners";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { isAdmin } = await getAdminViewer();
@@ -20,7 +20,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json({ ok: false, reason: "not found" }, { status: 404 });
   }
 
-  const utmSource = `${slugifyUtmSource(partner.firstName)}_${slugifyUtmSource(platform)}`;
+  const utmSource = await uniqueUtmSource(
+    `${slugifyUtmSource(partner.firstName)}_${slugifyUtmSource(platform)}`
+  );
 
   try {
     await addPartnerLink(id, platform.trim(), utmSource);
