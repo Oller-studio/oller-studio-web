@@ -9,10 +9,17 @@ export type Car = {
   ownerNote?: string;
 };
 
-export type Availability =
-  | { status: "available" }
-  | { status: "away"; shipsFrom: string }
-  | { status: "sold_out" };
+// Single source of truth for what a customer sees on the shop grid/product
+// page and whether Add to Bag is active (everything except sold_out) — set
+// by hand from one control in the admin, independent of stockOnHand (the
+// founder's own internal count of what's actually printed).
+export type ShopBadge =
+  | { kind: "available" }
+  | { kind: "new" }
+  | { kind: "in_stock"; count: number }
+  | { kind: "coming_soon"; shipsFrom: string }
+  | { kind: "sold_out" }
+  | { kind: "back_in_stock" };
 
 // "collection" = standing colorway, always orderable, no artificial scarcity.
 // "signature" = a one-off drop tied to a specific story (e.g. a car match) — real numbered scarcity, closes for good.
@@ -58,12 +65,13 @@ export type Colorway = {
   story?: string;
   whyPoints?: string[];
   campaignNote?: { quote: string; name: string; role: string };
-  availability: Availability;
+  shopBadge: ShopBadge;
   isFeatured?: boolean;
-  isNew: boolean;
   launchedAt: string;
+  // Internal-only — how many are actually sitting printed in the studio.
+  // Never shown to customers directly; shopBadge's "in_stock" count (above)
+  // is the customer-facing number and can differ on purpose.
   stockOnHand: number;
-  showStockOnStorefront: boolean;
 };
 
 export type CartItem = {

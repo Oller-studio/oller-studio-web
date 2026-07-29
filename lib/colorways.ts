@@ -27,12 +27,18 @@ function rowToColorwayProduct(row: ProductModel): ColorwayProduct {
 }
 
 function rowToColorway(row: ColorwayRow & { product: ProductModel }): Colorway {
-  const availability =
-    row.availabilityStatus === "away"
-      ? ({ status: "away", shipsFrom: row.availabilityShipsFrom ?? "" } as const)
-      : row.availabilityStatus === "sold_out"
-        ? ({ status: "sold_out" } as const)
-        : ({ status: "available" } as const);
+  const shopBadge: Colorway["shopBadge"] =
+    row.shopBadge === "new"
+      ? { kind: "new" }
+      : row.shopBadge === "in_stock"
+        ? { kind: "in_stock", count: row.shopBadgeStockCount ?? 0 }
+        : row.shopBadge === "coming_soon"
+          ? { kind: "coming_soon", shipsFrom: row.shopBadgeShipsFrom ?? "" }
+          : row.shopBadge === "sold_out"
+            ? { kind: "sold_out" }
+            : row.shopBadge === "back_in_stock"
+              ? { kind: "back_in_stock" }
+              : { kind: "available" };
 
   const matchedCar = row.matchedCarMake
     ? {
@@ -72,12 +78,10 @@ function rowToColorway(row: ColorwayRow & { product: ProductModel }): Colorway {
     story: row.story ?? undefined,
     whyPoints: JSON.parse(row.whyPoints) as string[],
     campaignNote,
-    availability,
+    shopBadge,
     isFeatured: row.isFeatured,
-    isNew: row.isNew,
     launchedAt: row.launchedAt,
     stockOnHand: row.stockOnHand,
-    showStockOnStorefront: row.showStockOnStorefront,
   };
 }
 
@@ -155,12 +159,11 @@ export type ColorwayInput = {
   campaignQuote: string | null;
   campaignName: string | null;
   campaignRole: string | null;
-  availabilityStatus: "available" | "away" | "sold_out";
-  availabilityShipsFrom: string | null;
+  shopBadge: "available" | "new" | "in_stock" | "coming_soon" | "sold_out" | "back_in_stock";
+  shopBadgeShipsFrom: string | null;
+  shopBadgeStockCount: number | null;
   stockOnHand: number;
-  showStockOnStorefront: boolean;
   isFeatured: boolean;
-  isNew: boolean;
   launchedAt: string;
   sortOrder: number;
 };
@@ -192,12 +195,11 @@ function toRowData(input: ColorwayInput) {
     campaignQuote: input.campaignQuote,
     campaignName: input.campaignName,
     campaignRole: input.campaignRole,
-    availabilityStatus: input.availabilityStatus,
-    availabilityShipsFrom: input.availabilityShipsFrom,
+    shopBadge: input.shopBadge,
+    shopBadgeShipsFrom: input.shopBadgeShipsFrom,
+    shopBadgeStockCount: input.shopBadgeStockCount,
     stockOnHand: input.stockOnHand,
-    showStockOnStorefront: input.showStockOnStorefront,
     isFeatured: input.isFeatured,
-    isNew: input.isNew,
     launchedAt: input.launchedAt,
     sortOrder: input.sortOrder,
   };

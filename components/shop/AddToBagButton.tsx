@@ -1,6 +1,6 @@
 "use client";
 
-import type { Availability } from "@/lib/types";
+import type { ShopBadge } from "@/lib/types";
 import { formatShipsFrom } from "@/lib/format";
 import { useCart } from "@/components/cart/cart-context";
 
@@ -10,7 +10,7 @@ type AddToBagButtonProps = {
   price: number;
   currency: string;
   image?: string;
-  availability: Availability;
+  shopBadge: ShopBadge;
   piecesRemaining?: number;
 };
 
@@ -20,12 +20,12 @@ export function AddToBagButton({
   price,
   currency,
   image,
-  availability,
+  shopBadge,
   piecesRemaining,
 }: AddToBagButtonProps) {
   const { addItem } = useCart();
   const isSoldOut =
-    availability.status === "sold_out" ||
+    shopBadge.kind === "sold_out" ||
     (piecesRemaining !== undefined && piecesRemaining <= 0);
 
   if (isSoldOut) {
@@ -38,9 +38,9 @@ export function AddToBagButton({
 
   return (
     <div className="flex flex-col gap-3">
-      {availability.status === "away" && (
+      {shopBadge.kind === "coming_soon" && (
         <p className="text-sm font-medium text-accent">
-          {formatShipsFrom(availability.shipsFrom)}
+          {formatShipsFrom(shopBadge.shipsFrom)}
         </p>
       )}
       <button

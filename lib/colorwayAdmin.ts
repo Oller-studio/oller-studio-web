@@ -17,8 +17,15 @@ export function rowToVariantRow(
     name: row.name,
     tier: row.tier as "collection" | "signature",
     status: row.status as "draft" | "active" | "unlisted" | "inactive",
-    availabilityStatus: row.availabilityStatus as "available" | "away" | "sold_out",
-    availabilityShipsFrom: row.availabilityShipsFrom,
+    shopBadge: row.shopBadge as
+      | "available"
+      | "new"
+      | "in_stock"
+      | "coming_soon"
+      | "sold_out"
+      | "back_in_stock",
+    shopBadgeShipsFrom: row.shopBadgeShipsFrom,
+    shopBadgeStockCount: row.shopBadgeStockCount,
     piecesRemaining: row.piecesRemaining,
     totalPieces: row.totalPieces,
     stockOnHand: row.stockOnHand,
@@ -52,12 +59,17 @@ export function rowToVariantRow(
       campaignQuote: row.campaignQuote ?? "",
       campaignName: row.campaignName ?? "",
       campaignRole: row.campaignRole ?? "",
-      availabilityStatus: row.availabilityStatus as "available" | "away" | "sold_out",
-      availabilityShipsFrom: row.availabilityShipsFrom ?? "",
+      shopBadge: row.shopBadge as
+        | "available"
+        | "new"
+        | "in_stock"
+        | "coming_soon"
+        | "sold_out"
+        | "back_in_stock",
+      shopBadgeShipsFrom: row.shopBadgeShipsFrom ?? "",
+      shopBadgeStockCount: row.shopBadgeStockCount?.toString() ?? "",
       stockOnHand: row.stockOnHand.toString(),
-      showStockOnStorefront: row.showStockOnStorefront,
       isFeatured: row.isFeatured,
-      isNew: row.isNew,
       launchedAt: row.launchedAt,
       sortOrder: row.sortOrder.toString(),
     },

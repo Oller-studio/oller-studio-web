@@ -57,12 +57,11 @@ export type ColorwayFormState = {
   campaignQuote: string;
   campaignName: string;
   campaignRole: string;
-  availabilityStatus: "available" | "away" | "sold_out";
-  availabilityShipsFrom: string;
+  shopBadge: "available" | "new" | "in_stock" | "coming_soon" | "sold_out" | "back_in_stock";
+  shopBadgeShipsFrom: string;
+  shopBadgeStockCount: string;
   stockOnHand: string;
-  showStockOnStorefront: boolean;
   isFeatured: boolean;
-  isNew: boolean;
   launchedAt: string;
   sortOrder: string;
 };
@@ -95,12 +94,11 @@ function initialState(existing?: Partial<ColorwayFormState>): ColorwayFormState 
     campaignQuote: existing?.campaignQuote ?? "",
     campaignName: existing?.campaignName ?? "",
     campaignRole: existing?.campaignRole ?? "",
-    availabilityStatus: existing?.availabilityStatus ?? "available",
-    availabilityShipsFrom: existing?.availabilityShipsFrom ?? "",
+    shopBadge: existing?.shopBadge ?? "available",
+    shopBadgeShipsFrom: existing?.shopBadgeShipsFrom ?? "",
+    shopBadgeStockCount: existing?.shopBadgeStockCount ?? "",
     stockOnHand: existing?.stockOnHand ?? "0",
-    showStockOnStorefront: existing?.showStockOnStorefront ?? false,
     isFeatured: existing?.isFeatured ?? false,
-    isNew: existing?.isNew ?? false,
     launchedAt: existing?.launchedAt ?? new Date().toISOString().slice(0, 10),
     sortOrder: existing?.sortOrder ?? "0",
   };
@@ -145,12 +143,12 @@ function toInput(form: ColorwayFormState, productSlug: string): ColorwayInput {
     campaignQuote: isLimited ? form.campaignQuote.trim() || null : null,
     campaignName: isLimited ? form.campaignName.trim() || null : null,
     campaignRole: isLimited ? form.campaignRole.trim() || null : null,
-    availabilityStatus: form.availabilityStatus,
-    availabilityShipsFrom: form.availabilityShipsFrom.trim() || null,
+    shopBadge: form.shopBadge,
+    shopBadgeShipsFrom: form.shopBadge === "coming_soon" ? form.shopBadgeShipsFrom.trim() || null : null,
+    shopBadgeStockCount:
+      form.shopBadge === "in_stock" ? Number(form.shopBadgeStockCount) || 0 : null,
     stockOnHand: Number(form.stockOnHand) || 0,
-    showStockOnStorefront: form.showStockOnStorefront,
     isFeatured: form.isFeatured,
-    isNew: form.isNew,
     launchedAt: form.launchedAt,
     sortOrder: Number(form.sortOrder) || 0,
   };
@@ -177,9 +175,7 @@ export const ColorwayForm = forwardRef<
         : "units"
   );
   const [stockMode, setStockMode] = useState<"printed_on_demand" | "stock_in_hand">(
-    initial?.showStockOnStorefront || Number(initial?.stockOnHand) > 0
-      ? "stock_in_hand"
-      : "printed_on_demand"
+    Number(initial?.stockOnHand) > 0 ? "stock_in_hand" : "printed_on_demand"
   );
   const [showMoreStatuses, setShowMoreStatuses] = useState(
     initial?.status === "unlisted" || initial?.status === "inactive"
@@ -202,7 +198,7 @@ export const ColorwayForm = forwardRef<
   function selectStockMode(next: "printed_on_demand" | "stock_in_hand") {
     setStockMode(next);
     if (next === "printed_on_demand") {
-      setForm((f) => ({ ...f, stockOnHand: "0", showStockOnStorefront: false }));
+      setForm((f) => ({ ...f, stockOnHand: "0" }));
     }
   }
 
@@ -276,18 +272,6 @@ export const ColorwayForm = forwardRef<
 
   return (
     <form ref={formRef} onSubmit={submit} className="flex w-full flex-col gap-4">
-      {mode === "edit" && (
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={remove}
-            disabled={saving}
-            className="text-sm text-muted underline underline-offset-2 hover:text-foreground disabled:opacity-50"
-          >
-            Delete color variant
-          </button>
-        </div>
-      )}
 
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
         <span className={rowLabelClass}>Status</span>
@@ -334,30 +318,7 @@ export const ColorwayForm = forwardRef<
           }}
           className={`${inputClass} w-48`}
         />
-        <span className="text-sm font-semibold">Availability</span>
-        <select
-          value={form.availabilityStatus}
-          onChange={(e) =>
-            set("availabilityStatus", e.target.value as ColorwayFormState["availabilityStatus"])
-          }
-          className={`${inputClass} w-40`}
-        >
-          <option value="available">Available</option>
-          <option value="away">Away (temporarily unavailable)</option>
-          <option value="sold_out">Sold out</option>
-        </select>
       </div>
-      {form.availabilityStatus === "away" && (
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-          <span className={rowLabelClass}>Ships from (when back)</span>
-          <input
-            type="text"
-            value={form.availabilityShipsFrom}
-            onChange={(e) => set("availabilityShipsFrom", e.target.value)}
-            className={`${inputClass} w-56`}
-          />
-        </div>
-      )}
 
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
         <span className={rowLabelClass}>
@@ -448,16 +409,50 @@ export const ColorwayForm = forwardRef<
         <span className="text-sm">Featured on homepage</span>
       </label>
 
-      <label className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          checked={form.isNew}
-          onChange={(e) => set("isNew", e.target.checked)}
-        />
-        <span className="text-sm">
-          Mark as New (shows &ldquo;New&rdquo; instead of &ldquo;Available&rdquo; on the shop grid)
-        </span>
-      </label>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+        <span className={rowLabelClass}>Shop Badge</span>
+        <select
+          value={form.shopBadge}
+          onChange={(e) =>
+            set("shopBadge", e.target.value as ColorwayFormState["shopBadge"])
+          }
+          className={`${inputClass} w-44`}
+        >
+          <option value="available">Available</option>
+          <option value="new">New</option>
+          <option value="in_stock">X in stock</option>
+          <option value="coming_soon">Coming soon</option>
+          <option value="sold_out">Sold out</option>
+          <option value="back_in_stock">Back in stock</option>
+        </select>
+        {form.shopBadge === "in_stock" && (
+          <input
+            type="number"
+            min={0}
+            value={form.shopBadgeStockCount}
+            onChange={(e) => set("shopBadgeStockCount", e.target.value)}
+            placeholder="e.g. 1"
+            aria-label="Stock count shown to customers"
+            className={`${inputClass} no-spinner w-20`}
+          />
+        )}
+        {form.shopBadge === "coming_soon" && (
+          <input
+            type="text"
+            value={form.shopBadgeShipsFrom}
+            onChange={(e) => set("shopBadgeShipsFrom", e.target.value)}
+            placeholder="e.g. orders ship starting Aug 4"
+            className={`${inputClass} w-64`}
+          />
+        )}
+      </div>
+      <p className="text-xs text-muted sm:ml-40">
+        {form.shopBadge === "sold_out"
+          ? "Add to Bag is disabled. Everything else keeps the button active."
+          : form.shopBadge === "in_stock"
+            ? "This number is set by hand, independent of Stock on hand below — play with it however you like."
+            : "What customers see on the shop grid and product page."}
+      </p>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <div className="flex flex-col gap-3 rounded-xl border border-border p-4">
@@ -710,23 +705,14 @@ export const ColorwayForm = forwardRef<
             </button>
             {stockMode === "stock_in_hand" && (
               <>
+                <span className="text-xs text-muted">Stock on hand</span>
                 <input
                   type="number"
                   min={0}
                   value={form.stockOnHand}
                   onChange={(e) => set("stockOnHand", e.target.value)}
-                  aria-label="Stock on hand"
                   className={`${inputClass} no-spinner w-14`}
                 />
-                <label className="flex items-center gap-1.5 text-xs">
-                  <input
-                    type="checkbox"
-                    checked={form.showStockOnStorefront}
-                    onChange={(e) => set("showStockOnStorefront", e.target.checked)}
-                    className="h-3.5 w-3.5"
-                  />
-                  Display on website
-                </label>
               </>
             )}
           </div>
@@ -734,9 +720,8 @@ export const ColorwayForm = forwardRef<
 
         {stockMode === "stock_in_hand" && (
           <p className="text-xs text-muted sm:ml-40">
-            {form.showStockOnStorefront
-              ? `Shows as "Only ${form.stockOnHand || 0} left, won't restock" on the product page.`
-              : "Internal use only unless you check this box."}
+            Internal only — never shown to customers. Use Shop Badge above to
+            control what they see.
           </p>
         )}
       </div>

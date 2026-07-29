@@ -1,26 +1,20 @@
-import type { Availability } from "@/lib/types";
+import type { ShopBadge } from "@/lib/types";
 import { formatShipsFrom } from "@/lib/format";
 
 type AvailabilityBadgeProps = {
-  availability: Availability;
+  shopBadge: ShopBadge;
   piecesRemaining?: number;
   totalPieces?: number;
-  isNew?: boolean;
-  stockOnHand?: number;
-  showStockOnStorefront?: boolean;
 };
 
 export function AvailabilityBadge({
-  availability,
+  shopBadge,
   piecesRemaining,
   totalPieces,
-  isNew,
-  stockOnHand,
-  showStockOnStorefront,
 }: AvailabilityBadgeProps) {
   const isNumbered = totalPieces !== undefined && piecesRemaining !== undefined;
 
-  if (availability.status === "sold_out" || (isNumbered && piecesRemaining! <= 0)) {
+  if (shopBadge.kind === "sold_out" || (isNumbered && piecesRemaining! <= 0)) {
     return (
       <span className="text-[11px] font-bold uppercase tracking-wide text-foreground/40">
         {isNumbered ? "Sold out — drop closed" : "Sold out"}
@@ -28,10 +22,10 @@ export function AvailabilityBadge({
     );
   }
 
-  if (availability.status === "away") {
+  if (shopBadge.kind === "coming_soon") {
     return (
       <span className="text-[11px] font-bold uppercase tracking-wide text-accent">
-        {formatShipsFrom(availability.shipsFrom)}
+        {formatShipsFrom(shopBadge.shipsFrom)}
       </span>
     );
   }
@@ -44,16 +38,24 @@ export function AvailabilityBadge({
     );
   }
 
-  if (isNew) {
+  if (shopBadge.kind === "new") {
     return (
       <span className="text-[11px] font-bold uppercase tracking-wide text-foreground">New</span>
     );
   }
 
-  if (showStockOnStorefront && stockOnHand !== undefined && stockOnHand > 0) {
+  if (shopBadge.kind === "in_stock") {
     return (
       <span className="text-[11px] font-bold uppercase tracking-wide text-foreground">
-        {stockOnHand} in stock
+        {shopBadge.count} in stock
+      </span>
+    );
+  }
+
+  if (shopBadge.kind === "back_in_stock") {
+    return (
+      <span className="text-[11px] font-bold uppercase tracking-wide text-foreground">
+        Back in stock
       </span>
     );
   }

@@ -149,22 +149,26 @@ model Colorway {
   campaignQuote          String?
   campaignName           String?
   campaignRole           String?
-  availabilityStatus     String   @default("available")
-  availabilityShipsFrom  String?
-  // Ready-to-ship pieces already sitting in the studio, separate from
-  // availabilityStatus (which is the manual customer-facing "sold out"
-  // flag) — this is purely internal, for deciding what still needs printing.
+  // Single source of truth for what customers see on the shop grid and
+  // product page badge — "available" | "new" | "in_stock" | "coming_soon" |
+  // "sold_out" | "back_in_stock". Also drives whether Add to Bag is active
+  // (everything except sold_out). Replaces what used to be spread across
+  // availabilityStatus + a separate "mark as new" + "show stock" checkbox.
+  shopBadge              String   @default("available")
+  // Only meaningful when shopBadge = "coming_soon" — the ship-after date
+  // shown next to the badge so the buyer can commit with real expectations.
+  shopBadgeShipsFrom     String?
+  // Only meaningful when shopBadge = "in_stock" — a customer-facing count
+  // Alicia sets by hand, independent of stockOnHand below. Lets her play
+  // with scarcity messaging (e.g. show "1 in stock" for hype) without it
+  // having to match what's actually sitting in the studio.
+  shopBadgeStockCount    Int?
+  // Ready-to-ship pieces already sitting in the studio — purely internal,
+  // for deciding what still needs printing. Never shown to customers
+  // directly (shopBadgeStockCount above is the customer-facing number).
   stockOnHand            Int      @default(0)
-  // Opt-in exception to the "stockOnHand is internal only" rule above — when
-  // true, the storefront shows a "only N left" line built from stockOnHand.
-  // Independent of tier — a Limited Edition can be stock-tracked too,
-  // alongside (not instead of) its own piecesRemaining/totalPieces countdown.
-  showStockOnStorefront  Boolean  @default(false)
   status                 String   @default("draft")
   isFeatured             Boolean  @default(false)
-  // Manually toggled — shows a "New" badge on the shop grid instead of
-  // "Available" until the founder unchecks it herself (no auto-expiry).
-  isNew                  Boolean  @default(false)
   launchedAt             String
   sortOrder              Int      @default(0)
   createdAt              DateTime @default(now())

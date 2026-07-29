@@ -111,22 +111,13 @@ export default async function ColorwayPage({
               {formatPrice(colorway.price, colorway.product.currency)}
             </p>
 
-            {(colorway.availability.status !== "available" || colorway.isNew) && (
+            {colorway.shopBadge.kind !== "available" && (
               <AvailabilityBadge
-                availability={colorway.availability}
+                shopBadge={colorway.shopBadge}
                 piecesRemaining={colorway.piecesRemaining}
                 totalPieces={colorway.totalPieces}
-                isNew={colorway.isNew}
               />
             )}
-
-            {colorway.availability.status === "available" &&
-              colorway.showStockOnStorefront &&
-              colorway.stockOnHand > 0 && (
-                <span className="text-[11px] font-bold uppercase tracking-wide text-foreground">
-                  Only {colorway.stockOnHand} left, won&apos;t restock
-                </span>
-              )}
 
             {colorway.matchedCar && (
               <p className="text-sm text-muted">
@@ -180,7 +171,7 @@ export default async function ColorwayPage({
               price={colorway.price}
               currency={colorway.product.currency}
               image={colorway.images[0]}
-              availability={colorway.availability}
+              shopBadge={colorway.shopBadge}
               piecesRemaining={colorway.piecesRemaining}
             />
 

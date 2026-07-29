@@ -10,6 +10,6 @@ export async function getSignatureInventory() {
       dropNumber: c.dropNumber,
       totalPieces: c.totalPieces ?? null,
       piecesRemaining: c.piecesRemaining ?? null,
-      status: c.availability.status,
+      status: c.shopBadge.kind,
     }));
 }

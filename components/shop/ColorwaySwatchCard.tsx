@@ -9,7 +9,7 @@ import { QuickAddButton } from "./QuickAddButton";
 
 export function ColorwaySwatchCard({ colorway }: { colorway: Colorway }) {
   const [primaryImage, secondaryImage] = colorway.images;
-  const canQuickAdd = colorway.availability.status !== "sold_out";
+  const canQuickAdd = colorway.shopBadge.kind !== "sold_out";
   const href = `/shop/${colorway.slug}`;
 
   return (
@@ -60,12 +60,9 @@ export function ColorwaySwatchCard({ colorway }: { colorway: Colorway }) {
       </div>
       <Link href={href} className="flex flex-col gap-0.5">
         <AvailabilityBadge
-          availability={colorway.availability}
+          shopBadge={colorway.shopBadge}
           piecesRemaining={colorway.piecesRemaining}
           totalPieces={colorway.totalPieces}
-          isNew={colorway.isNew}
-          stockOnHand={colorway.stockOnHand}
-          showStockOnStorefront={colorway.showStockOnStorefront}
         />
         <span className="flex items-center gap-1.5 text-xs font-normal uppercase tracking-wide text-muted">
           {colorway.product.name}

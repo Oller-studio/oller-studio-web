@@ -9,13 +9,35 @@ import { formatMoneyCents } from "@/lib/format";
 
 const TIER_LABELS = { collection: "Collection", signature: "Signature" } as const;
 
+function formatShopBadge(v: {
+  shopBadge: VariantRow["shopBadge"];
+  shopBadgeShipsFrom: string | null;
+  shopBadgeStockCount: number | null;
+}): string {
+  switch (v.shopBadge) {
+    case "new":
+      return "New";
+    case "in_stock":
+      return `${v.shopBadgeStockCount ?? 0} in stock`;
+    case "coming_soon":
+      return `Coming soon (${v.shopBadgeShipsFrom ?? "—"})`;
+    case "sold_out":
+      return "Sold out";
+    case "back_in_stock":
+      return "Back in stock";
+    default:
+      return "Available";
+  }
+}
+
 export type VariantRow = {
   slug: string;
   name: string;
   tier: "collection" | "signature";
   status: "draft" | "active" | "unlisted" | "inactive";
-  availabilityStatus: "available" | "away" | "sold_out";
-  availabilityShipsFrom: string | null;
+  shopBadge: "available" | "new" | "in_stock" | "coming_soon" | "sold_out" | "back_in_stock";
+  shopBadgeShipsFrom: string | null;
+  shopBadgeStockCount: number | null;
   piecesRemaining: number | null;
   totalPieces: number | null;
   stockOnHand: number;
@@ -384,7 +406,7 @@ export const ColorVariantsList = forwardRef<
                 <th className="whitespace-nowrap py-2 pr-7 text-left">Color</th>
                 <th className="whitespace-nowrap py-2 pr-7 text-left">Price</th>
                 <th className="whitespace-nowrap py-2 pr-7 text-left">Tier</th>
-                <th className="whitespace-nowrap py-2 pr-7 text-left">Availability</th>
+                <th className="whitespace-nowrap py-2 pr-7 text-left">Shop Badge</th>
                 <th className="whitespace-nowrap py-2 pr-7 text-left">Stock</th>
                 <th className="whitespace-nowrap py-2 pr-6 text-left">Status</th>
               </tr>
@@ -445,10 +467,7 @@ export const ColorVariantsList = forwardRef<
                         {TIER_LABELS[v.tier]}
                       </td>
                       <td className="whitespace-nowrap py-3 pr-7 text-xs text-muted">
-                        {v.availabilityStatus === "available" && "Available"}
-                        {v.availabilityStatus === "sold_out" && "Sold out"}
-                        {v.availabilityStatus === "away" &&
-                          `Away (${v.availabilityShipsFrom})`}
+                        {formatShopBadge(v)}
                       </td>
                       <td className="whitespace-nowrap py-3 pr-7 text-xs text-muted">
                         <StockCell slug={v.slug} stockOnHand={v.stockOnHand} />
