@@ -5,12 +5,18 @@ type AvailabilityBadgeProps = {
   availability: Availability;
   piecesRemaining?: number;
   totalPieces?: number;
+  isNew?: boolean;
+  stockOnHand?: number;
+  showStockOnStorefront?: boolean;
 };
 
 export function AvailabilityBadge({
   availability,
   piecesRemaining,
   totalPieces,
+  isNew,
+  stockOnHand,
+  showStockOnStorefront,
 }: AvailabilityBadgeProps) {
   const isNumbered = totalPieces !== undefined && piecesRemaining !== undefined;
 
@@ -34,6 +40,20 @@ export function AvailabilityBadge({
     return (
       <span className="text-[11px] font-bold uppercase tracking-wide text-foreground">
         {piecesRemaining} of {totalPieces} pieces left
+      </span>
+    );
+  }
+
+  if (isNew) {
+    return (
+      <span className="text-[11px] font-bold uppercase tracking-wide text-foreground">New</span>
+    );
+  }
+
+  if (showStockOnStorefront && stockOnHand !== undefined && stockOnHand > 0) {
+    return (
+      <span className="text-[11px] font-bold uppercase tracking-wide text-foreground">
+        {stockOnHand} in stock
       </span>
     );
   }

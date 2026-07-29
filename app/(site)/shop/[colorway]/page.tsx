@@ -111,11 +111,12 @@ export default async function ColorwayPage({
               {formatPrice(colorway.price, colorway.product.currency)}
             </p>
 
-            {colorway.availability.status !== "available" && (
+            {(colorway.availability.status !== "available" || colorway.isNew) && (
               <AvailabilityBadge
                 availability={colorway.availability}
                 piecesRemaining={colorway.piecesRemaining}
                 totalPieces={colorway.totalPieces}
+                isNew={colorway.isNew}
               />
             )}
 

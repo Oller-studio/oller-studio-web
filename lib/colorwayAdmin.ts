@@ -57,6 +57,7 @@ export function rowToVariantRow(
       stockOnHand: row.stockOnHand.toString(),
       showStockOnStorefront: row.showStockOnStorefront,
       isFeatured: row.isFeatured,
+      isNew: row.isNew,
       launchedAt: row.launchedAt,
       sortOrder: row.sortOrder.toString(),
     },

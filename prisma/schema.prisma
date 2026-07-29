@@ -162,6 +162,9 @@ model Colorway {
   showStockOnStorefront  Boolean  @default(false)
   status                 String   @default("draft")
   isFeatured             Boolean  @default(false)
+  // Manually toggled — shows a "New" badge on the shop grid instead of
+  // "Available" until the founder unchecks it herself (no auto-expiry).
+  isNew                  Boolean  @default(false)
   launchedAt             String
   sortOrder              Int      @default(0)
   createdAt              DateTime @default(now())

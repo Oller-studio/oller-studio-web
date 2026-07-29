@@ -60,6 +60,7 @@ export type Colorway = {
   campaignNote?: { quote: string; name: string; role: string };
   availability: Availability;
   isFeatured?: boolean;
+  isNew: boolean;
   launchedAt: string;
   stockOnHand: number;
   showStockOnStorefront: boolean;

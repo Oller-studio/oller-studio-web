@@ -62,6 +62,7 @@ export type ColorwayFormState = {
   stockOnHand: string;
   showStockOnStorefront: boolean;
   isFeatured: boolean;
+  isNew: boolean;
   launchedAt: string;
   sortOrder: string;
 };
@@ -99,6 +100,7 @@ function initialState(existing?: Partial<ColorwayFormState>): ColorwayFormState 
     stockOnHand: existing?.stockOnHand ?? "0",
     showStockOnStorefront: existing?.showStockOnStorefront ?? false,
     isFeatured: existing?.isFeatured ?? false,
+    isNew: existing?.isNew ?? false,
     launchedAt: existing?.launchedAt ?? new Date().toISOString().slice(0, 10),
     sortOrder: existing?.sortOrder ?? "0",
   };
@@ -148,6 +150,7 @@ function toInput(form: ColorwayFormState, productSlug: string): ColorwayInput {
     stockOnHand: Number(form.stockOnHand) || 0,
     showStockOnStorefront: form.showStockOnStorefront,
     isFeatured: form.isFeatured,
+    isNew: form.isNew,
     launchedAt: form.launchedAt,
     sortOrder: Number(form.sortOrder) || 0,
   };
@@ -443,6 +446,17 @@ export const ColorwayForm = forwardRef<
           onChange={(e) => set("isFeatured", e.target.checked)}
         />
         <span className="text-sm">Featured on homepage</span>
+      </label>
+
+      <label className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          checked={form.isNew}
+          onChange={(e) => set("isNew", e.target.checked)}
+        />
+        <span className="text-sm">
+          Mark as New (shows &ldquo;New&rdquo; instead of &ldquo;Available&rdquo; on the shop grid)
+        </span>
       </label>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">

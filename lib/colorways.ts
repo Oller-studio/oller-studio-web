@@ -74,6 +74,7 @@ function rowToColorway(row: ColorwayRow & { product: ProductModel }): Colorway {
     campaignNote,
     availability,
     isFeatured: row.isFeatured,
+    isNew: row.isNew,
     launchedAt: row.launchedAt,
     stockOnHand: row.stockOnHand,
     showStockOnStorefront: row.showStockOnStorefront,
@@ -159,6 +160,7 @@ export type ColorwayInput = {
   stockOnHand: number;
   showStockOnStorefront: boolean;
   isFeatured: boolean;
+  isNew: boolean;
   launchedAt: string;
   sortOrder: number;
 };
@@ -195,6 +197,7 @@ function toRowData(input: ColorwayInput) {
     stockOnHand: input.stockOnHand,
     showStockOnStorefront: input.showStockOnStorefront,
     isFeatured: input.isFeatured,
+    isNew: input.isNew,
     launchedAt: input.launchedAt,
     sortOrder: input.sortOrder,
   };
