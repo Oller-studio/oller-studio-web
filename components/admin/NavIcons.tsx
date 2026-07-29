@@ -63,6 +63,22 @@ export function ProductsIcon({ className = "" }: IconProps) {
   );
 }
 
+export function MarketingIcon({ className = "" }: IconProps) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className={`${base} ${className}`} aria-hidden="true">
+      <path
+        d="M2 6.3v3.4a1 1 0 0 0 1 1h1l1.6 3.8.9-.3-1.2-3.5"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M4 6.3 11.5 3v9L4 10.7Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+      <path d="M11.5 5.6c1.3.4 2.3 1.3 2.3 2.4s-1 2-2.3 2.4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export function OffersIcon({ className = "" }: IconProps) {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className={`${base} ${className}`} aria-hidden="true">

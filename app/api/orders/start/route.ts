@@ -20,7 +20,9 @@ export async function POST(request: Request) {
     (sum, i) => sum + Math.round(i.price * 100) * i.quantity,
     0
   );
-  const source = (await cookies()).get("oller_src")?.value ?? null;
+  const cookieStore = await cookies();
+  const source = cookieStore.get("oller_src")?.value ?? null;
+  const channel = cookieStore.get("oller_chan")?.value ?? null;
 
   await prisma.order.create({
     data: {
@@ -29,6 +31,7 @@ export async function POST(request: Request) {
       amountCents,
       currency: body.currency,
       source,
+      channel,
       payerEmail: body.payerEmail || null,
       items: {
         create: body.items.map((i) => ({

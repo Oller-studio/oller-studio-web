@@ -16,10 +16,16 @@ export type Customer = {
 
 // Customers aren't a stored entity — they're derived from who has actually
 // paid. Grouped by payer email since that's the only stable identifier that
-// covers both guest and logged-in checkouts.
-export async function getCustomers(): Promise<Customer[]> {
+// covers both guest and logged-in checkouts. `since` scopes both which
+// customers show up and their order count/amount spent to that range —
+// same semantics as the Orders page's date filter.
+export async function getCustomers(since?: Date): Promise<Customer[]> {
   const orders = await prisma.order.findMany({
-    where: { completedAt: { not: null }, payerEmail: { not: null } },
+    where: {
+      completedAt: { not: null },
+      payerEmail: { not: null },
+      ...(since ? { createdAt: { gte: since } } : {}),
+    },
     orderBy: { createdAt: "desc" },
   });
 

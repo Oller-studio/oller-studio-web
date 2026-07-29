@@ -3,6 +3,7 @@
 import type { Availability } from "@/lib/types";
 import { formatShipsFrom } from "@/lib/format";
 import { useCart } from "@/components/cart/cart-context";
+import { track } from "@/lib/track";
 
 type AddToBagButtonProps = {
   slug: string;
@@ -45,7 +46,10 @@ export function AddToBagButton({
       )}
       <button
         type="button"
-        onClick={() => addItem({ slug, name, price, currency, image })}
+        onClick={() => {
+          addItem({ slug, name, price, currency, image });
+          track("add_to_cart");
+        }}
         className="block w-full rounded-full bg-foreground py-4 text-center text-sm font-semibold uppercase tracking-wide text-background hover:opacity-90"
       >
         Add to Bag

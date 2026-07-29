@@ -10,18 +10,20 @@ import {
   OrdersIcon,
   CustomersIcon,
   ProductsIcon,
-  OffersIcon,
+  MarketingIcon,
   FinanceIcon,
   AnalyticsIcon,
   SupportIcon,
 } from "./NavIcons";
+
+type Child = { href: string; label: string; comingSoon?: boolean };
 
 type Section = {
   href: string;
   label: string;
   icon: (props: { className?: string }) => React.ReactElement;
   comingSoon?: boolean;
-  children?: { href: string; label: string }[];
+  children?: Child[];
 };
 
 const sections: Section[] = [
@@ -35,9 +37,17 @@ const sections: Section[] = [
   { href: "/admin/orders", label: "Orders", icon: OrdersIcon },
   { href: "/admin/customers", label: "Customers", icon: CustomersIcon },
   { href: "/admin/products", label: "Products", icon: ProductsIcon },
-  { href: "/admin/offers", label: "Offers", icon: OffersIcon, comingSoon: true },
+  {
+    href: "/admin/marketing",
+    label: "Marketing",
+    icon: MarketingIcon,
+    children: [
+      { href: "/admin/marketing/partners", label: "Partners" },
+      { href: "/admin/marketing/offers", label: "Offers", comingSoon: true },
+    ],
+  },
   { href: "/admin/finance", label: "Finance", icon: FinanceIcon },
-  { href: "/admin/analytics", label: "Analytics", icon: AnalyticsIcon, comingSoon: true },
+  { href: "/admin/analytics", label: "Analytics", icon: AnalyticsIcon },
   { href: "/admin/support", label: "Support", icon: SupportIcon, comingSoon: true },
 ];
 
@@ -113,15 +123,25 @@ export function AdminNav({ name }: { name: string }) {
             </div>
             {isOpen && (
               <div className="ml-2 flex flex-col gap-1 border-l border-border pl-3">
-                {s.children.map((c) => (
-                  <Link
-                    key={c.href}
-                    href={c.href}
-                    className="rounded-lg px-2 py-1.5 text-sm text-muted hover:bg-border/40 hover:text-foreground"
-                  >
-                    {c.label}
-                  </Link>
-                ))}
+                {s.children.map((c) =>
+                  c.comingSoon ? (
+                    <span
+                      key={c.href}
+                      title="Coming soon"
+                      className="cursor-not-allowed rounded-lg px-2 py-1.5 text-sm text-muted/50"
+                    >
+                      {c.label}
+                    </span>
+                  ) : (
+                    <Link
+                      key={c.href}
+                      href={c.href}
+                      className="rounded-lg px-2 py-1.5 text-sm text-muted hover:bg-border/40 hover:text-foreground"
+                    >
+                      {c.label}
+                    </Link>
+                  )
+                )}
               </div>
             )}
           </div>

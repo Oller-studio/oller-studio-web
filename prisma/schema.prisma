@@ -32,6 +32,9 @@ model Order {
   shippingAddress   String?
   shippingCity      String?
   source            String?
+  // Same coarse bucket as PageView.channel — powers "Sales attributed to
+  // marketing" on the Analytics dashboard.
+  channel           String?
   fulfillmentStatus String      @default("NEW_ORDER")
   startedPrintingAt DateTime?
   rawPayload        String?
@@ -58,6 +61,45 @@ model OrderItem {
 model Visit {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
+}
+
+// One row per page load (storefront only), tagged with the session it
+// belongs to and the first-touch source for that session — powers the
+// Analytics dashboard's traffic sources, top pages, and top products.
+model PageView {
+  id        String   @id @default(cuid())
+  sessionId String
+  path      String
+  source    String?
+  // Coarse bucket for source: "Direct" | "Ads" | "Social" | "Referral".
+  channel   String?
+  // "Desktop" | "Mobile" | "Tablet", sniffed from the User-Agent header.
+  device    String?
+  // From Vercel's edge geolocation headers — all null in local dev, since
+  // those headers only exist once actually deployed on Vercel.
+  country   String?
+  region    String?
+  city      String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([path])
+  @@index([sessionId])
+}
+
+// One row per tracked interaction that isn't a page load — scrolling past
+// the home hero, adding to the cart, etc. Feeds the funnel's steps that
+// PageView alone can't answer. `name` is one of a small fixed set, see
+// TRACKABLE_EVENTS in lib/track.ts.
+model FunnelEvent {
+  id        String   @id @default(cuid())
+  sessionId String
+  name      String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([name])
+  @@index([sessionId])
 }
 
 // A bag model (ONDINE, ORBE, Object 01...) — name, price, and lead time are
@@ -179,4 +221,46 @@ model FixedCost {
   amountCentsPerMonth Int
   startDate          DateTime  @default(now())
   endDate            DateTime?
+}
+
+// A referral, influencer, or collaborator (brand) partner. People use
+// firstName+lastName; a Collaborator brand just uses firstName for its name
+// and leaves lastName blank. Performance is computed live from PageView/
+// Order rows matching each of its links' utmSource — nothing stored here.
+// couponCode is shared across all of a partner's links, captured for later,
+// once checkout applies discounts.
+model Partner {
+  id         String        @id @default(cuid())
+  // "referral" | "influencer" | "collaborator"
+  type       String
+  firstName  String
+  lastName   String?
+  couponCode String?
+  // Inactive = collaboration ended, kept for history — their old link keeps
+  // working (never break a link someone already shared), just deprioritized
+  // in the admin list.
+  active     Boolean       @default(true)
+  createdAt  DateTime      @default(now())
+  links      PartnerLink[]
+}
+
+// One tracked link per distribution channel for a partner — lets a partner
+// active on both Instagram and TikTok get a separate link (and separate
+// numbers) for each, instead of splitting them into two Partner rows.
+model PartnerLink {
+  id        String   @id @default(cuid())
+  partner   Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  partnerId String
+  platform  String
+  utmSource String   @unique
+  createdAt DateTime @default(now())
+}
+
+// Reusable list of distribution channels (Organic, Instagram, TikTok…) a
+// partner link can be tagged with — editable under Marketing, same pattern
+// as Packaging presets under Production.
+model DistributionChannel {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
 }

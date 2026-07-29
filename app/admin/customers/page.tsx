@@ -1,8 +1,11 @@
+import Link from "next/link";
 import { getCustomers } from "@/lib/customers";
 import { formatMoneyCents } from "@/lib/format";
 import { getCountryName } from "@/lib/countryIso";
+import { DATE_RANGES, resolveDateRange } from "@/lib/dateRange";
 import { WorldMap } from "@/components/admin/WorldMap";
 import { Flag } from "@/components/admin/Flag";
+import { CustomersFilters } from "@/components/admin/CustomersFilters";
 
 function YesNoBadge({ value }: { value: boolean | null }) {
   if (value === null) {
@@ -19,8 +22,26 @@ function YesNoBadge({ value }: { value: boolean | null }) {
   );
 }
 
-export default async function AdminCustomersPage() {
-  const customers = await getCustomers();
+export default async function AdminCustomersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ range?: string; q?: string; account?: string; subscribed?: string }>;
+}) {
+  const { range, q, account, subscribed } = await searchParams;
+  const { key: activeRange, since } = resolveDateRange(range);
+  const query = q?.trim().toLowerCase() ?? "";
+
+  const allCustomers = await getCustomers(since);
+
+  let customers = query
+    ? allCustomers.filter(
+        (c) => c.name?.toLowerCase().includes(query) || c.email.toLowerCase().includes(query)
+      )
+    : allCustomers;
+  if (account) customers = customers.filter((c) => (account === "yes" ? c.hasAccount : !c.hasAccount));
+  if (subscribed) {
+    customers = customers.filter((c) => (subscribed === "yes" ? c.subscribed === true : c.subscribed !== true));
+  }
 
   const countryCounts: Record<string, number> = {};
   const cityCounts = new Map<string, number>();
@@ -37,8 +58,34 @@ export default async function AdminCustomersPage() {
     <div className="flex flex-col gap-6">
       <h1 className="font-display text-3xl font-semibold">Customers</h1>
 
+      <div className="flex w-full flex-wrap items-center justify-between gap-3">
+        <CustomersFilters
+          range={activeRange}
+          q={q ?? ""}
+          account={account ?? ""}
+          subscribed={subscribed ?? ""}
+        />
+        <div className="flex w-fit gap-1 rounded-full border border-border p-1 text-sm">
+          {DATE_RANGES.map((r) => (
+            <Link
+              key={r.key}
+              href={`/admin/customers?range=${r.key}`}
+              className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1 ${
+                r.key === activeRange
+                  ? "bg-foreground text-background"
+                  : "text-muted hover:text-foreground"
+              }`}
+            >
+              {r.label}
+            </Link>
+          ))}
+        </div>
+      </div>
+
       {customers.length === 0 ? (
-        <p className="text-sm text-muted">No customers yet.</p>
+        <p className="text-sm text-muted">
+          {query || account || subscribed ? "No customers match that filter." : "No customers in this range yet."}
+        </p>
       ) : (
         <div className="w-fit overflow-hidden rounded-xl border border-border">
           <table className="border-collapse">
