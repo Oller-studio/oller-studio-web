@@ -724,15 +724,23 @@ export const ColorwayForm = forwardRef<
             </label>
           )}
         </div>
-        <p className="text-xs text-muted">
-          {form.shopBadge === "sold_out"
-            ? "Add to Bag is disabled. Everything else keeps the button active."
-            : form.shopBadge === "in_stock"
-              ? "Shows Stock on hand (set in Inventory) as the count — goes down as it actually sells."
-              : form.shopBadge === "coming_soon"
-                ? 'Button reads "Reserve Yours" until the launch date, then this switches to Available on its own — no need to come back and change it.'
-                : "What customers see on the shop grid and product page."}
-        </p>
+        {form.shopBadge === "in_stock" && stockMode === "printed_on_demand" ? (
+          <p className="text-xs font-medium text-red-600">
+            This color is set to Printed on demand, so Stock on hand is 0 —
+            &ldquo;X in stock&rdquo; would show &ldquo;0 in stock&rdquo;, which reads as sold out.
+            Switch Inventory to Stock in hand below, or pick a different Shop Badge.
+          </p>
+        ) : (
+          <p className="text-xs text-muted">
+            {form.shopBadge === "sold_out"
+              ? "Add to Bag is disabled. Everything else keeps the button active."
+              : form.shopBadge === "in_stock"
+                ? "Shows Stock on hand (set in Inventory) as the count — goes down as it actually sells."
+                : form.shopBadge === "coming_soon"
+                  ? 'Button reads "Reserve Yours" until the launch date, then this switches to Available on its own — no need to come back and change it.'
+                  : "What customers see on the shop grid and product page."}
+          </p>
+        )}
       </div>
 
       {form.tier === "signature" && (
