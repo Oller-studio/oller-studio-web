@@ -3,6 +3,7 @@ import { getAdminViewer } from "@/lib/admin";
 import { prisma } from "@/lib/db";
 import { markWaitlistInvited } from "@/lib/waitlist";
 import { sendRestockEmail } from "@/lib/resend";
+import { RESTOCK_TEMPLATE_KEY, getEmailTemplate, fillTemplate } from "@/lib/emailTemplates";
 
 export async function POST(request: Request) {
   const { isAdmin } = await getAdminViewer();
@@ -17,11 +18,15 @@ export async function POST(request: Request) {
 
   const entries = await prisma.waitlistEntry.findMany({ where: { id: { in: ids } } });
   const origin = new URL(request.url).origin;
+  const template = await getEmailTemplate(RESTOCK_TEMPLATE_KEY);
 
   const sentIds: string[] = [];
   for (const entry of entries) {
     const link = `${origin}/shop/${entry.colorwaySlug}?access=${entry.accessToken}`;
-    const ok = await sendRestockEmail(entry.email, entry.productName, entry.colorName, link);
+    const vars = { product: entry.productName, color: entry.colorName };
+    const subject = fillTemplate(template.subject, vars);
+    const message = fillTemplate(template.message, vars);
+    const ok = await sendRestockEmail(entry.email, subject, message, link);
     if (ok) sentIds.push(entry.id);
   }
 

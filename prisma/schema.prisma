@@ -212,3 +212,14 @@ model WaitlistEntry {
   @@unique([colorwaySlug, email])
   @@index([colorwaySlug])
 }
+
+// Editable copy for admin-triggered emails (currently just the waitlist
+// restock notice). {{product}} / {{color}} in subject/message get filled in
+// per-send — the "Get yours" button + link are always appended automatically.
+model EmailTemplate {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  subject   String
+  message   String
+  updatedAt DateTime @updatedAt
+}
