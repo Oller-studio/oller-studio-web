@@ -1,3 +1,13 @@
+export function formatMoneyCents(cents: number, currency: string): string {
+  return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(cents / 100);
+}
+
+// SQLite doesn't support autoincrement on a non-primary-key column, so the
+// human-readable order number is derived from the id instead of stored.
+export function formatOrderNumber(id: string): string {
+  return `#${id.slice(-6).toUpperCase()}`;
+}
+
 export function formatPrice(amount: number, currency: string): string {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -9,12 +19,4 @@ export function formatPrice(amount: number, currency: string): string {
 
 export function formatLeadTime([min, max]: [number, number]): string {
   return `Ships in ${min}–${max} days`;
-}
-
-export function formatShipsFrom(isoDate: string): string {
-  const date = new Date(isoDate);
-  return `Orders ship starting ${date.toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-  })}`;
 }

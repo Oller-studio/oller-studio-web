@@ -1,0 +1,406 @@
+import Link from "next/link";
+import { formatMoneyCents } from "@/lib/format";
+import { DATE_RANGES, resolveDateRange } from "@/lib/dateRange";
+import {
+  getOverview,
+  getFunnel,
+  getTrafficChannels,
+  getSalesAttribution,
+  getTrafficTable,
+  getSessionsOverTime,
+  getConversionRateOverTime,
+  getSessionsByDevice,
+  getSessionsByLocation,
+  getTopPages,
+  getTopProducts,
+} from "@/lib/analytics";
+import { iconForSource, iconForChannel } from "@/components/admin/SourceIcons";
+import { LineChart } from "@/components/admin/LineChart";
+import { DonutChart } from "@/components/admin/DonutChart";
+import { MetricLabel } from "@/components/admin/MetricLabel";
+
+const boxClass = "flex flex-col gap-3 rounded-xl border border-border bg-background p-4";
+
+// Shortened for the Traffic channels list — "Organic" reads fine as a
+// section title but made every row a different width once the rest are
+// one word (Direct, Ads, Referral).
+const CHANNEL_LABELS: Record<string, string> = {
+  "Organic Search": "Search",
+  "Organic Social": "Social",
+};
+
+function Bar({ pct }: { pct: number }) {
+  const clamped = Math.min(Math.max(pct, pct > 0 ? 2 : 0), 100);
+  return (
+    <div className="h-2 w-full overflow-hidden rounded-full bg-border/40">
+      <div
+        className="h-2 rounded-full bg-foreground"
+        style={{ width: `${clamped}%` }}
+      />
+    </div>
+  );
+}
+
+export default async function AnalyticsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ range?: string }>;
+}) {
+  const { range: rangeParam } = await searchParams;
+  const { key: activeRange, since } = resolveDateRange(rangeParam);
+  const hourly = activeRange === "24h";
+
+  const [
+    overview,
+    funnel,
+    channels,
+    attribution,
+    trafficTable,
+    sessionsOverTime,
+    conversionOverTime,
+    byDevice,
+    byLocation,
+    topPages,
+    topProducts,
+  ] = await Promise.all([
+    getOverview(since),
+    getFunnel(since),
+    getTrafficChannels(since),
+    getSalesAttribution(since),
+    getTrafficTable(since),
+    getSessionsOverTime(since, hourly),
+    getConversionRateOverTime(since, hourly),
+    getSessionsByDevice(since),
+    getSessionsByLocation(since),
+    getTopPages(since),
+    getTopProducts(since),
+  ]);
+
+  const maxFunnel = funnel[0]?.value || 1;
+  const maxChannel = channels[0]?.visitors || 1;
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="font-display text-3xl font-semibold">Analytics</h1>
+        <div className="flex w-fit gap-1 rounded-full border border-border p-1 text-sm">
+          {DATE_RANGES.map((r) => (
+            <Link
+              key={r.key}
+              href={`/admin/analytics?range=${r.key}`}
+              className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1 ${
+                r.key === activeRange
+                  ? "bg-foreground text-background"
+                  : "text-muted hover:text-foreground"
+              }`}
+            >
+              {r.label}
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-4 lg:grid-cols-6">
+        {[
+          {
+            label: "Visitors",
+            value: overview.visitors.toLocaleString(),
+            description: "Unique sessions with at least one page view in this range.",
+          },
+          {
+            label: "Page views",
+            value: overview.pageViews.toLocaleString(),
+            description: "Total pages loaded, including repeat pages from the same session.",
+          },
+          {
+            label: "Bag views",
+            value: overview.bagViews.toLocaleString(),
+            description: "Sessions that visited at least one product page.",
+          },
+          {
+            label: "Checkouts started",
+            value: overview.checkoutsStarted.toLocaleString(),
+            description: "Orders created the moment someone clicks pay — includes abandoned ones.",
+          },
+          {
+            label: "Orders",
+            value: overview.ordersCompleted.toLocaleString(),
+            description: "Orders that were actually completed (payment captured).",
+          },
+          {
+            label: "Revenue",
+            value: formatMoneyCents(overview.revenueCents, "EUR"),
+            description: "Total amount from completed orders.",
+          },
+        ].map((c) => (
+          <div key={c.label} className={boxClass}>
+            <MetricLabel label={c.label} description={c.description} size="xs" />
+            <p className="text-2xl font-semibold">{c.value}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap gap-4">
+        <div className={`${boxClass} w-72 shrink-0`}>
+          <MetricLabel
+            label="Funnel"
+            description="Same visitors, tracked through each step from Home visit to purchase."
+          />
+          <div className="flex flex-col gap-3">
+            {funnel.map((step) => {
+              const pct = maxFunnel ? (step.value / maxFunnel) * 100 : 0;
+              return (
+                <div key={step.label} className="flex flex-col gap-1">
+                  <div className="flex items-center justify-between text-sm">
+                    <span>{step.label}</span>
+                    <span className="text-muted">
+                      {step.value.toLocaleString()} ({Math.min(pct, 100).toFixed(0)}%)
+                    </span>
+                  </div>
+                  <Bar pct={pct} />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className={`${boxClass} w-72 shrink-0`}>
+          <MetricLabel
+            label="Traffic channels"
+            description="Where sessions came from on their first visit, grouped into Direct, Search, Social, Ads, and Referral."
+          />
+          {channels.every((c) => c.visitors === 0) ? (
+            <p className="text-sm text-muted">No visits yet in this range.</p>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {channels.map((c) => {
+                const pct = maxChannel ? (c.visitors / maxChannel) * 100 : 0;
+                const Icon = iconForChannel(c.channel);
+                return (
+                  <div key={c.channel} className="flex flex-col gap-1">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="flex items-center gap-1.5">
+                        <Icon />
+                        {CHANNEL_LABELS[c.channel] ?? c.channel}
+                      </span>
+                      <span className="text-muted">{c.visitors.toLocaleString()}</span>
+                    </div>
+                    <Bar pct={pct} />
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="flex min-w-[320px] flex-1 flex-col gap-2 rounded-xl border border-border bg-background p-3">
+          <MetricLabel
+            label="Traffic by source"
+            description="Same as Traffic channels, but broken out by the exact source (Instagram, Google, a UTM tag…) instead of the coarse bucket."
+          />
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[820px] border-collapse text-sm">
+              <thead>
+                <tr className="text-xs font-semibold uppercase tracking-wide text-muted">
+                  <th className="py-1 pr-2 text-left">Channel</th>
+                  <th className="py-1 pr-2 text-left">Type</th>
+                  <th className="py-1 pr-2 text-right">Sessions</th>
+                  <th className="py-1 pr-2 text-right">Sales</th>
+                  <th className="py-1 pr-2 text-right">Orders</th>
+                  <th className="py-1 pr-2 text-right">Conv.</th>
+                  <th className="py-1 pr-2 text-right">AOV</th>
+                  <th className="py-1 pr-2 text-right">New</th>
+                  <th className="py-1 text-right">Returning</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {trafficTable.map((s) => {
+                  const Icon = iconForSource(s.source);
+                  return (
+                    <tr key={s.source}>
+                      <td className="py-1 pr-2">
+                        <span className="flex items-center gap-1.5 font-medium">
+                          <Icon />
+                          {s.source}
+                        </span>
+                      </td>
+                      <td className="py-1 pr-2 text-muted">
+                        {CHANNEL_LABELS[s.channel] ?? s.channel}
+                      </td>
+                      <td className="py-1 pr-2 text-right">{s.sessions}</td>
+                      <td className="py-1 pr-2 text-right">
+                        {formatMoneyCents(s.revenueCents, "EUR")}
+                      </td>
+                      <td className="py-1 pr-2 text-right">{s.orders}</td>
+                      <td className="py-1 pr-2 text-right">{s.conversionRate.toFixed(1)}%</td>
+                      <td className="py-1 pr-2 text-right">
+                        {s.orders > 0 ? formatMoneyCents(s.aovCents, "EUR") : "—"}
+                      </td>
+                      <td className="py-1 pr-2 text-right">{s.newOrders}</td>
+                      <td className="py-1 text-right">{s.returningOrders}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-xs text-muted">
+            Cost, ROAS, CPA and CTR aren&apos;t shown — those need an ad-platform spend
+            integration we don&apos;t have yet.
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-4">
+        <div className={boxClass}>
+          <MetricLabel
+            label="Sessions over time"
+            description="Unique sessions per day (or per hour, on the 24h view)."
+          />
+          <p className="text-2xl font-semibold">
+            {sessionsOverTime.reduce((sum, p) => sum + p.value, 0).toLocaleString()}
+          </p>
+          <LineChart points={sessionsOverTime} />
+        </div>
+
+        <div className={boxClass}>
+          <MetricLabel
+            label="Conversion rate over time"
+            description="Orders completed ÷ sessions, per day (or per hour, on the 24h view)."
+          />
+          <p className="text-2xl font-semibold">
+            {overview.pageViews > 0 || overview.visitors > 0
+              ? `${((overview.ordersCompleted / Math.max(overview.visitors, 1)) * 100).toFixed(1)}%`
+              : "0%"}
+          </p>
+          <LineChart points={conversionOverTime} />
+        </div>
+
+        <div className={boxClass}>
+          <MetricLabel
+            label="Sales attributed to marketing"
+            description="Revenue from completed orders whose session didn't arrive Direct."
+          />
+          <p className="text-2xl font-semibold">
+            {formatMoneyCents(attribution.marketingCents, "EUR")}
+          </p>
+          <p className="text-xs text-muted">
+            {attribution.totalCents > 0
+              ? `${Math.round((attribution.marketingCents / attribution.totalCents) * 100)}% of ${formatMoneyCents(attribution.totalCents, "EUR")} total`
+              : "Any completed order whose session didn't arrive Direct."}
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className={boxClass}>
+          <MetricLabel
+            label="Sessions by device type"
+            description="Sessions split by Desktop, Mobile, or Tablet, guessed from the browser's user agent."
+          />
+          {byDevice.length === 0 ? (
+            <p className="text-sm text-muted">No visits yet in this range.</p>
+          ) : (
+            <DonutChart segments={byDevice.map((d) => ({ label: d.device, value: d.sessions }))} />
+          )}
+        </div>
+
+        <div className={boxClass}>
+          <MetricLabel
+            label="Sessions by location"
+            description="Sessions by country/region/city — only available once deployed on Vercel."
+          />
+          {byLocation.length === 0 ? (
+            <p className="text-sm text-muted">
+              No location data yet — this only populates once deployed on Vercel.
+            </p>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {byLocation.map((l) => {
+                const max = byLocation[0].sessions || 1;
+                return (
+                  <div key={l.label} className="flex flex-col gap-1">
+                    <div className="flex items-center justify-between text-sm">
+                      <span>{l.label}</span>
+                      <span className="text-muted">{l.sessions}</span>
+                    </div>
+                    <Bar pct={(l.sessions / max) * 100} />
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className={boxClass}>
+          <MetricLabel
+            label="Top pages"
+            description="Most-visited pages in this range, with total views and unique visitors."
+          />
+          {topPages.length === 0 ? (
+            <p className="text-sm text-muted">No page views yet in this range.</p>
+          ) : (
+            <table className="border-collapse text-sm">
+              <thead>
+                <tr className="text-xs font-semibold uppercase tracking-wide text-muted">
+                  <th className="py-1 pr-4 text-left">Page</th>
+                  <th className="py-1 pr-4 text-right">Views</th>
+                  <th className="py-1 text-right">Unique</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {topPages.map((p) => (
+                  <tr key={p.path}>
+                    <td className="py-1.5 pr-4">
+                      {p.label}
+                      {p.label !== p.path && (
+                        <span className="ml-1.5 text-xs text-muted">{p.path}</span>
+                      )}
+                    </td>
+                    <td className="py-1.5 pr-4 text-right">{p.views}</td>
+                    <td className="py-1.5 text-right text-muted">{p.uniques}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        <div className={boxClass}>
+          <MetricLabel
+            label="Top bags seen"
+            description="Most-viewed product pages in this range, with total views and unique visitors."
+          />
+          {topProducts.length === 0 ? (
+            <p className="text-sm text-muted">No bag views yet in this range.</p>
+          ) : (
+            <table className="border-collapse text-sm">
+              <thead>
+                <tr className="text-xs font-semibold uppercase tracking-wide text-muted">
+                  <th className="py-1 pr-4 text-left">Bag</th>
+                  <th className="py-1 pr-4 text-right">Views</th>
+                  <th className="py-1 text-right">Unique</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {topProducts.map((p) => (
+                  <tr key={p.slug}>
+                    <td className="py-1.5 pr-4">
+                      <Link href={`/shop/${p.slug}`} target="_blank" className="hover:underline">
+                        {p.name}
+                      </Link>
+                    </td>
+                    <td className="py-1.5 pr-4 text-right">{p.views}</td>
+                    <td className="py-1.5 text-right text-muted">{p.uniques}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,45 +1,76 @@
-import type { Availability } from "@/lib/types";
-import { formatShipsFrom } from "@/lib/format";
+import type { ShopBadge } from "@/lib/types";
 
 type AvailabilityBadgeProps = {
-  availability: Availability;
+  shopBadge: ShopBadge;
   piecesRemaining?: number;
   totalPieces?: number;
+  stockOnHand?: number;
 };
 
 export function AvailabilityBadge({
-  availability,
+  shopBadge,
   piecesRemaining,
   totalPieces,
+  stockOnHand,
 }: AvailabilityBadgeProps) {
   const isNumbered = totalPieces !== undefined && piecesRemaining !== undefined;
 
-  if (availability.status === "sold_out" || (isNumbered && piecesRemaining! <= 0)) {
+  if (shopBadge.kind === "sold_out" || (isNumbered && piecesRemaining! <= 0)) {
     return (
-      <span className="text-xs font-semibold uppercase tracking-wide text-foreground/40">
+      <span className="text-[11px] font-bold uppercase tracking-wide text-foreground/40">
         {isNumbered ? "Sold out — drop closed" : "Sold out"}
       </span>
     );
   }
 
-  if (availability.status === "away") {
+  if (shopBadge.kind === "coming_soon") {
     return (
-      <span className="text-xs font-semibold uppercase tracking-wide text-accent">
-        {formatShipsFrom(availability.shipsFrom)}
+      <span className="text-[11px] font-bold uppercase tracking-wide text-foreground">
+        Coming Soon
       </span>
     );
   }
 
   if (isNumbered) {
     return (
-      <span className="text-xs font-semibold uppercase tracking-wide text-muted">
+      <span className="text-[11px] font-bold uppercase tracking-wide text-foreground">
         {piecesRemaining} of {totalPieces} pieces left
       </span>
     );
   }
 
+  if (shopBadge.kind === "new") {
+    return (
+      <span className="text-[11px] font-bold uppercase tracking-wide text-foreground">New</span>
+    );
+  }
+
+  if (shopBadge.kind === "in_stock") {
+    return (
+      <span className="text-[11px] font-bold uppercase tracking-wide text-foreground">
+        {stockOnHand ?? 0} in stock
+      </span>
+    );
+  }
+
+  if (shopBadge.kind === "limited_edition") {
+    return (
+      <span className="text-[11px] font-bold uppercase tracking-wide text-foreground">
+        Limited Edition
+      </span>
+    );
+  }
+
+  if (shopBadge.kind === "back_in_stock") {
+    return (
+      <span className="text-[11px] font-bold uppercase tracking-wide text-foreground">
+        Back in stock
+      </span>
+    );
+  }
+
   return (
-    <span className="text-xs font-semibold uppercase tracking-wide text-muted">
+    <span className="text-[11px] font-bold uppercase tracking-wide text-foreground">
       Available
     </span>
   );

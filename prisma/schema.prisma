@@ -1,0 +1,332 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// Created PENDING the moment checkout starts (so we can see abandoned
+// checkouts), then flipped to COMPLETED by the PayPal webhook — never by the
+// browser — so "sales" reflects money that actually moved.
+// Fulfillment stages for a handmade, built-to-order piece — tracks studio
+// production, not just shipping.
+// NEW_ORDER -> PRINTING -> PRINTED -> PACKED -> SENT -> DELIVERED
+model Order {
+  id                String      @id @default(cuid())
+  paypalOrderId     String      @unique
+  captureId         String?     @unique
+  status            String
+  amountCents       Int
+  refundedCents     Int         @default(0)
+  currency          String
+  payerEmail        String?
+  payerName         String?
+  payerCountry      String?
+  paypalFeeCents    Int         @default(0)
+  shippingName      String?
+  shippingAddress   String?
+  shippingCity      String?
+  source            String?
+  // Same coarse bucket as PageView.channel — powers "Sales attributed to
+  // marketing" on the Analytics dashboard.
+  channel           String?
+  fulfillmentStatus String      @default("NEW_ORDER")
+  startedPrintingAt DateTime?
+  rawPayload        String?
+  createdAt         DateTime    @default(now())
+  completedAt       DateTime?
+  refundedAt        DateTime?
+  shippedAt         DateTime?
+  deliveredAt       DateTime?
+  items             OrderItem[]
+}
+
+model OrderItem {
+  id              String @id @default(cuid())
+  order           Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId         String
+  colorwaySlug    String
+  name            String
+  quantity        Int
+  unitAmountCents Int
+}
+
+// One row per browsing session (deduped via a 30-minute cookie in proxy.ts),
+// not per page view — this is what "Sessions" on the dashboard counts.
+model Visit {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+}
+
+// One row per page load (storefront only), tagged with the session it
+// belongs to and the first-touch source for that session — powers the
+// Analytics dashboard's traffic sources, top pages, and top products.
+model PageView {
+  id        String   @id @default(cuid())
+  sessionId String
+  path      String
+  source    String?
+  // Coarse bucket for source: "Direct" | "Ads" | "Social" | "Referral".
+  channel   String?
+  // "Desktop" | "Mobile" | "Tablet", sniffed from the User-Agent header.
+  device    String?
+  // From Vercel's edge geolocation headers — all null in local dev, since
+  // those headers only exist once actually deployed on Vercel.
+  country   String?
+  region    String?
+  city      String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([path])
+  @@index([sessionId])
+}
+
+// One row per tracked interaction that isn't a page load — scrolling past
+// the home hero, adding to the cart, etc. Feeds the funnel's steps that
+// PageView alone can't answer. `name` is one of a small fixed set, see
+// TRACKABLE_EVENTS in lib/track.ts.
+model FunnelEvent {
+  id        String   @id @default(cuid())
+  sessionId String
+  name      String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([name])
+  @@index([sessionId])
+}
+
+// A bag model (ONDINE, ORBE, Object 01...) — name, price, and lead time are
+// shared by every variant underneath it. Editable from /admin/products.
+model Product {
+  slug          String     @id
+  name          String
+  description   String
+  // Fallback price when a color/edition doesn't set its own priceCents —
+  // editions are expected to set their own now, this is a safety net.
+  basePriceCents Int       @default(0)
+  // "Was X" price shown struck through next to Price for a sale/promo — has
+  // no effect unless it's set higher than basePriceCents.
+  compareAtPriceCents Int?
+  // Pieces included in one listing at that price — 1 for a single bag, more
+  // if it's ever sold as a set/pack. Unit price = basePriceCents / unitCount.
+  unitCount     Int        @default(1)
+  weightGrams   Int?
+  heightCm      Float?
+  widthCm       Float?
+  depthCm       Float?
+  sizeAndFitNote String?
+  // Override for the "Composition and Care" storefront section — if unset,
+  // the storefront shows a default generated from `material` instead.
+  compositionCareNote String?
+  // Override for "Delivery, Exchanges and Returns" — same text on every
+  // product unless this specific one needs different terms.
+  deliveryReturnsNote String?
+  material      String?
+  printMinutes  Int?
+  currency      String     @default("USD")
+  leadTimeMinDays Int
+  leadTimeMaxDays Int
+  sortOrder     Int        @default(0)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  variants      Colorway[]
+  packaging     Packaging? @relation(fields: [packagingId], references: [id], onDelete: SetNull)
+  packagingId   String?
+}
+
+// A reusable box/packaging preset (name + size) — set up once under
+// Production, then picked per-product instead of typing dimensions each time.
+model Packaging {
+  id        String    @id @default(cuid())
+  name      String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
+}
+
+// One color/drop variant of a Product — what shows up as a shop listing.
+// Editable from /admin/products/[slug]. Array/object fields (images,
+// whyPoints, matchedCar, campaignNote) are stored as JSON strings, same
+// pattern as Order.rawPayload.
+model Colorway {
+  slug                   String   @id
+  product                Product  @relation(fields: [productSlug], references: [slug], onDelete: Cascade)
+  productSlug            String
+  name                   String
+  // JSON array of hex colors, e.g. ["#8a4a3a"] or ["#d4af37","#e8a0bf"] for a
+  // multi-color edition (rendered as a pie-slice swatch when there's more
+  // than one) — up to 4 in the admin UI.
+  swatchColors           String   @default("[]")
+  // Overrides Product.basePriceCents for this specific color — null means
+  // "use the product's price" (most colors won't need their own).
+  priceCents             Int?
+  // "Was X" price shown struck through next to Price for a sale/promo — has
+  // no effect unless it's set higher than priceCents.
+  compareAtPriceCents    Int?
+  // Pieces included in one listing at that price — 1 for a single bag, more
+  // if it's ever sold as a set/pack. Unit price = priceCents / unitCount.
+  unitCount              Int      @default(1)
+  compositionMaterial    String?
+  compositionDescription String?
+  tier                   String
+  dropNumber             Int?
+  dropEndsAt             String?
+  totalPieces            Int?
+  piecesRemaining        Int?
+  images                 String   @default("[]")
+  matchedCarMake         String?
+  matchedCarModel        String?
+  matchedCarColorName    String?
+  matchedCarImageUrl     String?
+  matchedCarOwnerNote    String?
+  story                  String?
+  whyPoints              String   @default("[]")
+  campaignQuote          String?
+  campaignName           String?
+  campaignRole           String?
+  // Single source of truth for what customers see on the shop grid and
+  // product page badge — "available" | "new" | "in_stock" | "coming_soon" |
+  // "sold_out" | "back_in_stock". Also drives whether Add to Bag is active
+  // (everything except sold_out). Replaces what used to be spread across
+  // availabilityStatus + a separate "mark as new" + "show stock" checkbox.
+  shopBadge              String   @default("available")
+  // Ready-to-ship pieces already sitting in the studio. When shopBadge is
+  // "in_stock", this same number is what customers see too (e.g. "1 in
+  // stock") — one number, so it goes down for real as it sells instead of
+  // needing to be kept in sync by hand with a separate customer-facing count.
+  stockOnHand            Int      @default(0)
+  status                 String   @default("draft")
+  isFeatured             Boolean  @default(false)
+  launchedAt             String
+  sortOrder              Int      @default(0)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+// What it costs to actually make one piece (materials only — print time is
+// a product spec, see Product.printMinutes), entered by hand since there's
+// no integration that can detect this. Keyed by colorway slug rather than a
+// relation to keep cost-tracking independent of catalog edits.
+model ProductCost {
+  colorwaySlug String   @id
+  name         String
+  costCents    Int
+  updatedAt    DateTime @updatedAt
+}
+
+// Recurring costs (rent, tools, subscriptions) — prorated by day when shown
+// over a date range.
+model FixedCost {
+  id                 String    @id @default(cuid())
+  label              String
+  amountCentsPerMonth Int
+  startDate          DateTime  @default(now())
+  endDate            DateTime?
+}
+
+// "Notify me" signups left on a Sold Out color's page. Product/color name
+// are stored directly (not a relation) so the list still reads fine even
+// if that color is later renamed or removed — this is a record of demand,
+// not something that should disappear with the catalog entry.
+model WaitlistEntry {
+  id           String    @id @default(cuid())
+  colorwaySlug String
+  colorName    String
+  productName  String
+  email        String
+  // waiting -> invited (admin sent the private restock link) -> purchased
+  // (matched to a completed order by email, see the PayPal webhook).
+  status       String    @default("waiting")
+  // Unguessable param that unlocks Add to Bag on this one color's page for
+  // whoever holds the link, without changing the public Shop Badge.
+  accessToken  String    @unique @default(cuid())
+  invitedAt    DateTime?
+  purchasedAt  DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@unique([colorwaySlug, email])
+  @@index([colorwaySlug])
+}
+
+// Editable copy for admin-triggered emails (currently just the waitlist
+// restock notice). {{product}} / {{color}} in subject/message get filled in
+// per-send — the "Get yours" button + link are always appended automatically.
+model EmailTemplate {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  subject   String
+  message   String
+  updatedAt DateTime @updatedAt
+}
+
+// A referral, influencer, or collaborator (brand) partner. People use
+// firstName+lastName; a Collaborator brand just uses firstName for its name
+// and leaves lastName blank. Performance is computed live from PageView/
+// Order rows matching each of its links' utmSource — nothing stored here.
+// Their coupon code (if they have one) lives as its own Offer row instead
+// of a bare string field, so it can carry a real discount value.
+model Partner {
+  id        String        @id @default(cuid())
+  // "referral" | "influencer" | "collaborator"
+  type      String
+  firstName String
+  lastName  String?
+  // Inactive = collaboration ended, kept for history — their old link keeps
+  // working (never break a link someone already shared), just deprioritized
+  // in the admin list.
+  active    Boolean       @default(true)
+  createdAt DateTime      @default(now())
+  links     PartnerLink[]
+  offers    Offer[]
+}
+
+// One tracked link per distribution channel for a partner — lets a partner
+// active on both Instagram and TikTok get a separate link (and separate
+// numbers) for each, instead of splitting them into two Partner rows.
+model PartnerLink {
+  id        String   @id @default(cuid())
+  partner   Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+  partnerId String
+  platform  String
+  utmSource String   @unique
+  createdAt DateTime @default(now())
+}
+
+// Reusable list of distribution channels (Organic, Instagram, TikTok…) a
+// partner link can be tagged with — editable under Marketing, same pattern
+// as Packaging presets under Production.
+model DistributionChannel {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+}
+
+// A discount code — either standalone (a seasonal sale code) or tied to a
+// partner (their personal coupon). Not applied at checkout yet — this is
+// just the management layer; redeeming one still needs the checkout work.
+model Offer {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  // "percentage" | "fixed"
+  type      String
+  // 10 for 10%, or a cents amount for "fixed".
+  value     Int
+  partner   Partner? @relation(fields: [partnerId], references: [id], onDelete: SetNull)
+  partnerId String?
+  active    Boolean  @default(true)
+  // Optional — null means it's usable right away. Same as `active`, not
+  // enforced anywhere yet (no checkout redemption) — just tracked here so
+  // the admin list can show "Scheduled" until this date arrives.
+  startsAt  DateTime?
+  // Optional — null means it never expires. Same as `active`, this isn't
+  // enforced anywhere yet (no checkout redemption), just tracked here.
+  expiresAt DateTime?
+  createdAt DateTime @default(now())
+}

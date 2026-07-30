@@ -1,29 +1,56 @@
 import fs from "node:fs";
 import path from "node:path";
+import { getAllColorways } from "@/lib/colorways";
 
 export function hasHeroVideo(): boolean {
   return fs.existsSync(path.join(process.cwd(), "public", "videos", "hero.mp4"));
 }
 
-export type CarouselSlide = { images: string[]; alt: string };
+// A dedicated editorial hero photo — takes priority over a product photo
+// fallback, so the homepage doesn't have to lead with plain product
+// photography before a hero video/shoot exists.
+// Drop a file at public/images/home/hero.jpg (or .png) to use it.
+export function getHeroImage(): string | null {
+  for (const ext of ["jpg", "jpeg", "png"]) {
+    const rel = `/images/home/hero.${ext}`;
+    if (fs.existsSync(path.join(process.cwd(), "public", rel))) return rel;
+  }
+  return null;
+}
 
-// 4-up product carousel below the hero. Each slide can hold up to 2 images
-// (e.g. front/back) — drop them at public/images/home/product-{1..4}-{1,2}.jpg
-// and they show up automatically; tapping/swiping a slide toggles between them.
-export function getHomeCarouselSlides(): CarouselSlide[] {
-  return [1, 2, 3, 4].map((n) => {
-    const images = [1, 2]
-      .map((v) => `/images/home/product-${n}-${v}.jpg`)
-      .filter((rel) => fs.existsSync(path.join(process.cwd(), "public", rel)));
-    return { images, alt: `OLLER piece ${n}` };
+export type CarouselSlide = { images: string[]; alt: string; href?: string };
+
+// 4-up product carousel below the hero. Real colorways fill the first slots;
+// remaining slots preview as "Coming soon" until more colorways exist.
+export async function getHomeCarouselSlides(): Promise<CarouselSlide[]> {
+  const colorways = await getAllColorways({ publishedOnly: true });
+  return Array.from({ length: 4 }, (_, i) => {
+    const colorway = colorways[i];
+    if (colorway) {
+      return { images: colorway.images, alt: colorway.name, href: `/shop/${colorway.slug}` };
+    }
+    return { images: [], alt: "New colorway" };
   });
 }
 
-// Editorial diptych (Cult Gaia style) — drop photos at
-// public/images/home/model-1.jpg and model-2.jpg.
-export function getHomeEditorialImages(): (string | null)[] {
-  return [1, 2].map((n) => {
-    const rel = `/images/home/model-${n}.jpg`;
-    return fs.existsSync(path.join(process.cwd(), "public", rel)) ? rel : null;
+export type EditorialMedia = { type: "video" | "image"; src: string };
+
+// 4-up editorial strip, same layout as the product carousel above it.
+// Display order is 3, 1, 2, 4 — not filename order — per founder preference.
+// Drop a video at public/videos/home/editorial-N.mp4, or a photo at
+// public/images/home/model-N.jpg. Video takes priority.
+export function getHomeEditorialImages(): (EditorialMedia | null)[] {
+  return [3, 1, 2, 4].map((n) => {
+    const videoRel = `/videos/home/editorial-${n}.mp4`;
+    if (fs.existsSync(path.join(process.cwd(), "public", videoRel))) {
+      return { type: "video", src: videoRel };
+    }
+    for (const ext of ["jpg", "jpeg", "png"]) {
+      const rel = `/images/home/model-${n}.${ext}`;
+      if (fs.existsSync(path.join(process.cwd(), "public", rel))) {
+        return { type: "image", src: rel };
+      }
+    }
+    return null;
   });
 }
