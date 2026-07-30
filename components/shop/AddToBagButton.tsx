@@ -2,6 +2,7 @@
 
 import type { ShopBadge } from "@/lib/types";
 import { useCart } from "@/components/cart/cart-context";
+import { NotifyMeForm } from "./NotifyMeForm";
 
 type AddToBagButtonProps = {
   slug: string;
@@ -29,9 +30,12 @@ export function AddToBagButton({
 
   if (isSoldOut) {
     return (
-      <span className="block w-full border border-foreground/20 py-3.5 text-center text-sm font-semibold uppercase tracking-wide text-foreground/50">
-        Sold out
-      </span>
+      <div className="flex flex-col gap-3">
+        <span className="block w-full border border-foreground/20 py-3.5 text-center text-sm font-semibold uppercase tracking-wide text-foreground/50">
+          Sold out
+        </span>
+        <NotifyMeForm slug={slug} />
+      </div>
     );
   }
 

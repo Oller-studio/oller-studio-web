@@ -188,3 +188,19 @@ model FixedCost {
   startDate          DateTime  @default(now())
   endDate            DateTime?
 }
+
+// "Notify me" signups left on a Sold Out color's page. Product/color name
+// are stored directly (not a relation) so the list still reads fine even
+// if that color is later renamed or removed — this is a record of demand,
+// not something that should disappear with the catalog entry.
+model WaitlistEntry {
+  id           String   @id @default(cuid())
+  colorwaySlug String
+  colorName    String
+  productName  String
+  email        String
+  createdAt    DateTime @default(now())
+
+  @@unique([colorwaySlug, email])
+  @@index([colorwaySlug])
+}
