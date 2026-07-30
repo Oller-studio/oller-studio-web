@@ -13,7 +13,6 @@ export function RestockEmailEditor({
   initialSubject: string;
   initialMessage: string;
 }) {
-  const [open, setOpen] = useState(false);
   const [subject, setSubject] = useState(initialSubject);
   const [message, setMessage] = useState(initialMessage);
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -28,31 +27,11 @@ export function RestockEmailEditor({
     setStatus(res && res.ok ? "saved" : "error");
   }
 
-  if (!open) {
-    return (
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="w-fit text-sm text-muted underline underline-offset-4 hover:text-foreground"
-      >
-        Edit restock email
-      </button>
-    );
-  }
-
   return (
-    <div className="flex w-full max-w-xl flex-col gap-3 rounded-xl border border-border p-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold uppercase tracking-wide">Restock email</p>
-        <button
-          type="button"
-          onClick={() => setOpen(false)}
-          className="text-xs text-muted hover:text-foreground"
-        >
-          Close
-        </button>
-      </div>
+    <div className="flex w-full max-w-xl flex-col gap-3 rounded-xl border border-border bg-background p-4 shadow-sm">
+      <p className="text-sm font-semibold uppercase tracking-wide">Restock email</p>
       <p className="text-xs text-muted">
+        Sent from the Waitlist page when you notify someone a sold-out color is ready for them.
         Use {"{{product}}"} and {"{{color}}"} anywhere below — they get filled in per person. The
         "Get yours" button and private link are added automatically under your message.
       </p>
