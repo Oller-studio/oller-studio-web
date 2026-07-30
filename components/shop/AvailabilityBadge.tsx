@@ -25,7 +25,7 @@ export function AvailabilityBadge({
 
   if (shopBadge.kind === "coming_soon") {
     return (
-      <span className="text-[11px] font-bold uppercase tracking-wide text-accent">
+      <span className="text-[11px] font-bold uppercase tracking-wide text-foreground">
         Coming Soon
       </span>
     );
