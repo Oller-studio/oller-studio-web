@@ -5,12 +5,14 @@ type AvailabilityBadgeProps = {
   shopBadge: ShopBadge;
   piecesRemaining?: number;
   totalPieces?: number;
+  stockOnHand?: number;
 };
 
 export function AvailabilityBadge({
   shopBadge,
   piecesRemaining,
   totalPieces,
+  stockOnHand,
 }: AvailabilityBadgeProps) {
   const isNumbered = totalPieces !== undefined && piecesRemaining !== undefined;
 
@@ -47,7 +49,7 @@ export function AvailabilityBadge({
   if (shopBadge.kind === "in_stock") {
     return (
       <span className="text-[11px] font-bold uppercase tracking-wide text-foreground">
-        {shopBadge.count} in stock
+        {stockOnHand ?? 0} in stock
       </span>
     );
   }

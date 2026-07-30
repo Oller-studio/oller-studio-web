@@ -59,7 +59,6 @@ export type ColorwayFormState = {
   campaignRole: string;
   shopBadge: "available" | "new" | "in_stock" | "coming_soon" | "sold_out" | "back_in_stock";
   shopBadgeShipsFrom: string;
-  shopBadgeStockCount: string;
   stockOnHand: string;
   isFeatured: boolean;
   launchedAt: string;
@@ -96,7 +95,6 @@ function initialState(existing?: Partial<ColorwayFormState>): ColorwayFormState 
     campaignRole: existing?.campaignRole ?? "",
     shopBadge: existing?.shopBadge ?? "available",
     shopBadgeShipsFrom: existing?.shopBadgeShipsFrom ?? "",
-    shopBadgeStockCount: existing?.shopBadgeStockCount ?? "",
     stockOnHand: existing?.stockOnHand ?? "0",
     isFeatured: existing?.isFeatured ?? false,
     launchedAt: existing?.launchedAt ?? new Date().toISOString().slice(0, 10),
@@ -145,8 +143,6 @@ function toInput(form: ColorwayFormState, productSlug: string): ColorwayInput {
     campaignRole: isLimited ? form.campaignRole.trim() || null : null,
     shopBadge: form.shopBadge,
     shopBadgeShipsFrom: form.shopBadge === "coming_soon" ? form.shopBadgeShipsFrom.trim() || null : null,
-    shopBadgeStockCount:
-      form.shopBadge === "in_stock" ? Number(form.shopBadgeStockCount) || 0 : null,
     stockOnHand: Number(form.stockOnHand) || 0,
     isFeatured: form.isFeatured,
     launchedAt: form.launchedAt,
@@ -395,64 +391,59 @@ export const ColorwayForm = forwardRef<
         </div>
       </div>
 
-      <div className="flex flex-col gap-1">
-        <span className={labelClass}>Media (max 4)</span>
-        <ImagesField images={form.images} onChange={(v) => set("images", v)} max={4} />
-      </div>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1">
+            <span className={labelClass}>Media (max 4)</span>
+            <ImagesField images={form.images} onChange={(v) => set("images", v)} max={4} />
+          </div>
 
-      <label className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          checked={form.isFeatured}
-          onChange={(e) => set("isFeatured", e.target.checked)}
-        />
-        <span className="text-sm">Featured on homepage</span>
-      </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={form.isFeatured}
+              onChange={(e) => set("isFeatured", e.target.checked)}
+            />
+            <span className="text-sm">Featured on homepage</span>
+          </label>
+        </div>
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-        <span className={rowLabelClass}>Shop Badge</span>
-        <select
-          value={form.shopBadge}
-          onChange={(e) =>
-            set("shopBadge", e.target.value as ColorwayFormState["shopBadge"])
-          }
-          className={`${inputClass} w-44`}
-        >
-          <option value="available">Available</option>
-          <option value="new">New</option>
-          <option value="in_stock">X in stock</option>
-          <option value="coming_soon">Coming soon</option>
-          <option value="sold_out">Sold out</option>
-          <option value="back_in_stock">Back in stock</option>
-        </select>
-        {form.shopBadge === "in_stock" && (
-          <input
-            type="number"
-            min={0}
-            value={form.shopBadgeStockCount}
-            onChange={(e) => set("shopBadgeStockCount", e.target.value)}
-            placeholder="e.g. 1"
-            aria-label="Stock count shown to customers"
-            className={`${inputClass} no-spinner w-20`}
-          />
-        )}
-        {form.shopBadge === "coming_soon" && (
-          <input
-            type="text"
-            value={form.shopBadgeShipsFrom}
-            onChange={(e) => set("shopBadgeShipsFrom", e.target.value)}
-            placeholder="e.g. orders ship starting Aug 4"
-            className={`${inputClass} w-64`}
-          />
-        )}
+        <div className="flex flex-col gap-2">
+          <span className={labelClass}>Shop Badge</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={form.shopBadge}
+              onChange={(e) =>
+                set("shopBadge", e.target.value as ColorwayFormState["shopBadge"])
+              }
+              className={`${inputClass} w-44`}
+            >
+              <option value="available">Available</option>
+              <option value="new">New</option>
+              <option value="in_stock">X in stock</option>
+              <option value="coming_soon">Coming soon</option>
+              <option value="sold_out">Sold out</option>
+              <option value="back_in_stock">Back in stock</option>
+            </select>
+            {form.shopBadge === "coming_soon" && (
+              <input
+                type="text"
+                value={form.shopBadgeShipsFrom}
+                onChange={(e) => set("shopBadgeShipsFrom", e.target.value)}
+                placeholder="e.g. orders ship starting Aug 4"
+                className={`${inputClass} w-64`}
+              />
+            )}
+          </div>
+          <p className="text-xs text-muted">
+            {form.shopBadge === "sold_out"
+              ? "Add to Bag is disabled. Everything else keeps the button active."
+              : form.shopBadge === "in_stock"
+                ? "Shows Stock on hand (set in Inventory below) as the count — goes down as it actually sells."
+                : "What customers see on the shop grid and product page."}
+          </p>
+        </div>
       </div>
-      <p className="text-xs text-muted sm:ml-40">
-        {form.shopBadge === "sold_out"
-          ? "Add to Bag is disabled. Everything else keeps the button active."
-          : form.shopBadge === "in_stock"
-            ? "This number is set by hand, independent of Stock on hand below — play with it however you like."
-            : "What customers see on the shop grid and product page."}
-      </p>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <div className="flex flex-col gap-3 rounded-xl border border-border p-4">

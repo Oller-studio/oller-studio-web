@@ -48,7 +48,7 @@ export function AddToBagButton({
         onClick={() => addItem({ slug, name, price, currency, image })}
         className="block w-full border border-foreground py-3.5 text-center text-sm font-semibold uppercase tracking-wide text-foreground transition-colors hover:bg-foreground hover:text-background"
       >
-        Add to Bag
+        {shopBadge.kind === "coming_soon" ? "Reserve Yours" : "Add to Bag"}
       </button>
     </div>
   );

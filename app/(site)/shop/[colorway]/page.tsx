@@ -116,6 +116,7 @@ export default async function ColorwayPage({
                 shopBadge={colorway.shopBadge}
                 piecesRemaining={colorway.piecesRemaining}
                 totalPieces={colorway.totalPieces}
+                stockOnHand={colorway.stockOnHand}
               />
             )}
 

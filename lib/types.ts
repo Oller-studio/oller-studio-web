@@ -11,12 +11,13 @@ export type Car = {
 
 // Single source of truth for what a customer sees on the shop grid/product
 // page and whether Add to Bag is active (everything except sold_out) — set
-// by hand from one control in the admin, independent of stockOnHand (the
-// founder's own internal count of what's actually printed).
+// by hand from one control in the admin. "in_stock" shows Colorway.stockOnHand
+// directly (not its own number), so the count is the same one used for
+// production tracking and goes down as stockOnHand does.
 export type ShopBadge =
   | { kind: "available" }
   | { kind: "new" }
-  | { kind: "in_stock"; count: number }
+  | { kind: "in_stock" }
   | { kind: "coming_soon"; shipsFrom: string }
   | { kind: "sold_out" }
   | { kind: "back_in_stock" };

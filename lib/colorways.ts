@@ -31,7 +31,7 @@ function rowToColorway(row: ColorwayRow & { product: ProductModel }): Colorway {
     row.shopBadge === "new"
       ? { kind: "new" }
       : row.shopBadge === "in_stock"
-        ? { kind: "in_stock", count: row.shopBadgeStockCount ?? 0 }
+        ? { kind: "in_stock" }
         : row.shopBadge === "coming_soon"
           ? { kind: "coming_soon", shipsFrom: row.shopBadgeShipsFrom ?? "" }
           : row.shopBadge === "sold_out"
@@ -161,7 +161,6 @@ export type ColorwayInput = {
   campaignRole: string | null;
   shopBadge: "available" | "new" | "in_stock" | "coming_soon" | "sold_out" | "back_in_stock";
   shopBadgeShipsFrom: string | null;
-  shopBadgeStockCount: number | null;
   stockOnHand: number;
   isFeatured: boolean;
   launchedAt: string;
@@ -197,7 +196,6 @@ function toRowData(input: ColorwayInput) {
     campaignRole: input.campaignRole,
     shopBadge: input.shopBadge,
     shopBadgeShipsFrom: input.shopBadgeShipsFrom,
-    shopBadgeStockCount: input.shopBadgeStockCount,
     stockOnHand: input.stockOnHand,
     isFeatured: input.isFeatured,
     launchedAt: input.launchedAt,

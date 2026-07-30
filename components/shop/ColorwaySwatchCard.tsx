@@ -63,6 +63,7 @@ export function ColorwaySwatchCard({ colorway }: { colorway: Colorway }) {
           shopBadge={colorway.shopBadge}
           piecesRemaining={colorway.piecesRemaining}
           totalPieces={colorway.totalPieces}
+          stockOnHand={colorway.stockOnHand}
         />
         <span className="flex items-center gap-1.5 text-xs font-normal uppercase tracking-wide text-muted">
           {colorway.product.name}
