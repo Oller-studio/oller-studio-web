@@ -2,6 +2,7 @@
 
 import type { ShopBadge } from "@/lib/types";
 import { useCart } from "@/components/cart/cart-context";
+import { track } from "@/lib/track";
 import { NotifyMeForm } from "./NotifyMeForm";
 
 type AddToBagButtonProps = {
@@ -51,7 +52,10 @@ export function AddToBagButton({
       )}
       <button
         type="button"
-        onClick={() => addItem({ slug, name, price, currency, image })}
+        onClick={() => {
+          addItem({ slug, name, price, currency, image });
+          track("add_to_cart");
+        }}
         className="block w-full border border-foreground py-3.5 text-center text-sm font-semibold uppercase tracking-wide text-foreground transition-colors hover:bg-foreground hover:text-background"
       >
         {shopBadge.kind === "coming_soon" ? "Reserve Yours" : "Add to Bag"}

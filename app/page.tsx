@@ -10,6 +10,7 @@ import {
 import { TopBar } from "@/components/layout/TopBar";
 import { Header } from "@/components/layout/Header";
 import { ProductCarousel } from "@/components/home/ProductCarousel";
+import { ScrollTracker } from "@/components/analytics/ScrollTracker";
 
 export default async function Home() {
   const featured = await getFeaturedColorway();
@@ -20,6 +21,7 @@ export default async function Home() {
 
   return (
     <main>
+      <ScrollTracker />
       <section className="relative flex min-h-screen flex-col overflow-hidden">
         <div className="absolute inset-0 -z-10 bg-border">
           {showVideo ? (

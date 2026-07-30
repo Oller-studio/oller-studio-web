@@ -51,7 +51,7 @@ const sections: Section[] = [
     ],
   },
   { href: "/admin/finance", label: "Finance", icon: FinanceIcon },
-  { href: "/admin/analytics", label: "Analytics", icon: AnalyticsIcon, comingSoon: true },
+  { href: "/admin/analytics", label: "Analytics", icon: AnalyticsIcon },
   { href: "/admin/support", label: "Support", icon: SupportIcon, comingSoon: true },
 ];
 
