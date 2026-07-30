@@ -20,7 +20,10 @@ export async function uniqueUtmSource(base: string): Promise<string> {
 export async function getAllPartners() {
   return prisma.partner.findMany({
     orderBy: { createdAt: "desc" },
-    include: { links: { orderBy: { createdAt: "asc" } } },
+    include: {
+      links: { orderBy: { createdAt: "asc" } },
+      offers: { orderBy: { createdAt: "desc" } },
+    },
   });
 }
 
@@ -28,7 +31,6 @@ export async function createPartner(data: {
   type: PartnerType;
   firstName: string;
   lastName: string | null;
-  couponCode: string | null;
   // At least one link to start with — a partner with zero distribution
   // channels has nothing to track.
   links: { platform: string; utmSource: string }[];
@@ -38,7 +40,6 @@ export async function createPartner(data: {
       type: data.type,
       firstName: data.firstName,
       lastName: data.lastName,
-      couponCode: data.couponCode,
       links: { create: data.links },
     },
     include: { links: true },
@@ -49,12 +50,7 @@ export async function deletePartner(id: string) {
   return prisma.partner.delete({ where: { id } });
 }
 
-// couponCode: pass null to clear it without touching `active` — deactivating
-// a partner is a separate, explicit action.
-export async function updatePartner(
-  id: string,
-  data: { couponCode?: string | null; active?: boolean }
-) {
+export async function updatePartner(id: string, data: { active?: boolean }) {
   return prisma.partner.update({ where: { id }, data });
 }
 

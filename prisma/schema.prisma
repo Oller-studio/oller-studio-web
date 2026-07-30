@@ -227,21 +227,21 @@ model FixedCost {
 // firstName+lastName; a Collaborator brand just uses firstName for its name
 // and leaves lastName blank. Performance is computed live from PageView/
 // Order rows matching each of its links' utmSource — nothing stored here.
-// couponCode is shared across all of a partner's links, captured for later,
-// once checkout applies discounts.
+// Their coupon code (if they have one) lives as its own Offer row instead
+// of a bare string field, so it can carry a real discount value.
 model Partner {
-  id         String        @id @default(cuid())
+  id        String        @id @default(cuid())
   // "referral" | "influencer" | "collaborator"
-  type       String
-  firstName  String
-  lastName   String?
-  couponCode String?
+  type      String
+  firstName String
+  lastName  String?
   // Inactive = collaboration ended, kept for history — their old link keeps
   // working (never break a link someone already shared), just deprioritized
   // in the admin list.
-  active     Boolean       @default(true)
-  createdAt  DateTime      @default(now())
-  links      PartnerLink[]
+  active    Boolean       @default(true)
+  createdAt DateTime      @default(now())
+  links     PartnerLink[]
+  offers    Offer[]
 }
 
 // One tracked link per distribution channel for a partner — lets a partner
@@ -262,5 +262,28 @@ model PartnerLink {
 model DistributionChannel {
   id        String   @id @default(cuid())
   name      String   @unique
+  createdAt DateTime @default(now())
+}
+
+// A discount code — either standalone (a seasonal sale code) or tied to a
+// partner (their personal coupon). Not applied at checkout yet — this is
+// just the management layer; redeeming one still needs the checkout work.
+model Offer {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  // "percentage" | "fixed"
+  type      String
+  // 10 for 10%, or a cents amount for "fixed".
+  value     Int
+  partner   Partner? @relation(fields: [partnerId], references: [id], onDelete: SetNull)
+  partnerId String?
+  active    Boolean  @default(true)
+  // Optional — null means it's usable right away. Same as `active`, not
+  // enforced anywhere yet (no checkout redemption) — just tracked here so
+  // the admin list can show "Scheduled" until this date arrives.
+  startsAt  DateTime?
+  // Optional — null means it never expires. Same as `active`, this isn't
+  // enforced anywhere yet (no checkout redemption), just tracked here.
+  expiresAt DateTime?
   createdAt DateTime @default(now())
 }

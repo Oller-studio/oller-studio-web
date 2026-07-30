@@ -10,15 +10,16 @@ import { slugifyUtmSource } from "@/lib/utmSlug";
 import { MetricLabel } from "@/components/admin/MetricLabel";
 
 type LinkRow = { id: string; platform: string; utmSource: string };
+type OfferRow = { id: string; code: string; active: boolean; expiresAt: Date | null };
 
 type PartnerRow = {
   id: string;
   type: string;
   firstName: string;
   lastName: string | null;
-  couponCode: string | null;
   active: boolean;
   links: LinkRow[];
+  offers: OfferRow[];
   overall: SourcePerformance;
   byLink: Record<string, SourcePerformance>;
 };
@@ -72,7 +73,6 @@ function AddPartnerForm({
     type: "" as PartnerType | "",
     firstName: "",
     lastName: "",
-    couponCode: "",
     platforms: [] as string[],
   });
   const isBrand = form.type === "collaborator";
@@ -143,7 +143,7 @@ function AddPartnerForm({
           </option>
           <option value="influencer">Influencer</option>
           <option value="referral">Referral</option>
-          <option value="collaborator">Collaborator (brand)</option>
+          <option value="collaborator">Collaborator</option>
         </select>
       </label>
 
@@ -260,18 +260,6 @@ function AddPartnerForm({
                 )}
               </div>
             )}
-
-            <label className="flex max-w-xs flex-col gap-1">
-              <span className="text-sm font-semibold">Coupon code (optional)</span>
-              <input
-                type="text"
-                value={form.couponCode}
-                onChange={(e) => setForm((f) => ({ ...f, couponCode: e.target.value }))}
-                placeholder="MARIA10"
-                className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
-              />
-              <span className="text-xs text-muted">Not applied at checkout yet.</span>
-            </label>
           </div>
 
           {error && <p className="text-sm text-red-600">{error}</p>}
@@ -392,59 +380,7 @@ export function PartnersManager({
 
   return (
     <div className="flex flex-col gap-3">
-      <h2 className="text-sm font-semibold">Partners</h2>
-
-      {selected.size > 0 && (
-        <div className="flex items-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-sm">
-          <button
-            type="button"
-            onClick={toggleAll}
-            className="flex h-5 w-5 items-center justify-center rounded border border-border bg-foreground text-background"
-            aria-label="Clear selection"
-          >
-            −
-          </button>
-          <span className="font-medium">{selected.size} selected</span>
-          <select
-            aria-label="Change status"
-            defaultValue=""
-            disabled={bulkBusy}
-            onChange={(e) => {
-              const action = e.target.value as "activate" | "deactivate";
-              e.target.value = "";
-              if (action) runBulk(action);
-            }}
-            className="rounded-full border border-border bg-background px-3 py-1.5 text-sm font-semibold hover:bg-border/40 disabled:opacity-50"
-          >
-            <option value="" disabled>
-              {bulkBusy ? "Updating…" : "Change status"}
-            </option>
-            <option value="activate">Activate</option>
-            <option value="deactivate">Deactivate</option>
-          </select>
-          <div ref={moreRef} className="relative">
-            <button
-              type="button"
-              onClick={() => setMoreOpen((v) => !v)}
-              aria-label="More bulk actions"
-              className="rounded-full border border-border p-2 hover:bg-border/40"
-            >
-              <MoreIcon />
-            </button>
-            {moreOpen && (
-              <div className="absolute left-0 top-full z-40 mt-2 w-48 rounded-lg border border-border bg-background py-1 shadow-lg">
-                <button
-                  type="button"
-                  onClick={() => runBulk("delete")}
-                  className="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
-                >
-                  Delete partners
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      <h2 className="text-sm font-semibold text-muted">Partners</h2>
 
       <div className="flex w-full items-center gap-2">
         {partners.length > 0 && (
@@ -558,7 +494,59 @@ export function PartnersManager({
 
       <div className="flex flex-wrap items-start gap-4">
       {partners.length > 0 && (
-        <div className="w-fit overflow-hidden rounded-xl border border-border">
+        <div className="flex w-fit flex-col gap-2">
+          {selected.size > 0 && (
+            <div className="flex w-full items-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-sm">
+              <button
+                type="button"
+                onClick={toggleAll}
+                className="flex h-5 w-5 items-center justify-center rounded border border-border bg-foreground text-background"
+                aria-label="Clear selection"
+              >
+                −
+              </button>
+              <span className="font-medium">{selected.size} selected</span>
+              <select
+                aria-label="Change status"
+                defaultValue=""
+                disabled={bulkBusy}
+                onChange={(e) => {
+                  const action = e.target.value as "activate" | "deactivate";
+                  e.target.value = "";
+                  if (action) runBulk(action);
+                }}
+                className="rounded-full border border-border bg-background px-3 py-1.5 text-sm font-semibold hover:bg-border/40 disabled:opacity-50"
+              >
+                <option value="" disabled>
+                  {bulkBusy ? "Updating…" : "Change status"}
+                </option>
+                <option value="activate">Activate</option>
+                <option value="deactivate">Deactivate</option>
+              </select>
+              <div ref={moreRef} className="relative">
+                <button
+                  type="button"
+                  onClick={() => setMoreOpen((v) => !v)}
+                  aria-label="More bulk actions"
+                  className="rounded-full border border-border p-2 hover:bg-border/40"
+                >
+                  <MoreIcon />
+                </button>
+                {moreOpen && (
+                  <div className="absolute left-0 top-full z-40 mt-2 w-48 rounded-lg border border-border bg-background py-1 shadow-lg">
+                    <button
+                      type="button"
+                      onClick={() => runBulk("delete")}
+                      className="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+                    >
+                      Delete partners
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        <div className="w-fit overflow-hidden rounded-xl border border-border bg-background">
           <div>
             <table className="border-collapse">
               <thead>
@@ -599,13 +587,16 @@ export function PartnersManager({
               <tbody className="divide-y divide-border">
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={10} className="py-4 text-center text-sm text-muted">
+                    <td colSpan={11} className="py-4 text-center text-sm text-muted">
                       No partners match &ldquo;{query}&rdquo;.
                     </td>
                   </tr>
                 )}
                 {filtered.map((p) => {
                   const fullName = [p.firstName, p.lastName].filter(Boolean).join(" ");
+                  const activeOffer = p.offers.find(
+                    (o) => o.active && !(o.expiresAt && new Date(o.expiresAt) < new Date())
+                  );
                   return (
                     <tr
                       key={p.id}
@@ -634,7 +625,7 @@ export function PartnersManager({
                         {TYPE_LABELS[p.type] ?? p.type}
                       </td>
                       <td className="whitespace-nowrap py-3 pr-7 text-xs">
-                        {p.couponCode ?? <span className="text-muted">—</span>}
+                        {activeOffer ? activeOffer.code : <span className="text-muted">—</span>}
                       </td>
                       <td className="whitespace-nowrap py-3 pr-7 text-right text-sm">
                         {p.overall.pageViews}
@@ -672,6 +663,7 @@ export function PartnersManager({
               </tbody>
             </table>
           </div>
+        </div>
         </div>
       )}
 

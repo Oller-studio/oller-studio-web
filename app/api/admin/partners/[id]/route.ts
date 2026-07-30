@@ -21,12 +21,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 
   const { id } = await params;
-  const body = (await request.json()) as { couponCode?: string | null; active?: boolean };
+  const body = (await request.json()) as { active?: boolean };
 
-  const data: { couponCode?: string | null; active?: boolean } = {};
-  if ("couponCode" in body) {
-    data.couponCode = body.couponCode?.trim().toUpperCase() || null;
-  }
+  const data: { active?: boolean } = {};
   if (typeof body.active === "boolean") {
     data.active = body.active;
   }

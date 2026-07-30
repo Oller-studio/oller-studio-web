@@ -43,7 +43,7 @@ const sections: Section[] = [
     icon: MarketingIcon,
     children: [
       { href: "/admin/marketing/partners", label: "Partners" },
-      { href: "/admin/marketing/offers", label: "Offers", comingSoon: true },
+      { href: "/admin/marketing/offers", label: "Offers" },
     ],
   },
   { href: "/admin/finance", label: "Finance", icon: FinanceIcon },

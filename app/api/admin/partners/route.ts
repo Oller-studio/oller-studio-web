@@ -12,7 +12,6 @@ export async function POST(request: Request) {
     type?: string;
     firstName?: string;
     lastName?: string;
-    couponCode?: string;
     platforms?: string[];
   };
 
@@ -41,7 +40,6 @@ export async function POST(request: Request) {
       type: body.type as PartnerType,
       firstName: body.firstName.trim(),
       lastName: body.lastName?.trim() || null,
-      couponCode: body.couponCode?.trim().toUpperCase() || null,
       links,
     });
   } catch {
