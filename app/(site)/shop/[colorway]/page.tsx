@@ -6,7 +6,6 @@ import { getAdminViewer } from "@/lib/admin";
 import { formatPrice } from "@/lib/format";
 import { swatchBackground } from "@/lib/swatch";
 import { ColorwayGallery } from "@/components/shop/ColorwayGallery";
-import { AvailabilityBadge } from "@/components/shop/AvailabilityBadge";
 import { AddToBagButton } from "@/components/shop/AddToBagButton";
 import { ProductAccordion } from "@/components/shop/ProductAccordion";
 
@@ -110,15 +109,6 @@ export default async function ColorwayPage({
             <p className="text-base font-normal text-muted">
               {formatPrice(colorway.price, colorway.product.currency)}
             </p>
-
-            {colorway.shopBadge.kind !== "available" && (
-              <AvailabilityBadge
-                shopBadge={colorway.shopBadge}
-                piecesRemaining={colorway.piecesRemaining}
-                totalPieces={colorway.totalPieces}
-                stockOnHand={colorway.stockOnHand}
-              />
-            )}
 
             {colorway.matchedCar && (
               <p className="text-sm text-muted">
