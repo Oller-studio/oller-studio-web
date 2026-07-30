@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, useRef, useState } from "react";
+import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ColorwayInput } from "@/lib/colorways";
 import { AutoTextarea } from "./AutoTextarea";
@@ -150,8 +150,16 @@ function toInput(form: ColorwayFormState, productSlug: string): ColorwayInput {
   };
 }
 
+// Exposed to the parent Product form so its own Save button can save
+// whichever color is open too — a plain save() that resolves when the
+// network request settles, so the two saves run one after another instead
+// of racing each other's fetch + router.push/refresh at the same time.
+export type ColorwayFormHandle = {
+  save: () => Promise<boolean>;
+};
+
 export const ColorwayForm = forwardRef<
-  HTMLFormElement,
+  ColorwayFormHandle,
   {
     mode: "create" | "edit";
     productSlug: string;
@@ -198,8 +206,11 @@ export const ColorwayForm = forwardRef<
     }
   }
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
+  // Just the network save — no navigation, no onSaved callback. Used both
+  // by the normal submit below and by the parent Product form's cascade
+  // save, which needs to know when this settles without triggering a
+  // second, competing router.push/refresh of its own.
+  async function performSave(): Promise<boolean> {
     setSaving(true);
     setError(null);
 
@@ -225,10 +236,20 @@ export const ColorwayForm = forwardRef<
       const data = res ? ((await res.json().catch(() => null)) as { reason?: string } | null) : null;
       setError(data?.reason ?? "Something went wrong saving this color variant.");
       setSaving(false);
-      return;
+      return false;
     }
 
     setForm(draftForm);
+    setSaving(false);
+    return true;
+  }
+
+  useImperativeHandle(formRef, () => ({ save: performSave }));
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    const ok = await performSave();
+    if (!ok) return;
     onSaved?.();
     router.push(`/admin/products/${productSlug}`);
     router.refresh();
@@ -267,7 +288,7 @@ export const ColorwayForm = forwardRef<
   const rowLabelClass = "text-sm font-semibold sm:w-36 sm:shrink-0";
 
   return (
-    <form ref={formRef} onSubmit={submit} className="flex w-full flex-col gap-4">
+    <form onSubmit={submit} className="flex w-full flex-col gap-4">
 
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
         <span className={rowLabelClass}>Status</span>
@@ -518,7 +539,6 @@ export const ColorwayForm = forwardRef<
         )}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <div className="flex flex-col gap-3 rounded-xl border border-border p-4">
         <p className={labelClass}>Tier &amp; Inventory</p>
 
@@ -671,8 +691,8 @@ export const ColorwayForm = forwardRef<
 
         {stockMode === "stock_in_hand" && (
           <p className="text-xs text-muted sm:ml-40">
-            Internal only — never shown to customers. Use Shop Badge next to
-            it to control what they see.
+            Internal only — never shown to customers. Use Shop Badge below to
+            control what they see.
           </p>
         )}
       </div>
@@ -712,7 +732,6 @@ export const ColorwayForm = forwardRef<
               ? "Shows Stock on hand (set in Inventory) as the count — goes down as it actually sells."
               : "What customers see on the shop grid and product page."}
         </p>
-      </div>
       </div>
 
       {form.tier === "signature" && (

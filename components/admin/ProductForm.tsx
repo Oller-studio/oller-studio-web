@@ -281,8 +281,9 @@ export function ProductForm({
 
     // Also save whichever color is currently open (editing or being added)
     // — one button, two saves, so a wrong-button click can't silently drop
-    // color changes the way two separately-labeled Save buttons did.
-    colorVariantsRef.current?.saveActive();
+    // color changes the way two separately-labeled Save buttons did. Awaited
+    // so it finishes (and stops touching the DB) before this save starts.
+    await colorVariantsRef.current?.saveActive();
 
     const url = mode === "create" ? "/api/admin/products" : `/api/admin/products/${form.slug}`;
     const method = mode === "create" ? "POST" : "PATCH";

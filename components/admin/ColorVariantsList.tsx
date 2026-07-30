@@ -4,7 +4,7 @@ import { Fragment, forwardRef, useEffect, useImperativeHandle, useRef, useState 
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ColorwayForm, type ColorwayFormState } from "./ColorwayForm";
+import { ColorwayForm, type ColorwayFormHandle, type ColorwayFormState } from "./ColorwayForm";
 import { COLORWAY_STATUSES, STATUS_BADGE, STATUS_LABELS } from "@/lib/colorwayStatus";
 import { formatMoneyCents } from "@/lib/format";
 
@@ -160,7 +160,7 @@ function StockCell({ slug, stockOnHand }: { slug: string; stockOnHand: number })
 // so there's one obvious "save everything" action instead of two easily
 // confused buttons.
 export type ColorVariantsListHandle = {
-  saveActive: () => void;
+  saveActive: () => Promise<void>;
 };
 
 export const ColorVariantsList = forwardRef<
@@ -174,17 +174,20 @@ export const ColorVariantsList = forwardRef<
   const [statusFilter, setStatusFilter] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const filtersRef = useRef<HTMLDivElement>(null);
-  const openFormRef = useRef<HTMLFormElement>(null);
-  const newFormRef = useRef<HTMLFormElement>(null);
+  const openFormRef = useRef<ColorwayFormHandle>(null);
+  const newFormRef = useRef<ColorwayFormHandle>(null);
   const router = useRouter();
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
 
   useImperativeHandle(ref, () => ({
-    saveActive: () => {
-      openFormRef.current?.requestSubmit();
-      newFormRef.current?.requestSubmit();
+    saveActive: async () => {
+      // Sequential, not parallel — two concurrent writes to the SQLite
+      // file (this color + the product itself) can block on the same
+      // file lock, which is what left the Save button stuck on "Saving…".
+      await openFormRef.current?.save();
+      await newFormRef.current?.save();
     },
   }));
 
