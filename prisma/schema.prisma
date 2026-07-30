@@ -155,9 +155,6 @@ model Colorway {
   // (everything except sold_out). Replaces what used to be spread across
   // availabilityStatus + a separate "mark as new" + "show stock" checkbox.
   shopBadge              String   @default("available")
-  // Only meaningful when shopBadge = "coming_soon" — the ship-after date
-  // shown next to the badge so the buyer can commit with real expectations.
-  shopBadgeShipsFrom     String?
   // Ready-to-ship pieces already sitting in the studio. When shopBadge is
   // "in_stock", this same number is what customers see too (e.g. "1 in
   // stock") — one number, so it goes down for real as it sells instead of

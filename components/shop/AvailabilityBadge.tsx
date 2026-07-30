@@ -1,5 +1,4 @@
 import type { ShopBadge } from "@/lib/types";
-import { formatShipsFrom } from "@/lib/format";
 
 type AvailabilityBadgeProps = {
   shopBadge: ShopBadge;
@@ -27,7 +26,7 @@ export function AvailabilityBadge({
   if (shopBadge.kind === "coming_soon") {
     return (
       <span className="text-[11px] font-bold uppercase tracking-wide text-accent">
-        {formatShipsFrom(shopBadge.shipsFrom)}
+        Coming Soon
       </span>
     );
   }

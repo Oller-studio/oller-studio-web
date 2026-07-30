@@ -20,11 +20,3 @@ export function formatPrice(amount: number, currency: string): string {
 export function formatLeadTime([min, max]: [number, number]): string {
   return `Ships in ${min}–${max} days`;
 }
-
-export function formatShipsFrom(isoDate: string): string {
-  const date = new Date(isoDate);
-  return `Orders ship starting ${date.toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-  })}`;
-}

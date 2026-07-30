@@ -25,7 +25,6 @@ export function rowToVariantRow(
       | "limited_edition"
       | "sold_out"
       | "back_in_stock",
-    shopBadgeShipsFrom: row.shopBadgeShipsFrom,
     piecesRemaining: row.piecesRemaining,
     totalPieces: row.totalPieces,
     stockOnHand: row.stockOnHand,
@@ -67,7 +66,6 @@ export function rowToVariantRow(
         | "limited_edition"
         | "sold_out"
         | "back_in_stock",
-      shopBadgeShipsFrom: row.shopBadgeShipsFrom ?? "",
       stockOnHand: row.stockOnHand.toString(),
       isFeatured: row.isFeatured,
       launchedAt: row.launchedAt,

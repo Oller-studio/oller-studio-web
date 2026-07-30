@@ -58,7 +58,6 @@ export type ColorwayFormState = {
   campaignName: string;
   campaignRole: string;
   shopBadge: "available" | "new" | "in_stock" | "coming_soon" | "limited_edition" | "sold_out" | "back_in_stock";
-  shopBadgeShipsFrom: string;
   stockOnHand: string;
   isFeatured: boolean;
   launchedAt: string;
@@ -94,7 +93,6 @@ function initialState(existing?: Partial<ColorwayFormState>): ColorwayFormState 
     campaignName: existing?.campaignName ?? "",
     campaignRole: existing?.campaignRole ?? "",
     shopBadge: existing?.shopBadge ?? "available",
-    shopBadgeShipsFrom: existing?.shopBadgeShipsFrom ?? "",
     stockOnHand: existing?.stockOnHand ?? "0",
     isFeatured: existing?.isFeatured ?? false,
     launchedAt: existing?.launchedAt ?? new Date().toISOString().slice(0, 10),
@@ -142,7 +140,6 @@ function toInput(form: ColorwayFormState, productSlug: string): ColorwayInput {
     campaignName: isLimited ? form.campaignName.trim() || null : null,
     campaignRole: isLimited ? form.campaignRole.trim() || null : null,
     shopBadge: form.shopBadge,
-    shopBadgeShipsFrom: form.shopBadge === "coming_soon" ? form.shopBadgeShipsFrom.trim() || null : null,
     stockOnHand: Number(form.stockOnHand) || 0,
     isFeatured: form.isFeatured,
     launchedAt: form.launchedAt,
@@ -715,22 +712,15 @@ export const ColorwayForm = forwardRef<
             <option value="sold_out">Sold out</option>
             <option value="back_in_stock">Back in stock</option>
           </select>
-          {form.shopBadge === "coming_soon" && (
-            <input
-              type="text"
-              value={form.shopBadgeShipsFrom}
-              onChange={(e) => set("shopBadgeShipsFrom", e.target.value)}
-              placeholder="e.g. Aug 4"
-              className={`${inputClass} w-32`}
-            />
-          )}
         </div>
         <p className="text-xs text-muted">
           {form.shopBadge === "sold_out"
             ? "Add to Bag is disabled. Everything else keeps the button active."
             : form.shopBadge === "in_stock"
               ? "Shows Stock on hand (set in Inventory) as the count — goes down as it actually sells."
-              : "What customers see on the shop grid and product page."}
+              : form.shopBadge === "coming_soon"
+                ? 'Product page button reads "Reserve Yours" instead of "Add to Bag".'
+                : "What customers see on the shop grid and product page."}
         </p>
       </div>
 

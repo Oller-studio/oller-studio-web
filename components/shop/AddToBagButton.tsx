@@ -1,7 +1,6 @@
 "use client";
 
 import type { ShopBadge } from "@/lib/types";
-import { formatShipsFrom } from "@/lib/format";
 import { useCart } from "@/components/cart/cart-context";
 
 type AddToBagButtonProps = {
@@ -38,11 +37,6 @@ export function AddToBagButton({
 
   return (
     <div className="flex flex-col gap-3">
-      {shopBadge.kind === "coming_soon" && (
-        <p className="text-sm font-medium text-accent">
-          {formatShipsFrom(shopBadge.shipsFrom)}
-        </p>
-      )}
       <button
         type="button"
         onClick={() => addItem({ slug, name, price, currency, image })}

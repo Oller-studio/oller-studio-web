@@ -12,7 +12,6 @@ const TIER_LABELS = { collection: "Collection", signature: "Signature" } as cons
 
 function formatShopBadge(v: {
   shopBadge: VariantRow["shopBadge"];
-  shopBadgeShipsFrom: string | null;
   stockOnHand: number;
 }): string {
   switch (v.shopBadge) {
@@ -21,7 +20,7 @@ function formatShopBadge(v: {
     case "in_stock":
       return `${v.stockOnHand} in stock`;
     case "coming_soon":
-      return `Coming soon (${v.shopBadgeShipsFrom ?? "—"})`;
+      return "Coming soon";
     case "limited_edition":
       return "Limited Edition";
     case "sold_out":
@@ -39,7 +38,6 @@ export type VariantRow = {
   tier: "collection" | "signature";
   status: "draft" | "active" | "unlisted" | "inactive";
   shopBadge: "available" | "new" | "in_stock" | "coming_soon" | "limited_edition" | "sold_out" | "back_in_stock";
-  shopBadgeShipsFrom: string | null;
   piecesRemaining: number | null;
   totalPieces: number | null;
   stockOnHand: number;
