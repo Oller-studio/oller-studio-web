@@ -159,6 +159,7 @@ export default async function ColorwayPage({
             <AddToBagButton
               slug={colorway.slug}
               name={colorway.name}
+              productName={colorway.product.name}
               price={colorway.price}
               currency={colorway.product.currency}
               image={colorway.images[0]}

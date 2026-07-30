@@ -7,6 +7,7 @@ import { NotifyMeForm } from "./NotifyMeForm";
 type AddToBagButtonProps = {
   slug: string;
   name: string;
+  productName: string;
   price: number;
   currency: string;
   image?: string;
@@ -17,6 +18,7 @@ type AddToBagButtonProps = {
 export function AddToBagButton({
   slug,
   name,
+  productName,
   price,
   currency,
   image,
@@ -31,10 +33,7 @@ export function AddToBagButton({
   if (isSoldOut) {
     return (
       <div className="flex flex-col gap-3">
-        <span className="block w-full border border-foreground/20 py-3.5 text-center text-sm font-semibold uppercase tracking-wide text-foreground/50">
-          Sold out
-        </span>
-        <NotifyMeForm slug={slug} />
+        <NotifyMeForm slug={slug} productName={productName} colorName={name} />
       </div>
     );
   }
