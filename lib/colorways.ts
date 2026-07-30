@@ -27,18 +27,31 @@ function rowToColorwayProduct(row: ProductModel): ColorwayProduct {
 }
 
 function rowToColorway(row: ColorwayRow & { product: ProductModel }): Colorway {
+  // Scheduled launch: while launchedAt hasn't happened yet, the color reads
+  // as Coming Soon no matter what Shop Badge is set to in the admin —
+  // computed here on every read, so it flips over on its own the moment the
+  // date passes, with nothing to remember to go toggle by hand. Once that
+  // date passes, a badge that was itself "coming_soon" settles to Available
+  // (its natural end state); any other badge just takes over as stored.
+  const isScheduled = new Date(row.launchedAt) > new Date();
+  const effectiveBadge = isScheduled
+    ? "coming_soon"
+    : row.shopBadge === "coming_soon"
+      ? "available"
+      : row.shopBadge;
+
   const shopBadge: Colorway["shopBadge"] =
-    row.shopBadge === "new"
+    effectiveBadge === "new"
       ? { kind: "new" }
-      : row.shopBadge === "in_stock"
+      : effectiveBadge === "in_stock"
         ? { kind: "in_stock" }
-        : row.shopBadge === "coming_soon"
+        : effectiveBadge === "coming_soon"
           ? { kind: "coming_soon" }
-          : row.shopBadge === "limited_edition"
+          : effectiveBadge === "limited_edition"
             ? { kind: "limited_edition" }
-            : row.shopBadge === "sold_out"
+            : effectiveBadge === "sold_out"
               ? { kind: "sold_out" }
-              : row.shopBadge === "back_in_stock"
+              : effectiveBadge === "back_in_stock"
                 ? { kind: "back_in_stock" }
                 : { kind: "available" };
 

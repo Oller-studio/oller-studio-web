@@ -712,6 +712,17 @@ export const ColorwayForm = forwardRef<
             <option value="sold_out">Sold out</option>
             <option value="back_in_stock">Back in stock</option>
           </select>
+          {form.shopBadge === "coming_soon" && (
+            <label className="flex items-center gap-2 text-xs text-muted">
+              Launch date
+              <input
+                type="date"
+                value={form.launchedAt}
+                onChange={(e) => set("launchedAt", e.target.value)}
+                className={`${inputClass} w-40`}
+              />
+            </label>
+          )}
         </div>
         <p className="text-xs text-muted">
           {form.shopBadge === "sold_out"
@@ -719,7 +730,7 @@ export const ColorwayForm = forwardRef<
             : form.shopBadge === "in_stock"
               ? "Shows Stock on hand (set in Inventory) as the count — goes down as it actually sells."
               : form.shopBadge === "coming_soon"
-                ? 'Product page button reads "Reserve Yours" instead of "Add to Bag".'
+                ? 'Button reads "Reserve Yours" until the launch date, then this switches to Available on its own — no need to come back and change it.'
                 : "What customers see on the shop grid and product page."}
         </p>
       </div>
