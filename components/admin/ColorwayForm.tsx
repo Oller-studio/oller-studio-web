@@ -57,7 +57,7 @@ export type ColorwayFormState = {
   campaignQuote: string;
   campaignName: string;
   campaignRole: string;
-  shopBadge: "available" | "new" | "in_stock" | "coming_soon" | "sold_out" | "back_in_stock";
+  shopBadge: "available" | "new" | "in_stock" | "coming_soon" | "limited_edition" | "sold_out" | "back_in_stock";
   shopBadgeShipsFrom: string;
   stockOnHand: string;
   isFeatured: boolean;
@@ -391,61 +391,20 @@ export const ColorwayForm = forwardRef<
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-col gap-1">
-            <span className={labelClass}>Media (max 4)</span>
-            <ImagesField images={form.images} onChange={(v) => set("images", v)} max={4} />
-          </div>
-
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={form.isFeatured}
-              onChange={(e) => set("isFeatured", e.target.checked)}
-            />
-            <span className="text-sm">Featured on homepage</span>
-          </label>
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <span className={labelClass}>Shop Badge</span>
-          <div className="flex flex-wrap items-center gap-2">
-            <select
-              value={form.shopBadge}
-              onChange={(e) =>
-                set("shopBadge", e.target.value as ColorwayFormState["shopBadge"])
-              }
-              className={`${inputClass} w-44`}
-            >
-              <option value="available">Available</option>
-              <option value="new">New</option>
-              <option value="in_stock">X in stock</option>
-              <option value="coming_soon">Coming soon</option>
-              <option value="sold_out">Sold out</option>
-              <option value="back_in_stock">Back in stock</option>
-            </select>
-            {form.shopBadge === "coming_soon" && (
-              <input
-                type="text"
-                value={form.shopBadgeShipsFrom}
-                onChange={(e) => set("shopBadgeShipsFrom", e.target.value)}
-                placeholder="e.g. orders ship starting Aug 4"
-                className={`${inputClass} w-64`}
-              />
-            )}
-          </div>
-          <p className="text-xs text-muted">
-            {form.shopBadge === "sold_out"
-              ? "Add to Bag is disabled. Everything else keeps the button active."
-              : form.shopBadge === "in_stock"
-                ? "Shows Stock on hand (set in Inventory below) as the count — goes down as it actually sells."
-                : "What customers see on the shop grid and product page."}
-          </p>
-        </div>
+      <div className="flex flex-col gap-1">
+        <span className={labelClass}>Media (max 4)</span>
+        <ImagesField images={form.images} onChange={(v) => set("images", v)} max={4} />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <label className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          checked={form.isFeatured}
+          onChange={(e) => set("isFeatured", e.target.checked)}
+        />
+        <span className="text-sm">Featured on homepage</span>
+      </label>
+
       <div className="flex flex-col gap-3 rounded-xl border border-border p-4">
         <p className={labelClass}>Price</p>
         <label className="flex w-28 flex-col gap-1">
@@ -559,6 +518,7 @@ export const ColorwayForm = forwardRef<
         )}
       </div>
 
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <div className="flex flex-col gap-3 rounded-xl border border-border p-4">
         <p className={labelClass}>Tier &amp; Inventory</p>
 
@@ -711,10 +671,47 @@ export const ColorwayForm = forwardRef<
 
         {stockMode === "stock_in_hand" && (
           <p className="text-xs text-muted sm:ml-40">
-            Internal only — never shown to customers. Use Shop Badge above to
-            control what they see.
+            Internal only — never shown to customers. Use Shop Badge next to
+            it to control what they see.
           </p>
         )}
+      </div>
+
+      <div className="flex flex-col gap-3 rounded-xl border border-border p-4">
+        <p className={labelClass}>Shop Badge</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={form.shopBadge}
+            onChange={(e) =>
+              set("shopBadge", e.target.value as ColorwayFormState["shopBadge"])
+            }
+            className={`${inputClass} w-44`}
+          >
+            <option value="available">Available</option>
+            <option value="new">New</option>
+            <option value="in_stock">X in stock</option>
+            <option value="coming_soon">Coming soon</option>
+            <option value="limited_edition">Limited Edition</option>
+            <option value="sold_out">Sold out</option>
+            <option value="back_in_stock">Back in stock</option>
+          </select>
+          {form.shopBadge === "coming_soon" && (
+            <input
+              type="text"
+              value={form.shopBadgeShipsFrom}
+              onChange={(e) => set("shopBadgeShipsFrom", e.target.value)}
+              placeholder="e.g. Aug 4"
+              className={`${inputClass} w-32`}
+            />
+          )}
+        </div>
+        <p className="text-xs text-muted">
+          {form.shopBadge === "sold_out"
+            ? "Add to Bag is disabled. Everything else keeps the button active."
+            : form.shopBadge === "in_stock"
+              ? "Shows Stock on hand (set in Inventory) as the count — goes down as it actually sells."
+              : "What customers see on the shop grid and product page."}
+        </p>
       </div>
       </div>
 

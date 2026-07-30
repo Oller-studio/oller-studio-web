@@ -2,6 +2,7 @@
 
 import { Fragment, forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ColorwayForm, type ColorwayFormState } from "./ColorwayForm";
 import { COLORWAY_STATUSES, STATUS_BADGE, STATUS_LABELS } from "@/lib/colorwayStatus";
@@ -21,6 +22,8 @@ function formatShopBadge(v: {
       return `${v.stockOnHand} in stock`;
     case "coming_soon":
       return `Coming soon (${v.shopBadgeShipsFrom ?? "—"})`;
+    case "limited_edition":
+      return "Limited Edition";
     case "sold_out":
       return "Sold out";
     case "back_in_stock":
@@ -35,7 +38,7 @@ export type VariantRow = {
   name: string;
   tier: "collection" | "signature";
   status: "draft" | "active" | "unlisted" | "inactive";
-  shopBadge: "available" | "new" | "in_stock" | "coming_soon" | "sold_out" | "back_in_stock";
+  shopBadge: "available" | "new" | "in_stock" | "coming_soon" | "limited_edition" | "sold_out" | "back_in_stock";
   shopBadgeShipsFrom: string | null;
   piecesRemaining: number | null;
   totalPieces: number | null;
@@ -457,7 +460,14 @@ export const ColorVariantsList = forwardRef<
                         )}
                       </td>
                       <td className="whitespace-nowrap py-3 pr-7 text-sm font-semibold">
-                        {v.name}
+                        <Link
+                          href={`/shop/${v.slug}`}
+                          target="_blank"
+                          onClick={(e) => e.stopPropagation()}
+                          className="hover:underline"
+                        >
+                          {v.name}
+                        </Link>
                       </td>
                       <td className="whitespace-nowrap py-3 pr-7 text-sm font-medium">
                         {formatMoneyCents(v.priceCents, v.currency)}

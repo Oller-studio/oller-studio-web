@@ -54,6 +54,14 @@ export function AvailabilityBadge({
     );
   }
 
+  if (shopBadge.kind === "limited_edition") {
+    return (
+      <span className="text-[11px] font-bold uppercase tracking-wide text-foreground">
+        Limited Edition
+      </span>
+    );
+  }
+
   if (shopBadge.kind === "back_in_stock") {
     return (
       <span className="text-[11px] font-bold uppercase tracking-wide text-foreground">

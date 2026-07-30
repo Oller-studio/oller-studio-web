@@ -19,6 +19,7 @@ export type ShopBadge =
   | { kind: "new" }
   | { kind: "in_stock" }
   | { kind: "coming_soon"; shipsFrom: string }
+  | { kind: "limited_edition" }
   | { kind: "sold_out" }
   | { kind: "back_in_stock" };
 

@@ -22,6 +22,7 @@ export function rowToVariantRow(
       | "new"
       | "in_stock"
       | "coming_soon"
+      | "limited_edition"
       | "sold_out"
       | "back_in_stock",
     shopBadgeShipsFrom: row.shopBadgeShipsFrom,
@@ -63,6 +64,7 @@ export function rowToVariantRow(
         | "new"
         | "in_stock"
         | "coming_soon"
+        | "limited_edition"
         | "sold_out"
         | "back_in_stock",
       shopBadgeShipsFrom: row.shopBadgeShipsFrom ?? "",

@@ -34,11 +34,13 @@ function rowToColorway(row: ColorwayRow & { product: ProductModel }): Colorway {
         ? { kind: "in_stock" }
         : row.shopBadge === "coming_soon"
           ? { kind: "coming_soon", shipsFrom: row.shopBadgeShipsFrom ?? "" }
-          : row.shopBadge === "sold_out"
-            ? { kind: "sold_out" }
-            : row.shopBadge === "back_in_stock"
-              ? { kind: "back_in_stock" }
-              : { kind: "available" };
+          : row.shopBadge === "limited_edition"
+            ? { kind: "limited_edition" }
+            : row.shopBadge === "sold_out"
+              ? { kind: "sold_out" }
+              : row.shopBadge === "back_in_stock"
+                ? { kind: "back_in_stock" }
+                : { kind: "available" };
 
   const matchedCar = row.matchedCarMake
     ? {
@@ -159,7 +161,7 @@ export type ColorwayInput = {
   campaignQuote: string | null;
   campaignName: string | null;
   campaignRole: string | null;
-  shopBadge: "available" | "new" | "in_stock" | "coming_soon" | "sold_out" | "back_in_stock";
+  shopBadge: "available" | "new" | "in_stock" | "coming_soon" | "limited_edition" | "sold_out" | "back_in_stock";
   shopBadgeShipsFrom: string | null;
   stockOnHand: number;
   isFeatured: boolean;
