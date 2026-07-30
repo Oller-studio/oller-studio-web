@@ -13,6 +13,9 @@ type AddToBagButtonProps = {
   image?: string;
   shopBadge: ShopBadge;
   piecesRemaining?: number;
+  // Set when the visitor arrived via a private waitlist link — lets this one
+  // person buy a sold-out color without changing the public Shop Badge.
+  forceUnlocked?: boolean;
 };
 
 export function AddToBagButton({
@@ -24,11 +27,12 @@ export function AddToBagButton({
   image,
   shopBadge,
   piecesRemaining,
+  forceUnlocked,
 }: AddToBagButtonProps) {
   const { addItem } = useCart();
-  const isSoldOut =
-    shopBadge.kind === "sold_out" ||
-    (piecesRemaining !== undefined && piecesRemaining <= 0);
+  const wouldBeSoldOut =
+    shopBadge.kind === "sold_out" || (piecesRemaining !== undefined && piecesRemaining <= 0);
+  const isSoldOut = wouldBeSoldOut && !forceUnlocked;
 
   if (isSoldOut) {
     return (
@@ -40,6 +44,11 @@ export function AddToBagButton({
 
   return (
     <div className="flex flex-col gap-3">
+      {forceUnlocked && wouldBeSoldOut && (
+        <p className="text-xs uppercase tracking-wide text-muted">
+          Reserved for you — printed on request from this link.
+        </p>
+      )}
       <button
         type="button"
         onClick={() => addItem({ slug, name, price, currency, image })}

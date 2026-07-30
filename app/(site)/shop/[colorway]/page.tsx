@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { getAllColorways, getColorwayBySlug } from "@/lib/colorways";
 import { getAdminViewer } from "@/lib/admin";
+import { prisma } from "@/lib/db";
 import { formatPrice } from "@/lib/format";
 import { swatchBackground } from "@/lib/swatch";
 import { ColorwayGallery } from "@/components/shop/ColorwayGallery";
@@ -22,16 +23,32 @@ export async function generateStaticParams() {
 
 export default async function ColorwayPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ colorway: string }>;
+  searchParams: Promise<{ access?: string }>;
 }) {
   const { colorway: slug } = await params;
+  const { access } = await searchParams;
   const { isAdmin } = await getAdminViewer();
   const colorway = await getColorwayBySlug(slug, { previewAsAdmin: isAdmin });
 
   if (!colorway) {
     notFound();
   }
+
+  // A private "Notify me" link — unlocks Add to Bag for this one visitor
+  // without touching the public Shop Badge everyone else sees.
+  const hasWaitlistAccess = access
+    ? (await prisma.waitlistEntry.findFirst({
+        where: {
+          colorwaySlug: colorway.slug,
+          accessToken: access,
+          status: { not: "purchased" },
+        },
+        select: { id: true },
+      })) !== null
+    : false;
 
   const bullets = colorway.whyPoints ?? DEFAULT_BULLETS;
   const allColorways = await getAllColorways({ publishedOnly: true });
@@ -165,6 +182,7 @@ export default async function ColorwayPage({
               image={colorway.images[0]}
               shopBadge={colorway.shopBadge}
               piecesRemaining={colorway.piecesRemaining}
+              forceUnlocked={hasWaitlistAccess}
             />
 
             <ProductAccordion items={accordionItems} />

@@ -194,12 +194,20 @@ model FixedCost {
 // if that color is later renamed or removed — this is a record of demand,
 // not something that should disappear with the catalog entry.
 model WaitlistEntry {
-  id           String   @id @default(cuid())
+  id           String    @id @default(cuid())
   colorwaySlug String
   colorName    String
   productName  String
   email        String
-  createdAt    DateTime @default(now())
+  // waiting -> invited (admin sent the private restock link) -> purchased
+  // (matched to a completed order by email, see the PayPal webhook).
+  status       String    @default("waiting")
+  // Unguessable param that unlocks Add to Bag on this one color's page for
+  // whoever holds the link, without changing the public Shop Badge.
+  accessToken  String    @unique @default(cuid())
+  invitedAt    DateTime?
+  purchasedAt  DateTime?
+  createdAt    DateTime  @default(now())
 
   @@unique([colorwaySlug, email])
   @@index([colorwaySlug])

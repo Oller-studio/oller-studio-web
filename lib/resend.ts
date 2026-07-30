@@ -28,6 +28,36 @@ export async function sendWelcomeEmail(email: string, firstName?: string) {
   }
 }
 
+export async function sendRestockEmail(
+  to: string,
+  productName: string,
+  colorName: string,
+  link: string,
+) {
+  if (!resend) return false;
+
+  try {
+    await resend.emails.send({
+      from: FROM,
+      to,
+      subject: `${productName} — ${colorName} is available for you`,
+      html: `
+        <div style="font-family: Georgia, serif; max-width: 480px; margin: 0 auto; color: #1a1a1a;">
+          <h1 style="font-size: 20px; letter-spacing: 0.05em; text-transform: uppercase;">OLLER</h1>
+          <p>Hi,</p>
+          <p>You asked to be notified about <strong>${productName} — ${colorName}</strong>. We can print you one — this link lets you complete the purchase:</p>
+          <p style="margin: 24px 0;"><a href="${link}" style="display: inline-block; background: #1a1a1a; color: #fff; padding: 12px 24px; text-decoration: none; text-transform: uppercase; letter-spacing: 0.05em; font-size: 13px;">Get yours</a></p>
+          <p style="margin-top: 32px; font-size: 13px; color: #777;">— OLLER Studio</p>
+        </div>
+      `,
+    });
+    return true;
+  } catch (error) {
+    console.error("sendRestockEmail error", error);
+    return false;
+  }
+}
+
 export async function sendNewsletterSignup(email: string) {
   if (!resend) return false;
 

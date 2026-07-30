@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyPaypalWebhook, getOrderDetails } from "@/lib/paypal";
 import { prisma } from "@/lib/db";
+import { markWaitlistPurchased } from "@/lib/waitlist";
 
 type PaypalCaptureCompletedEvent = {
   event_type: "PAYMENT.CAPTURE.COMPLETED";
@@ -121,6 +122,11 @@ async function handleCaptureCompleted(event: PaypalCaptureCompletedEvent) {
           where: { slug: item.colorwaySlug },
           data: { stockOnHand: Math.max(0, colorway.stockOnHand - item.quantity) },
         });
+      }
+      // Best-effort: if this buyer was on that color's waitlist, drop them
+      // off the "still need to print" count automatically.
+      if (payerEmail) {
+        await markWaitlistPurchased(item.colorwaySlug, payerEmail);
       }
     }
   }
