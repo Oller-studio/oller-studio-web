@@ -44,7 +44,11 @@ const sections: Section[] = [
     href: "/admin/marketing",
     label: "Marketing",
     icon: MarketingIcon,
-    children: [{ href: "/admin/marketing/emails", label: "Emails" }],
+    children: [
+      { href: "/admin/marketing/partners", label: "Partners" },
+      { href: "/admin/marketing/offers", label: "Offers" },
+      { href: "/admin/marketing/emails", label: "Emails" },
+    ],
   },
   { href: "/admin/finance", label: "Finance", icon: FinanceIcon },
   { href: "/admin/analytics", label: "Analytics", icon: AnalyticsIcon, comingSoon: true },
