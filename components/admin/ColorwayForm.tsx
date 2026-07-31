@@ -213,6 +213,7 @@ export const ColorwayForm = forwardRef<
     Boolean(initial?.seoDescription)
   );
   const [saving, setSaving] = useState(false);
+  const [duplicating, setDuplicating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [scarcityType, setScarcityType] = useState<"units" | "dates" | "both">(
     initial?.dropEndsAt && initial?.totalPieces
@@ -330,6 +331,22 @@ export const ColorwayForm = forwardRef<
     }).catch(() => {});
     onDeleted?.();
     router.push(`/admin/products/${productSlug}`);
+    router.refresh();
+  }
+
+  async function duplicate() {
+    setDuplicating(true);
+    const res = await fetch(
+      `/api/admin/products/${productSlug}/variants/${currentSlugRef.current}/duplicate`,
+      { method: "POST" }
+    ).catch(() => null);
+    const data = res && res.ok ? ((await res.json()) as { slug: string }) : null;
+    setDuplicating(false);
+    if (!data) {
+      setError("Something went wrong duplicating this color.");
+      return;
+    }
+    router.push(`/admin/products/${productSlug}/variants/${data.slug}`);
     router.refresh();
   }
 
@@ -968,14 +985,24 @@ export const ColorwayForm = forwardRef<
           {saving ? "Saving…" : mode === "create" ? "Create color variant" : "Save color"}
         </button>
         {mode === "edit" && (
-          <button
-            type="button"
-            onClick={remove}
-            disabled={saving}
-            className="text-sm text-muted underline underline-offset-2 hover:text-foreground disabled:opacity-50"
-          >
-            Delete color variant
-          </button>
+          <>
+            <button
+              type="button"
+              onClick={duplicate}
+              disabled={saving || duplicating}
+              className="text-sm text-muted underline underline-offset-2 hover:text-foreground disabled:opacity-50"
+            >
+              {duplicating ? "Duplicating…" : "Duplicate color"}
+            </button>
+            <button
+              type="button"
+              onClick={remove}
+              disabled={saving || duplicating}
+              className="text-sm text-muted underline underline-offset-2 hover:text-foreground disabled:opacity-50"
+            >
+              Delete color variant
+            </button>
+          </>
         )}
       </div>
     </form>
