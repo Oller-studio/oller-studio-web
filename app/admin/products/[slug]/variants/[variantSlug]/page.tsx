@@ -34,7 +34,7 @@ export default async function EditVariantPage({
           {STATUS_LABELS[row.status as ColorwayStatus]}
         </span>
       </div>
-      <ColorwayForm mode="edit" productSlug={slug} initial={initial} />
+      <ColorwayForm mode="edit" productSlug={slug} productName={product.name} initial={initial} />
     </div>
   );
 }

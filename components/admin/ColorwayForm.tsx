@@ -161,16 +161,42 @@ export type ColorwayFormHandle = {
   save: () => Promise<boolean>;
 };
 
+// Live, specific-to-this-color suggestions for the SEO fields below — shown
+// as the input's placeholder, so leaving it blank saves exactly this (see
+// lib/seo.ts, which mirrors this same logic for the storefront side).
+// Prefers the car-match story when there is one, since that's OLLER's real
+// differentiator, not generic product copy.
+function suggestSeoTitle(productName: string, form: ColorwayFormState): string {
+  return `${productName} — ${form.name || "Color"} | OLLER`;
+}
+
+function suggestSeoDescription(productName: string, form: ColorwayFormState): string {
+  const name = form.name || "this color";
+  if (form.matchedCarMake) {
+    const car = [form.matchedCarMake, form.matchedCarModel].filter(Boolean).join(" ");
+    return `${productName} in ${name}, matched to a ${car}${form.matchedCarColorName ? ` in ${form.matchedCarColorName}` : ""}. 3D-printed and made to order.`.slice(
+      0,
+      160
+    );
+  }
+  if (form.story.trim()) return form.story.trim().slice(0, 160);
+  return `${productName} in ${name} — a sculptural, 3D-printed handbag made to order by OLLER.`.slice(
+    0,
+    160
+  );
+}
+
 export const ColorwayForm = forwardRef<
   ColorwayFormHandle,
   {
     mode: "create" | "edit";
     productSlug: string;
+    productName: string;
     initial?: Partial<ColorwayFormState>;
     onSaved?: () => void;
     onDeleted?: () => void;
   }
->(function ColorwayForm({ mode, productSlug, initial, onSaved, onDeleted }, formRef) {
+>(function ColorwayForm({ mode, productSlug, productName, initial, onSaved, onDeleted }, formRef) {
   const [form, setForm] = useState<ColorwayFormState>(initialState(initial));
   // Whatever slug the server currently has this row stored under — starts
   // as the slug we were loaded with, and only moves once a rename actually
@@ -885,7 +911,7 @@ export const ColorwayForm = forwardRef<
             type="text"
             value={form.seoTitle}
             onChange={(e) => set("seoTitle", e.target.value)}
-            placeholder={`${form.name || "Color"} | OLLER`}
+            placeholder={suggestSeoTitle(productName, form)}
             className={inputClass}
           />
         </label>
@@ -895,6 +921,7 @@ export const ColorwayForm = forwardRef<
           </span>
           <AutoTextarea
             value={form.seoDescription}
+            placeholder={suggestSeoDescription(productName, form)}
             onChange={(v) => set("seoDescription", v)}
             rows={2}
             className={inputClass}
