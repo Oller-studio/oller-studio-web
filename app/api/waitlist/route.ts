@@ -1,8 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { addToWaitlist } from "@/lib/waitlist";
+import { isRateLimited, clientIp } from "@/lib/rateLimit";
 
 export async function POST(request: Request) {
+  if (isRateLimited(`waitlist:${clientIp(request.headers)}`, 5, 60_000)) {
+    return NextResponse.json({ ok: false, reason: "Too many requests" }, { status: 429 });
+  }
+
   const { slug, email } = (await request.json().catch(() => null)) ?? {};
 
   if (!slug || typeof slug !== "string" || !email || typeof email !== "string") {

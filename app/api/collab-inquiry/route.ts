@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { sendCollabInquiry } from "@/lib/resend";
+import { isRateLimited, clientIp } from "@/lib/rateLimit";
 
 export async function POST(request: Request) {
+  if (isRateLimited(`collab:${clientIp(request.headers)}`, 5, 60_000)) {
+    return NextResponse.json({ ok: false, error: "Too many requests" }, { status: 429 });
+  }
+
   const { firstName, lastName, email, phone, message } = await request.json();
 
   if (
