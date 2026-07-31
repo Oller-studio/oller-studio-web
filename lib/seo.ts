@@ -16,13 +16,13 @@ export function colorwaySeoDescription(colorway: Colorway): string {
   // field placeholder (ColorwayForm.tsx's suggestSeoDescription).
   if (colorway.matchedCar) {
     const car = [colorway.matchedCar.make, colorway.matchedCar.model].filter(Boolean).join(" ");
-    return `${colorway.product.name} in ${colorway.name}, matched to a ${car}${colorway.matchedCar.colorName ? ` in ${colorway.matchedCar.colorName}` : ""}. 3D-printed and made to order.`.slice(
+    return `${colorway.product.name} in ${colorway.name}, matched to a ${car}${colorway.matchedCar.colorName ? ` in ${colorway.matchedCar.colorName}` : ""}. A sculptural, 3D-printed handbag by OLLER.`.slice(
       0,
       160
     );
   }
   if (colorway.story?.trim()) return colorway.story.trim().slice(0, 160);
-  return `${colorway.product.name} in ${colorway.name} — a sculptural, 3D-printed handbag made to order by OLLER.`.slice(
+  return `${colorway.product.name} in ${colorway.name} — a sculptural, 3D-printed handbag designed to spark curiosity, by OLLER.`.slice(
     0,
     160
   );

@@ -174,13 +174,13 @@ function suggestSeoDescription(productName: string, form: ColorwayFormState): st
   const name = form.name || "this color";
   if (form.matchedCarMake) {
     const car = [form.matchedCarMake, form.matchedCarModel].filter(Boolean).join(" ");
-    return `${productName} in ${name}, matched to a ${car}${form.matchedCarColorName ? ` in ${form.matchedCarColorName}` : ""}. 3D-printed and made to order.`.slice(
+    return `${productName} in ${name}, matched to a ${car}${form.matchedCarColorName ? ` in ${form.matchedCarColorName}` : ""}. A sculptural, 3D-printed handbag by OLLER.`.slice(
       0,
       160
     );
   }
   if (form.story.trim()) return form.story.trim().slice(0, 160);
-  return `${productName} in ${name} — a sculptural, 3D-printed handbag made to order by OLLER.`.slice(
+  return `${productName} in ${name} — a sculptural, 3D-printed handbag designed to spark curiosity, by OLLER.`.slice(
     0,
     160
   );
