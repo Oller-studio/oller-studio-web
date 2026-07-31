@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { PayPalButtons, PayPalScriptProvider } from "@paypal/react-paypal-js";
 import { useCart } from "./cart-context";
+import { ApplePayButton } from "./ApplePayButton";
 
 const clerkConfigured = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
 
@@ -45,7 +46,15 @@ export function CartCheckout() {
           Create an account to track your order on our site
         </label>
       )}
-      <PayPalScriptProvider options={{ clientId, currency, intent: "capture" }}>
+      <PayPalScriptProvider
+        options={{ clientId, currency, intent: "capture", components: "buttons,applepay" }}
+      >
+        <ApplePayButton
+          onCaptured={() => {
+            setCompleted(true);
+            clear();
+          }}
+        />
         <PayPalButtons
           style={{ layout: "vertical", shape: "pill", label: "pay" }}
           createOrder={async (_, actions) => {

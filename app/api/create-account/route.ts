@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { sendWelcomeEmail } from "@/lib/resend";
+import { isRateLimited, clientIp } from "@/lib/rateLimit";
 
 export async function POST(request: Request) {
+  if (isRateLimited(`create-account:${clientIp(request.headers)}`, 5, 60_000)) {
+    return NextResponse.json({ ok: false, error: "Too many requests" }, { status: 429 });
+  }
+
   const secretKey = process.env.CLERK_SECRET_KEY;
   if (!secretKey) {
     return NextResponse.json({ ok: false, error: "Clerk not configured" }, { status: 500 });

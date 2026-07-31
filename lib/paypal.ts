@@ -23,6 +23,48 @@ export async function getAccessToken(): Promise<string> {
   return data.access_token;
 }
 
+// Server-side order creation — used by the Apple Pay button, which needs a
+// real order id up front (before the ApplePaySession payment sheet opens),
+// unlike the regular PayPalButtons which creates its order client-side via
+// the JS SDK.
+export async function createOrder(
+  currency: string,
+  items: { name: string; price: number; quantity: number }[]
+): Promise<string> {
+  const itemTotal = items
+    .reduce((sum, i) => sum + i.price * i.quantity, 0)
+    .toFixed(2);
+  const accessToken = await getAccessToken();
+
+  const res = await fetch(`${PAYPAL_API_BASE}/v2/checkout/orders`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      intent: "CAPTURE",
+      purchase_units: [
+        {
+          amount: {
+            currency_code: currency,
+            value: itemTotal,
+            breakdown: { item_total: { currency_code: currency, value: itemTotal } },
+          },
+          items: items.map((i) => ({
+            name: `ONDINE — ${i.name}`,
+            unit_amount: { currency_code: currency, value: i.price.toFixed(2) },
+            quantity: String(i.quantity),
+          })),
+        },
+      ],
+    }),
+  });
+  if (!res.ok) throw new Error(`PayPal order create failed: ${res.status}`);
+  const data = (await res.json()) as { id: string };
+  return data.id;
+}
+
 export async function verifyPaypalWebhook(
   headers: Headers,
   webhookEvent: unknown
