@@ -97,6 +97,8 @@ function rowToColorway(row: ColorwayRow & { product: ProductModel }): Colorway {
     isFeatured: row.isFeatured,
     launchedAt: row.launchedAt,
     stockOnHand: row.stockOnHand,
+    seoTitle: row.seoTitle ?? undefined,
+    seoDescription: row.seoDescription ?? undefined,
   };
 }
 
@@ -133,6 +135,17 @@ export async function getColorwayBySlug(
     return undefined;
   }
   return rowToColorway(row);
+}
+
+// Called when a slug 404s on the storefront — checks whether some color has
+// since been renamed away from it, so the page can 301 instead of 404ing an
+// old shared/bookmarked link.
+export async function getColorwaySlugByPreviousSlug(slug: string): Promise<string | undefined> {
+  const row = await prisma.colorway.findFirst({
+    where: { previousSlugs: { has: slug } },
+    select: { slug: true },
+  });
+  return row?.slug;
 }
 
 export async function getFeaturedColorway(): Promise<Colorway> {
@@ -179,6 +192,8 @@ export type ColorwayInput = {
   isFeatured: boolean;
   launchedAt: string;
   sortOrder: number;
+  seoTitle: string | null;
+  seoDescription: string | null;
 };
 
 function toRowData(input: ColorwayInput) {
@@ -213,6 +228,8 @@ function toRowData(input: ColorwayInput) {
     isFeatured: input.isFeatured,
     launchedAt: input.launchedAt,
     sortOrder: input.sortOrder,
+    seoTitle: input.seoTitle,
+    seoDescription: input.seoDescription,
   };
 }
 
@@ -220,8 +237,20 @@ export async function createColorway(input: ColorwayInput) {
   return prisma.colorway.create({ data: { slug: input.slug, ...toRowData(input) } });
 }
 
-export async function updateColorway(slug: string, input: ColorwayInput) {
-  return prisma.colorway.update({ where: { slug }, data: toRowData(input) });
+export async function updateColorway(currentSlug: string, input: ColorwayInput) {
+  const renamed = input.slug !== currentSlug;
+  return prisma.colorway.update({
+    where: { slug: currentSlug },
+    data: {
+      ...toRowData(input),
+      ...(renamed
+        ? {
+            slug: input.slug,
+            previousSlugs: { push: currentSlug },
+          }
+        : {}),
+    },
+  });
 }
 
 export async function deleteColorway(slug: string) {

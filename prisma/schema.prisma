@@ -206,6 +206,16 @@ model Colorway {
   isFeatured             Boolean  @default(false)
   launchedAt             String
   sortOrder              Int      @default(0)
+  // Overrides for the <title>/meta description Google shows for this
+  // color's page — blank means fall back to an auto-generated one (see
+  // lib/seo.ts). Independent of `name`/`story` so editing the on-page copy
+  // doesn't silently change what search results say, and vice versa.
+  seoTitle               String?
+  seoDescription         String?
+  // Every slug this color has ever had, oldest first — lets the product
+  // page 301-redirect an old shared/bookmarked URL to wherever it lives now
+  // instead of 404ing, whenever `slug` changes.
+  previousSlugs          String[] @default([])
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
 }

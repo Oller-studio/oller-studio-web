@@ -70,6 +70,8 @@ export function rowToVariantRow(
       isFeatured: row.isFeatured,
       launchedAt: row.launchedAt,
       sortOrder: row.sortOrder.toString(),
+      seoTitle: row.seoTitle ?? "",
+      seoDescription: row.seoDescription ?? "",
     },
   };
 }

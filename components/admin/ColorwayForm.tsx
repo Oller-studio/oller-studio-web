@@ -62,6 +62,8 @@ export type ColorwayFormState = {
   isFeatured: boolean;
   launchedAt: string;
   sortOrder: string;
+  seoTitle: string;
+  seoDescription: string;
 };
 
 function initialState(existing?: Partial<ColorwayFormState>): ColorwayFormState {
@@ -97,6 +99,8 @@ function initialState(existing?: Partial<ColorwayFormState>): ColorwayFormState 
     isFeatured: existing?.isFeatured ?? false,
     launchedAt: existing?.launchedAt ?? new Date().toISOString().slice(0, 10),
     sortOrder: existing?.sortOrder ?? "0",
+    seoTitle: existing?.seoTitle ?? "",
+    seoDescription: existing?.seoDescription ?? "",
   };
 }
 
@@ -144,6 +148,8 @@ function toInput(form: ColorwayFormState, productSlug: string): ColorwayInput {
     isFeatured: form.isFeatured,
     launchedAt: form.launchedAt,
     sortOrder: Number(form.sortOrder) || 0,
+    seoTitle: form.seoTitle.trim() || null,
+    seoDescription: form.seoDescription.trim() || null,
   };
 }
 
@@ -166,6 +172,12 @@ export const ColorwayForm = forwardRef<
   }
 >(function ColorwayForm({ mode, productSlug, initial, onSaved, onDeleted }, formRef) {
   const [form, setForm] = useState<ColorwayFormState>(initialState(initial));
+  // Whatever slug the server currently has this row stored under — starts
+  // as the slug we were loaded with, and only moves once a rename actually
+  // saves. Kept separate from form.slug (the URL field, which the admin can
+  // freely edit before saving) so a PATCH/DELETE always targets the row the
+  // server can actually find, even mid-edit of a not-yet-saved rename.
+  const currentSlugRef = useRef(initial?.slug ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [scarcityType, setScarcityType] = useState<"units" | "dates" | "both">(
@@ -193,7 +205,11 @@ export const ColorwayForm = forwardRef<
   }
 
   function setName(name: string) {
-    setForm((f) => ({ ...f, name, slug: mode === "create" ? slugify(name) : f.slug }));
+    setForm((f) => ({
+      ...f,
+      name,
+      slug: mode === "create" ? `${productSlug}-${slugify(name)}` : f.slug,
+    }));
   }
 
   function selectStockMode(next: "printed_on_demand" | "stock_in_hand") {
@@ -214,13 +230,14 @@ export const ColorwayForm = forwardRef<
     // Save must always succeed as a draft, even half-filled — a blank
     // Color label shouldn't block persisting whatever was already entered.
     const name = form.name.trim() || "Untitled color";
-    const slug = form.slug.trim() || `${slugify(name)}-${Date.now().toString(36)}`;
+    const slug =
+      form.slug.trim() || `${productSlug}-${slugify(name)}-${Date.now().toString(36)}`;
     const draftForm = { ...form, name, slug };
 
     const url =
       mode === "create"
         ? `/api/admin/products/${productSlug}/variants`
-        : `/api/admin/products/${productSlug}/variants/${draftForm.slug}`;
+        : `/api/admin/products/${productSlug}/variants/${currentSlugRef.current}`;
     const method = mode === "create" ? "POST" : "PATCH";
 
     const res = await fetch(url, {
@@ -236,6 +253,7 @@ export const ColorwayForm = forwardRef<
       return false;
     }
 
+    currentSlugRef.current = draftForm.slug;
     setForm(draftForm);
     setSaving(false);
     return true;
@@ -255,7 +273,7 @@ export const ColorwayForm = forwardRef<
   async function remove() {
     if (!confirm(`Delete "${form.name}"? This can't be undone.`)) return;
     setSaving(true);
-    await fetch(`/api/admin/products/${productSlug}/variants/${form.slug}`, {
+    await fetch(`/api/admin/products/${productSlug}/variants/${currentSlugRef.current}`, {
       method: "DELETE",
     }).catch(() => {});
     onDeleted?.();
@@ -836,6 +854,53 @@ export const ColorwayForm = forwardRef<
           </div>
         </>
       )}
+
+      <div className="flex flex-col gap-3 rounded-xl border border-border p-4">
+        <p className={labelClass}>Search engine listing</p>
+        <label className="flex flex-col gap-1">
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted">URL</span>
+          <div className="flex items-center overflow-hidden rounded-lg border border-border bg-background text-sm">
+            <span className="whitespace-nowrap bg-border/20 px-3 py-2 text-muted">
+              oller.studio/shop/
+            </span>
+            <input
+              type="text"
+              value={form.slug}
+              onChange={(e) => set("slug", slugify(e.target.value))}
+              className="w-full px-3 py-2 outline-none"
+            />
+          </div>
+          {mode === "edit" && (
+            <span className="text-xs text-muted">
+              Changing this keeps the old link working — it redirects to the new one instead of
+              breaking.
+            </span>
+          )}
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted">
+            Title (leave blank to auto-generate)
+          </span>
+          <input
+            type="text"
+            value={form.seoTitle}
+            onChange={(e) => set("seoTitle", e.target.value)}
+            placeholder={`${form.name || "Color"} | OLLER`}
+            className={inputClass}
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted">
+            Meta description (leave blank to auto-generate)
+          </span>
+          <AutoTextarea
+            value={form.seoDescription}
+            onChange={(v) => set("seoDescription", v)}
+            rows={2}
+            className={inputClass}
+          />
+        </label>
+      </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 

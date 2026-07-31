@@ -74,6 +74,10 @@ export type Colorway = {
   // Never shown to customers directly; shopBadge's "in_stock" count (above)
   // is the customer-facing number and can differ on purpose.
   stockOnHand: number;
+  // <title>/meta description overrides for this color's page — undefined
+  // means "generate a sensible default", see lib/seo.ts.
+  seoTitle?: string;
+  seoDescription?: string;
 };
 
 export type CartItem = {
