@@ -4,11 +4,13 @@ import { Fragment, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ColorVariantsList, type VariantRow } from "./ColorVariantsList";
+import { formatPrintTime } from "@/lib/format";
 
 export type ProductRow = {
   slug: string;
   name: string;
   material: string | null;
+  printMinutes: number | null;
   swatches: string[];
   variants: VariantRow[];
 };
@@ -74,7 +76,16 @@ function ProductRowItem({ product }: { product: ProductRow }) {
             {product.name}
           </Link>
         </td>
-        <td className="whitespace-nowrap py-3 pr-7 text-xs">
+        <td className="whitespace-nowrap py-3 pr-7 text-xs text-muted">
+          {product.variants.length}
+        </td>
+        <td className="whitespace-nowrap py-3 pr-7 text-xs text-muted">
+          {product.material ?? "—"}
+        </td>
+        <td className="whitespace-nowrap py-3 pr-7 text-xs text-muted">
+          {formatPrintTime(product.printMinutes)}
+        </td>
+        <td className="whitespace-nowrap py-3 pr-6 text-xs">
           {product.variants.length === 0 ? (
             <span className="rounded-full bg-border/40 px-2 py-0.5 font-semibold text-muted">
               No colors yet
@@ -92,27 +103,10 @@ function ProductRowItem({ product }: { product: ProductRow }) {
             </button>
           )}
         </td>
-        <td className="whitespace-nowrap py-3 pr-7 text-xs text-muted">
-          {product.material ?? "—"}
-        </td>
-        <td className="whitespace-nowrap py-3 pr-6 text-xs text-muted">
-          <div className="flex items-center gap-2">
-            <div className="flex -space-x-1">
-              {product.swatches.map((color, i) => (
-                <span
-                  key={i}
-                  style={{ backgroundColor: color }}
-                  className="h-4 w-4 rounded-full border-2 border-background"
-                />
-              ))}
-            </div>
-            {product.variants.length}
-          </div>
-        </td>
       </tr>
       {open && (
         <tr>
-          <td colSpan={5} className="border-t border-border bg-border/5 p-5">
+          <td colSpan={6} className="border-t border-border bg-border/5 p-5">
             <ColorVariantsList
               productSlug={product.slug}
               productName={product.name}
@@ -127,15 +121,16 @@ function ProductRowItem({ product }: { product: ProductRow }) {
 
 export function ProductsExpandableList({ products }: { products: ProductRow[] }) {
   return (
-    <div className="w-full max-w-full overflow-x-auto rounded-xl border border-border bg-background">
-      <table className="w-max min-w-full border-collapse">
+    <div className="w-fit max-w-full overflow-x-auto rounded-xl border border-border bg-background">
+      <table className="w-max border-collapse">
         <thead>
           <tr className="bg-border/20 text-xs font-semibold uppercase tracking-wide text-muted">
             <th className="whitespace-nowrap py-2 pl-5 pr-3 text-left"></th>
             <th className="whitespace-nowrap py-2 pr-7 text-left">Model</th>
-            <th className="whitespace-nowrap py-2 pr-7 text-left">Status</th>
+            <th className="whitespace-nowrap py-2 pr-7 text-left">Colors</th>
             <th className="whitespace-nowrap py-2 pr-7 text-left">Material</th>
-            <th className="whitespace-nowrap py-2 pr-6 text-left">Colors</th>
+            <th className="whitespace-nowrap py-2 pr-7 text-left">Printing time</th>
+            <th className="whitespace-nowrap py-2 pr-6 text-left">Status</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border">

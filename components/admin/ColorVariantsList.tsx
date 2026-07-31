@@ -6,31 +6,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ColorwayForm, type ColorwayFormHandle, type ColorwayFormState } from "./ColorwayForm";
 import { COLORWAY_STATUSES, STATUS_BADGE, STATUS_LABELS } from "@/lib/colorwayStatus";
+import { formatShopBadge } from "@/lib/shopBadge";
 import { formatMoneyCents } from "@/lib/format";
 
 const TIER_LABELS = { collection: "Collection", signature: "Signature" } as const;
-
-function formatShopBadge(v: {
-  shopBadge: VariantRow["shopBadge"];
-  stockOnHand: number;
-}): string {
-  switch (v.shopBadge) {
-    case "new":
-      return "New";
-    case "in_stock":
-      return `${v.stockOnHand} in stock`;
-    case "coming_soon":
-      return "Coming soon";
-    case "limited_edition":
-      return "Limited Edition";
-    case "sold_out":
-      return "Sold out";
-    case "back_in_stock":
-      return "Back in stock";
-    default:
-      return "Available";
-  }
-}
 
 export type VariantRow = {
   slug: string;
@@ -379,7 +358,7 @@ export const ColorVariantsList = forwardRef<
             {addingNew ? "Cancel" : "Add color variant"}
           </button>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-border">
+          <div className="w-fit max-w-full overflow-hidden rounded-xl border border-border">
             <button
               type="button"
               onClick={() => {
