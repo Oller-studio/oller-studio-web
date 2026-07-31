@@ -113,7 +113,11 @@ function ProductRowItem({ product }: { product: ProductRow }) {
       {open && (
         <tr>
           <td colSpan={5} className="border-t border-border bg-border/5 p-5">
-            <ColorVariantsList productSlug={product.slug} variants={product.variants} />
+            <ColorVariantsList
+              productSlug={product.slug}
+              productName={product.name}
+              variants={product.variants}
+            />
           </td>
         </tr>
       )}

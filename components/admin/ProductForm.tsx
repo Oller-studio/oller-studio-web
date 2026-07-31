@@ -657,6 +657,7 @@ export function ProductForm({
           <ColorVariantsList
             ref={colorVariantsRef}
             productSlug={form.slug}
+            productName={form.name}
             variants={variants}
           />
         </div>

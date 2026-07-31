@@ -1,11 +1,17 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
+import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { getAllColorways, getColorwayBySlug } from "@/lib/colorways";
+import {
+  getAllColorways,
+  getColorwayBySlug,
+  getColorwaySlugByPreviousSlug,
+} from "@/lib/colorways";
 import { getAdminViewer } from "@/lib/admin";
 import { prisma } from "@/lib/db";
 import { formatPrice } from "@/lib/format";
 import { swatchBackground } from "@/lib/swatch";
+import { colorwaySeoTitle, colorwaySeoDescription } from "@/lib/seo";
 import { ColorwayGallery } from "@/components/shop/ColorwayGallery";
 import { AddToBagButton } from "@/components/shop/AddToBagButton";
 import { ProductAccordion } from "@/components/shop/ProductAccordion";
@@ -21,6 +27,20 @@ export async function generateStaticParams() {
   return colorways.map((c) => ({ colorway: c.slug }));
 }
 
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ colorway: string }>;
+}): Promise<Metadata> {
+  const { colorway: slug } = await params;
+  const colorway = await getColorwayBySlug(slug);
+  if (!colorway) return {};
+  return {
+    title: colorwaySeoTitle(colorway),
+    description: colorwaySeoDescription(colorway),
+  };
+}
+
 export default async function ColorwayPage({
   params,
   searchParams,
@@ -34,6 +54,16 @@ export default async function ColorwayPage({
   const colorway = await getColorwayBySlug(slug, { previewAsAdmin: isAdmin });
 
   if (!colorway) {
+    // This slug might just be an old URL for a color that's since been
+    // renamed (see the "URL" field in the admin) — send it to the new one
+    // instead of 404ing a link someone bookmarked or shared.
+    const newSlug = await getColorwaySlugByPreviousSlug(slug);
+    if (newSlug) {
+      // Preserve ?access=... — a renamed color's private waitlist link must
+      // keep unlocking Add to Bag after the rename, not just redirect to a
+      // now-locked public page.
+      permanentRedirect(access ? `/shop/${newSlug}?access=${access}` : `/shop/${newSlug}`);
+    }
     notFound();
   }
 

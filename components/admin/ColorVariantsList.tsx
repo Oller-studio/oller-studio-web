@@ -163,8 +163,8 @@ export type ColorVariantsListHandle = {
 
 export const ColorVariantsList = forwardRef<
   ColorVariantsListHandle,
-  { productSlug: string; variants: VariantRow[] }
->(function ColorVariantsList({ productSlug, variants }, ref) {
+  { productSlug: string; productName: string; variants: VariantRow[] }
+>(function ColorVariantsList({ productSlug, productName, variants }, ref) {
   const [openSlug, setOpenSlug] = useState<string | null>(null);
   const [addingNew, setAddingNew] = useState(false);
   const [query, setQuery] = useState("");
@@ -495,6 +495,7 @@ export const ColorVariantsList = forwardRef<
                             ref={openFormRef}
                             mode="edit"
                             productSlug={productSlug}
+                            productName={productName}
                             initial={v.initial}
                             onSaved={() => {
                               setOpenSlug(null);
@@ -521,6 +522,7 @@ export const ColorVariantsList = forwardRef<
             ref={newFormRef}
             mode="create"
             productSlug={productSlug}
+            productName={productName}
             onSaved={() => setAddingNew(false)}
           />
         </div>

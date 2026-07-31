@@ -14,7 +14,7 @@ export default async function NewVariantPage({
   return (
     <div className="flex flex-col gap-6">
       <h1 className="font-display text-3xl font-semibold">New {product.name} color</h1>
-      <ColorwayForm mode="create" productSlug={slug} />
+      <ColorwayForm mode="create" productSlug={slug} productName={product.name} />
     </div>
   );
 }

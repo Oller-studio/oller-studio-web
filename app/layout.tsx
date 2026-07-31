@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Inter, Bodoni_Moda, Poppins } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
-import { Footer } from "@/components/layout/Footer";
 import { AuthModalProvider } from "@/components/auth/auth-modal-context";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { CartProvider } from "@/components/cart/cart-context";
@@ -43,15 +42,11 @@ export default function RootLayout({
             <ClerkProvider>
               <AuthModalProvider>
                 <div className="flex-1">{children}</div>
-                <Footer />
                 <AuthModal />
               </AuthModalProvider>
             </ClerkProvider>
           ) : (
-            <>
-              <div className="flex-1">{children}</div>
-              <Footer />
-            </>
+            <div className="flex-1">{children}</div>
           )}
           <CartDrawer />
         </CartProvider>

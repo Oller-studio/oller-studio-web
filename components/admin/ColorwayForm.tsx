@@ -62,6 +62,8 @@ export type ColorwayFormState = {
   isFeatured: boolean;
   launchedAt: string;
   sortOrder: string;
+  seoTitle: string;
+  seoDescription: string;
 };
 
 function initialState(existing?: Partial<ColorwayFormState>): ColorwayFormState {
@@ -97,6 +99,8 @@ function initialState(existing?: Partial<ColorwayFormState>): ColorwayFormState 
     isFeatured: existing?.isFeatured ?? false,
     launchedAt: existing?.launchedAt ?? new Date().toISOString().slice(0, 10),
     sortOrder: existing?.sortOrder ?? "0",
+    seoTitle: existing?.seoTitle ?? "",
+    seoDescription: existing?.seoDescription ?? "",
   };
 }
 
@@ -144,6 +148,8 @@ function toInput(form: ColorwayFormState, productSlug: string): ColorwayInput {
     isFeatured: form.isFeatured,
     launchedAt: form.launchedAt,
     sortOrder: Number(form.sortOrder) || 0,
+    seoTitle: form.seoTitle.trim() || null,
+    seoDescription: form.seoDescription.trim() || null,
   };
 }
 
@@ -155,17 +161,57 @@ export type ColorwayFormHandle = {
   save: () => Promise<boolean>;
 };
 
+// Live, specific-to-this-color suggestions for the SEO fields below — shown
+// as the input's placeholder, so leaving it blank saves exactly this (see
+// lib/seo.ts, which mirrors this same logic for the storefront side).
+// Prefers the car-match story when there is one, since that's OLLER's real
+// differentiator, not generic product copy.
+function suggestSeoTitle(productName: string, form: ColorwayFormState): string {
+  return `${productName} — ${form.name || "Color"} | OLLER`;
+}
+
+function suggestSeoDescription(productName: string, form: ColorwayFormState): string {
+  const name = form.name || "this color";
+  if (form.matchedCarMake) {
+    const car = [form.matchedCarMake, form.matchedCarModel].filter(Boolean).join(" ");
+    return `${productName} in ${name}, matched to a ${car}${form.matchedCarColorName ? ` in ${form.matchedCarColorName}` : ""}. A sculptural, 3D-printed handbag by OLLER.`.slice(
+      0,
+      160
+    );
+  }
+  if (form.story.trim()) return form.story.trim().slice(0, 160);
+  return `${productName} in ${name} — a sculptural, 3D-printed handbag designed to spark curiosity, by OLLER.`.slice(
+    0,
+    160
+  );
+}
+
 export const ColorwayForm = forwardRef<
   ColorwayFormHandle,
   {
     mode: "create" | "edit";
     productSlug: string;
+    productName: string;
     initial?: Partial<ColorwayFormState>;
     onSaved?: () => void;
     onDeleted?: () => void;
   }
->(function ColorwayForm({ mode, productSlug, initial, onSaved, onDeleted }, formRef) {
+>(function ColorwayForm({ mode, productSlug, productName, initial, onSaved, onDeleted }, formRef) {
   const [form, setForm] = useState<ColorwayFormState>(initialState(initial));
+  // Whatever slug the server currently has this row stored under — starts
+  // as the slug we were loaded with, and only moves once a rename actually
+  // saves. Kept separate from form.slug (the URL field, which the admin can
+  // freely edit before saving) so a PATCH/DELETE always targets the row the
+  // server can actually find, even mid-edit of a not-yet-saved rename.
+  const currentSlugRef = useRef(initial?.slug ?? "");
+  // Whether the admin has personally typed into the SEO title/description —
+  // starts true if a value was already saved (respect it, don't overwrite),
+  // false otherwise so the suggestion keeps auto-filling live as the color's
+  // own fields (name, story, matched car) change, until they touch it.
+  const [seoTitleTouched, setSeoTitleTouched] = useState(Boolean(initial?.seoTitle));
+  const [seoDescriptionTouched, setSeoDescriptionTouched] = useState(
+    Boolean(initial?.seoDescription)
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [scarcityType, setScarcityType] = useState<"units" | "dates" | "both">(
@@ -192,8 +238,21 @@ export const ColorwayForm = forwardRef<
     setForm((f) => ({ ...f, [key]: value }));
   }
 
+  // Live, real (editable, not placeholder) suggestion shown for the SEO
+  // fields until the admin actually types into one directly — computed
+  // during render off the color's own current fields, not stored in state,
+  // so it stays fresh as those change without needing an effect.
+  const displaySeoTitle = seoTitleTouched ? form.seoTitle : suggestSeoTitle(productName, form);
+  const displaySeoDescription = seoDescriptionTouched
+    ? form.seoDescription
+    : suggestSeoDescription(productName, form);
+
   function setName(name: string) {
-    setForm((f) => ({ ...f, name, slug: mode === "create" ? slugify(name) : f.slug }));
+    setForm((f) => ({
+      ...f,
+      name,
+      slug: mode === "create" ? `${productSlug}-${slugify(name)}` : f.slug,
+    }));
   }
 
   function selectStockMode(next: "printed_on_demand" | "stock_in_hand") {
@@ -214,13 +273,23 @@ export const ColorwayForm = forwardRef<
     // Save must always succeed as a draft, even half-filled — a blank
     // Color label shouldn't block persisting whatever was already entered.
     const name = form.name.trim() || "Untitled color";
-    const slug = form.slug.trim() || `${slugify(name)}-${Date.now().toString(36)}`;
-    const draftForm = { ...form, name, slug };
+    const slug =
+      form.slug.trim() || `${productSlug}-${slugify(name)}-${Date.now().toString(36)}`;
+    // Untouched SEO fields save the live suggestion, not blank — it's
+    // already showing as the real (non-placeholder) value on screen, so
+    // what gets saved should match what the admin was actually looking at.
+    const draftForm = {
+      ...form,
+      name,
+      slug,
+      seoTitle: displaySeoTitle,
+      seoDescription: displaySeoDescription,
+    };
 
     const url =
       mode === "create"
         ? `/api/admin/products/${productSlug}/variants`
-        : `/api/admin/products/${productSlug}/variants/${draftForm.slug}`;
+        : `/api/admin/products/${productSlug}/variants/${currentSlugRef.current}`;
     const method = mode === "create" ? "POST" : "PATCH";
 
     const res = await fetch(url, {
@@ -236,6 +305,7 @@ export const ColorwayForm = forwardRef<
       return false;
     }
 
+    currentSlugRef.current = draftForm.slug;
     setForm(draftForm);
     setSaving(false);
     return true;
@@ -255,7 +325,7 @@ export const ColorwayForm = forwardRef<
   async function remove() {
     if (!confirm(`Delete "${form.name}"? This can't be undone.`)) return;
     setSaving(true);
-    await fetch(`/api/admin/products/${productSlug}/variants/${form.slug}`, {
+    await fetch(`/api/admin/products/${productSlug}/variants/${currentSlugRef.current}`, {
       method: "DELETE",
     }).catch(() => {});
     onDeleted?.();
@@ -836,6 +906,56 @@ export const ColorwayForm = forwardRef<
           </div>
         </>
       )}
+
+      <div className="flex flex-col gap-3 rounded-xl border border-border p-4">
+        <p className={labelClass}>Search engine listing</p>
+        <label className="flex flex-col gap-1">
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted">URL</span>
+          <div className="flex items-center overflow-hidden rounded-lg border border-border bg-background text-sm">
+            <span className="whitespace-nowrap bg-border/20 px-3 py-2 text-muted">
+              oller.studio/shop/
+            </span>
+            <input
+              type="text"
+              value={form.slug}
+              onChange={(e) => set("slug", slugify(e.target.value))}
+              className="w-full px-3 py-2 outline-none"
+            />
+          </div>
+          {mode === "edit" && (
+            <span className="text-xs text-muted">
+              Changing this keeps the old link working — it redirects to the new one instead of
+              breaking.
+            </span>
+          )}
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted">Title</span>
+          <input
+            type="text"
+            value={displaySeoTitle}
+            onChange={(e) => {
+              setSeoTitleTouched(true);
+              set("seoTitle", e.target.value);
+            }}
+            className={inputClass}
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted">
+            Meta description
+          </span>
+          <AutoTextarea
+            value={displaySeoDescription}
+            onChange={(v) => {
+              setSeoDescriptionTouched(true);
+              set("seoDescription", v);
+            }}
+            rows={2}
+            className={inputClass}
+          />
+        </label>
+      </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
