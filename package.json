@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "node scripts/generate-hero-poster.mjs",
     "dev": "next dev",
+    "prebuild": "node scripts/generate-hero-poster.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -29,6 +31,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
+    "ffmpeg-static": "^5.3.0",
     "prisma": "^7.9.0",
     "tailwindcss": "^4",
     "typescript": "^5"
