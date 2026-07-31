@@ -204,6 +204,14 @@ export const ColorwayForm = forwardRef<
   // freely edit before saving) so a PATCH/DELETE always targets the row the
   // server can actually find, even mid-edit of a not-yet-saved rename.
   const currentSlugRef = useRef(initial?.slug ?? "");
+  // Whether the admin has personally typed into the SEO title/description —
+  // starts true if a value was already saved (respect it, don't overwrite),
+  // false otherwise so the suggestion keeps auto-filling live as the color's
+  // own fields (name, story, matched car) change, until they touch it.
+  const [seoTitleTouched, setSeoTitleTouched] = useState(Boolean(initial?.seoTitle));
+  const [seoDescriptionTouched, setSeoDescriptionTouched] = useState(
+    Boolean(initial?.seoDescription)
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [scarcityType, setScarcityType] = useState<"units" | "dates" | "both">(
@@ -229,6 +237,15 @@ export const ColorwayForm = forwardRef<
   function set<K extends keyof ColorwayFormState>(key: K, value: ColorwayFormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
   }
+
+  // Live, real (editable, not placeholder) suggestion shown for the SEO
+  // fields until the admin actually types into one directly — computed
+  // during render off the color's own current fields, not stored in state,
+  // so it stays fresh as those change without needing an effect.
+  const displaySeoTitle = seoTitleTouched ? form.seoTitle : suggestSeoTitle(productName, form);
+  const displaySeoDescription = seoDescriptionTouched
+    ? form.seoDescription
+    : suggestSeoDescription(productName, form);
 
   function setName(name: string) {
     setForm((f) => ({
@@ -258,7 +275,16 @@ export const ColorwayForm = forwardRef<
     const name = form.name.trim() || "Untitled color";
     const slug =
       form.slug.trim() || `${productSlug}-${slugify(name)}-${Date.now().toString(36)}`;
-    const draftForm = { ...form, name, slug };
+    // Untouched SEO fields save the live suggestion, not blank — it's
+    // already showing as the real (non-placeholder) value on screen, so
+    // what gets saved should match what the admin was actually looking at.
+    const draftForm = {
+      ...form,
+      name,
+      slug,
+      seoTitle: displaySeoTitle,
+      seoDescription: displaySeoDescription,
+    };
 
     const url =
       mode === "create"
@@ -904,25 +930,27 @@ export const ColorwayForm = forwardRef<
           )}
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-xs font-semibold uppercase tracking-wide text-muted">
-            Title (leave blank to auto-generate)
-          </span>
+          <span className="text-xs font-semibold uppercase tracking-wide text-muted">Title</span>
           <input
             type="text"
-            value={form.seoTitle}
-            onChange={(e) => set("seoTitle", e.target.value)}
-            placeholder={suggestSeoTitle(productName, form)}
+            value={displaySeoTitle}
+            onChange={(e) => {
+              setSeoTitleTouched(true);
+              set("seoTitle", e.target.value);
+            }}
             className={inputClass}
           />
         </label>
         <label className="flex flex-col gap-1">
           <span className="text-xs font-semibold uppercase tracking-wide text-muted">
-            Meta description (leave blank to auto-generate)
+            Meta description
           </span>
           <AutoTextarea
-            value={form.seoDescription}
-            placeholder={suggestSeoDescription(productName, form)}
-            onChange={(v) => set("seoDescription", v)}
+            value={displaySeoDescription}
+            onChange={(v) => {
+              setSeoDescriptionTouched(true);
+              set("seoDescription", v);
+            }}
             rows={2}
             className={inputClass}
           />
