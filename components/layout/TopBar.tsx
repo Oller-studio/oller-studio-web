@@ -20,12 +20,12 @@ export function TopBar({ variant = "solid" }: TopBarProps) {
           : "border-border bg-background text-foreground"
       }`}
     >
-      <p className="absolute left-6 top-1/2 -translate-y-1/2 whitespace-nowrap">
+      <p className="absolute left-6 top-1/2 hidden -translate-y-1/2 whitespace-nowrap sm:block">
         Worldwide free shipping
       </p>
       <Link
         href="/shop"
-        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 truncate text-center hover:opacity-80"
+        className="absolute left-1/2 top-1/2 max-w-[60%] -translate-x-1/2 -translate-y-1/2 truncate text-center hover:opacity-80"
       >
         {site.campaignLine} — Shop the Collection
       </Link>
