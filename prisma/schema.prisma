@@ -241,6 +241,21 @@ model FixedCost {
   endDate            DateTime?
 }
 
+// The homepage's hero + editorial media — editable from Admin > Pages > Home
+// instead of a developer swapping files under public/videos or
+// public/images and redeploying. Singleton row (id is always "home"). Null
+// fields fall back to the original file-drop convention in lib/media.ts, so
+// nothing breaks until a piece is actually replaced from the admin page.
+model HomePage {
+  id            String   @id @default("home")
+  heroVideoUrl  String?
+  heroPosterUrl String?
+  // JSON array of exactly 4 slots, in display order (left to right), each
+  // either null (empty) or { type: "video" | "image", url }.
+  editorial     String   @default("[]")
+  updatedAt     DateTime @updatedAt
+}
+
 // "Notify me" signups left on a Sold Out color's page. Product/color name
 // are stored directly (not a relation) so the list still reads fine even
 // if that color is later renamed or removed — this is a record of demand,

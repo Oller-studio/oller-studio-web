@@ -1,39 +1,31 @@
 import Image from "next/image";
 import Link from "next/link";
 import { getFeaturedColorway } from "@/lib/colorways";
-import {
-  hasHeroVideo,
-  getHeroImage,
-  getHomeCarouselSlides,
-  getHomeEditorialImages,
-} from "@/lib/media";
+import { getHeroMedia, getHomeCarouselSlides, getHomeEditorialImages } from "@/lib/media";
 import { TopBar } from "@/components/layout/TopBar";
 import { Header } from "@/components/layout/Header";
 import { ProductCarousel } from "@/components/home/ProductCarousel";
+import { AutoplayVideo } from "@/components/home/AutoplayVideo";
 import { ScrollTracker } from "@/components/analytics/ScrollTracker";
 
 export default async function Home() {
   const featured = await getFeaturedColorway();
-  const heroImage = getHeroImage() ?? featured.images[0];
-  const showVideo = hasHeroVideo();
+  const heroMedia = await getHeroMedia();
+  const heroImage = heroMedia.posterSrc ?? featured.images[0];
+  const showVideo = Boolean(heroMedia.videoSrc);
   const carouselSlides = await getHomeCarouselSlides();
-  const editorialImages = getHomeEditorialImages();
+  const editorialImages = await getHomeEditorialImages();
 
   return (
     <main>
       <ScrollTracker />
       <section className="relative flex min-h-screen flex-col overflow-hidden">
         <div className="absolute inset-0 -z-10 bg-border">
-          {showVideo ? (
-            <video
+          {showVideo && heroMedia.videoSrc ? (
+            <AutoplayVideo
               className="h-full w-full object-cover"
-              src="/videos/hero.mp4"
+              src={heroMedia.videoSrc}
               poster={heroImage}
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="auto"
             />
           ) : heroImage ? (
             <Image src={heroImage} alt="OLLER" fill priority className="object-cover" />
@@ -68,15 +60,7 @@ export default async function Home() {
               className="relative aspect-[2/3] w-1/2 flex-shrink-0 overflow-hidden bg-border sm:w-1/4"
             >
               {media?.type === "video" ? (
-                <video
-                  className="h-full w-full object-cover"
-                  src={media.src}
-                  autoPlay
-                  muted
-                  loop
-                  playsInline
-                  preload="auto"
-                />
+                <AutoplayVideo className="h-full w-full object-cover" src={media.src} />
               ) : media?.type === "image" ? (
                 <Image
                   src={media.src}
