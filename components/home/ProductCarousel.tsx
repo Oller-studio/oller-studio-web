@@ -43,7 +43,7 @@ export function ProductCarousel({ slides }: { slides: CarouselSlide[] }) {
         type="button"
         onClick={() => scroll("left")}
         aria-label="Previous"
-        className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-background/90 text-foreground shadow hover:bg-background"
+        className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center text-foreground hover:opacity-70"
       >
         <ArrowIcon direction="left" />
       </button>
@@ -51,7 +51,7 @@ export function ProductCarousel({ slides }: { slides: CarouselSlide[] }) {
         type="button"
         onClick={() => scroll("right")}
         aria-label="Next"
-        className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-background/90 text-foreground shadow hover:bg-background"
+        className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center text-foreground hover:opacity-70"
       >
         <ArrowIcon direction="right" />
       </button>
