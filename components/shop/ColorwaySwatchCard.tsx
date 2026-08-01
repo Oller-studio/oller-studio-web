@@ -8,7 +8,8 @@ import { FavoriteButton } from "./FavoriteButton";
 import { QuickAddButton } from "./QuickAddButton";
 
 export function ColorwaySwatchCard({ colorway }: { colorway: Colorway }) {
-  const [primaryImage, secondaryImage] = colorway.images;
+  const primaryImage = colorway.images[0];
+  const secondaryImage = colorway.hoverImageUrl ?? colorway.images[1];
   const canQuickAdd = colorway.shopBadge.kind !== "sold_out";
   const href = `/shop/${colorway.slug}`;
 

@@ -57,6 +57,7 @@ export async function POST(
     totalPieces: null,
     piecesRemaining: null,
     images: [],
+    hoverImageUrl: null,
     matchedCarMake: source.matchedCar?.make ?? null,
     matchedCarModel: source.matchedCar?.model ?? null,
     matchedCarColorName: source.matchedCar?.colorName ?? null,
