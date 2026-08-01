@@ -3,6 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { site } from "@/content/site";
+import { AccountControl } from "./AccountControl";
+import { WishlistControl } from "./WishlistControl";
+
+const clerkConfigured = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
 
 const MENU_LINKS = [
   { label: "Shop", href: "/shop" },
@@ -68,6 +72,15 @@ export function MobileMenu({ variant }: { variant: "solid" | "overlay" }) {
               </Link>
             ))}
           </nav>
+
+          <div className="mt-auto flex flex-col gap-4 border-t border-border pt-5 text-sm font-medium uppercase tracking-wide text-foreground">
+            {clerkConfigured ? (
+              <WishlistControl className="w-fit" label="Saved" />
+            ) : (
+              <span>Saved</span>
+            )}
+            {clerkConfigured ? <AccountControl className="w-fit" /> : <span>Login</span>}
+          </div>
         </div>
       )}
     </>
