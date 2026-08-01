@@ -416,7 +416,7 @@ export const ColorwayForm = forwardRef<
               firstSwatchInputRef.current?.select();
             }
           }}
-          className={`${inputClass} w-48`}
+          className={`${inputClass} w-48 sm:w-96`}
         />
       </div>
 
