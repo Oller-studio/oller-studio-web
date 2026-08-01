@@ -167,21 +167,17 @@ export type ColorwayFormHandle = {
 // Live, specific-to-this-color suggestions for the SEO fields below — shown
 // as the input's placeholder, so leaving it blank saves exactly this (see
 // lib/seo.ts, which mirrors this same logic for the storefront side).
-// Prefers the car-match story when there is one, since that's OLLER's real
-// differentiator, not generic product copy.
 function suggestSeoTitle(productName: string, form: ColorwayFormState): string {
   return `${productName} — ${form.name || "Color"} | OLLER`;
 }
 
+// Leads with the color's own story when there's one (unique per-color copy
+// beats generic text for search), otherwise the brand-wide "sculptural
+// handbag + spark curiosity" formula — emotion + searchable category.
+// Car-matching is campaign-specific messaging, not the default SEO voice,
+// so it's not suggested here — mirrors lib/seo.ts's colorwaySeoDescription.
 function suggestSeoDescription(productName: string, form: ColorwayFormState): string {
   const name = form.name || "this color";
-  if (form.matchedCarMake) {
-    const car = [form.matchedCarMake, form.matchedCarModel].filter(Boolean).join(" ");
-    return `${productName} in ${name}, matched to a ${car}${form.matchedCarColorName ? ` in ${form.matchedCarColorName}` : ""}. A sculptural, 3D-printed handbag by OLLER.`.slice(
-      0,
-      160
-    );
-  }
   if (form.story.trim()) return form.story.trim().slice(0, 160);
   return `${productName} in ${name} — a sculptural, 3D-printed handbag designed to spark curiosity, by OLLER.`.slice(
     0,

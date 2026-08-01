@@ -1,7 +1,7 @@
 export const site = {
   name: "OLLER",
   email: "hello@oller.studio",
-  hook: "Bags should match your car, not your outfit.",
+  hook: "Objects d'Art that spark curiosity.",
   campaignLine: "Escape the ordinary",
   heroSub:
     "Sculptural objects, made one signature at a time in my studio — not manufactured, not mass-produced. Made for the few who'd rather be looked at twice.",

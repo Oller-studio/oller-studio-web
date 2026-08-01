@@ -8,6 +8,12 @@ import { ProductCarousel } from "@/components/home/ProductCarousel";
 import { AutoplayVideo } from "@/components/home/AutoplayVideo";
 import { ScrollTracker } from "@/components/analytics/ScrollTracker";
 
+// Without this, Next statically prerenders the homepage at build/deploy
+// time and serves it from Vercel's CDN cache — admin edits (featured
+// color, Pages > Home media, new colors) wouldn't show up live until the
+// next deploy.
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
   const featured = await getFeaturedColorway();
   const heroMedia = await getHeroMedia();
@@ -39,6 +45,9 @@ export default async function Home() {
         </div>
 
         <div className="mt-auto flex w-full flex-col gap-3 px-6 pb-12 pt-16">
+          <h1 className="text-sm font-medium uppercase tracking-wide text-white/80">
+            Sculptural handbags that spark curiosity
+          </h1>
           <Link
             href="/shop"
             className="mt-3 inline-flex w-fit items-center gap-2 text-base font-semibold uppercase tracking-wide text-white hover:opacity-80"

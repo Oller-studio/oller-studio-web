@@ -83,6 +83,30 @@ export default async function ColorwayPage({
   const bullets = colorway.whyPoints ?? DEFAULT_BULLETS;
   const allColorways = await getAllColorways({ publishedOnly: true });
 
+  // Lets Google show price/availability directly in search results instead
+  // of just a plain link.
+  const availability =
+    colorway.shopBadge.kind === "sold_out"
+      ? "https://schema.org/OutOfStock"
+      : colorway.shopBadge.kind === "coming_soon"
+        ? "https://schema.org/PreOrder"
+        : "https://schema.org/InStock";
+  const productJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: `${colorway.product.name} — ${colorway.name}`,
+    description: colorwaySeoDescription(colorway),
+    image: colorway.images,
+    brand: { "@type": "Brand", name: "OLLER" },
+    offers: {
+      "@type": "Offer",
+      url: `https://oller.studio/shop/${colorway.slug}`,
+      priceCurrency: colorway.product.currency,
+      price: colorway.price,
+      availability,
+    },
+  };
+
   const accordionItems: { label: string; content: ReactNode }[] = [];
 
   if (colorway.product.sizeAndFit.dimensions || colorway.product.sizeAndFit.weight) {
@@ -128,6 +152,10 @@ export default async function ColorwayPage({
 
   return (
     <main>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+      />
       {isAdmin && colorway.status !== "active" && colorway.status !== "unlisted" && (
         <div className="bg-foreground px-6 py-2 text-center text-xs font-semibold uppercase tracking-wide text-background">
           Preview only — status: {colorway.status}. Not visible to customers.
