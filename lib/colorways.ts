@@ -33,7 +33,13 @@ function rowToColorway(row: ColorwayRow & { product: ProductModel }): Colorway {
   // date passes, with nothing to remember to go toggle by hand. Once that
   // date passes, a badge that was itself "coming_soon" settles to Available
   // (its natural end state); any other badge just takes over as stored.
-  const isScheduled = new Date(row.launchedAt) > new Date();
+  // launchedAt is a date-only string ("2026-08-01"), which parses as
+  // midnight — comparing against the END of that day instead means a color
+  // launching today still reads as Coming Soon for the rest of today,
+  // rather than "in the future" already being false by 00:00:01.
+  const launchEndOfDay = new Date(row.launchedAt);
+  launchEndOfDay.setHours(23, 59, 59, 999);
+  const isScheduled = launchEndOfDay > new Date();
   const effectiveBadge = isScheduled
     ? "coming_soon"
     : row.shopBadge === "coming_soon"
