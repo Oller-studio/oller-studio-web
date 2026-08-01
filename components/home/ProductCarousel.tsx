@@ -22,17 +22,33 @@ function ArrowIcon({ direction }: { direction: "left" | "right" }) {
 export function ProductCarousel({ slides }: { slides: CarouselSlide[] }) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  function scroll(direction: "left" | "right") {
+  // Reads the real scroll position rather than tracking an index in state,
+  // so this stays correct however the last move happened — clicking an
+  // arrow or swiping with a finger.
+  function currentIndex(el: HTMLDivElement): number {
+    const first = el.children[0] as HTMLElement | undefined;
+    if (!first) return 0;
+    const step = first.offsetWidth + 4; // + the gap-1 between slides
+    return Math.round(el.scrollLeft / step);
+  }
+
+  function goTo(direction: -1 | 1) {
     const el = scrollRef.current;
-    if (!el) return;
-    el.scrollBy({ left: direction === "left" ? -el.clientWidth / 2 : el.clientWidth / 2, behavior: "smooth" });
+    if (!el || slides.length === 0) return;
+    const count = slides.length;
+    const next = ((currentIndex(el) + direction) % count + count) % count;
+    (el.children[next] as HTMLElement | undefined)?.scrollIntoView({
+      behavior: "smooth",
+      inline: "start",
+      block: "nearest",
+    });
   }
 
   return (
     <div className="relative bg-background">
       <div
         ref={scrollRef}
-        className="flex gap-1 overflow-x-auto"
+        className="flex snap-x snap-mandatory gap-1 overflow-x-auto scroll-smooth"
         style={{ scrollbarWidth: "none" }}
       >
         {slides.map((slide, i) => (
@@ -41,7 +57,7 @@ export function ProductCarousel({ slides }: { slides: CarouselSlide[] }) {
       </div>
       <button
         type="button"
-        onClick={() => scroll("left")}
+        onClick={() => goTo(-1)}
         aria-label="Previous"
         className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center text-foreground hover:opacity-70"
       >
@@ -49,7 +65,7 @@ export function ProductCarousel({ slides }: { slides: CarouselSlide[] }) {
       </button>
       <button
         type="button"
-        onClick={() => scroll("right")}
+        onClick={() => goTo(1)}
         aria-label="Next"
         className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center text-foreground hover:opacity-70"
       >
@@ -96,11 +112,11 @@ function ProductSlide({ slide }: { slide: CarouselSlide }) {
 
   if (slide.href) {
     return (
-      <Link href={slide.href} className="group w-1/2 flex-shrink-0 sm:w-1/4">
+      <Link href={slide.href} className="group w-1/2 flex-shrink-0 snap-start sm:w-1/4">
         {content}
       </Link>
     );
   }
 
-  return <div className="w-1/2 flex-shrink-0 sm:w-1/4">{content}</div>;
+  return <div className="w-1/2 flex-shrink-0 snap-start sm:w-1/4">{content}</div>;
 }
