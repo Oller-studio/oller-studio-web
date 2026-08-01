@@ -107,6 +107,15 @@ export function MarketingIcon({ className = "" }: IconProps) {
   );
 }
 
+export function PagesIcon({ className = "" }: IconProps) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className={`${base} ${className}`} aria-hidden="true">
+      <rect x="2.5" y="2" width="11" height="12" rx="1.2" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M5 5.5h6M5 8h6M5 10.5h3.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export function SupportIcon({ className = "" }: IconProps) {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className={`${base} ${className}`} aria-hidden="true">

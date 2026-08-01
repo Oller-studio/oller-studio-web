@@ -10,6 +10,7 @@ import {
   OrdersIcon,
   CustomersIcon,
   ProductsIcon,
+  PagesIcon,
   MarketingIcon,
   FinanceIcon,
   AnalyticsIcon,
@@ -40,6 +41,12 @@ const sections: Section[] = [
     children: [{ href: "/admin/customers/waitlist", label: "Waitlist" }],
   },
   { href: "/admin/products", label: "Products", icon: ProductsIcon },
+  {
+    href: "/admin/pages",
+    label: "Pages",
+    icon: PagesIcon,
+    children: [{ href: "/admin/pages/home", label: "Home" }],
+  },
   {
     href: "/admin/marketing",
     label: "Marketing",
