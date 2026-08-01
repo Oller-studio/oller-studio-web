@@ -33,6 +33,7 @@ export default async function Home() {
               muted
               loop
               playsInline
+              preload="auto"
             />
           ) : heroImage ? (
             <Image src={heroImage} alt="OLLER" fill priority className="object-cover" />
@@ -74,6 +75,7 @@ export default async function Home() {
                   muted
                   loop
                   playsInline
+                  preload="auto"
                 />
               ) : media?.type === "image" ? (
                 <Image
