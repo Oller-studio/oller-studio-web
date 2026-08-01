@@ -242,18 +242,36 @@ export async function createColorway(input: ColorwayInput) {
 
 export async function updateColorway(currentSlug: string, input: ColorwayInput) {
   const renamed = input.slug !== currentSlug;
-  return prisma.colorway.update({
-    where: { slug: currentSlug },
-    data: {
-      ...toRowData(input),
-      ...(renamed
-        ? {
-            slug: input.slug,
-            previousSlugs: { push: currentSlug },
-          }
-        : {}),
-    },
-  });
+  try {
+    return await prisma.colorway.update({
+      where: { slug: currentSlug },
+      data: {
+        ...toRowData(input),
+        ...(renamed
+          ? {
+              slug: input.slug,
+              previousSlugs: { push: currentSlug },
+            }
+          : {}),
+      },
+    });
+  } catch (error) {
+    // The URL now auto-follows the color's name (see ColorwayForm), so two
+    // saves close together (e.g. the product-level "Save" cascading into
+    // this color's own save around the same time) can both compute the
+    // same rename and race — the second one arrives after the row's
+    // already moved to the new slug and 404s looking for the old one.
+    // Retry against wherever it actually landed instead of surfacing a
+    // scary "this color no longer exists" error for what's really a no-op.
+    const code = typeof error === "object" && error !== null && "code" in error ? error.code : null;
+    if (code === "P2025" && renamed) {
+      return prisma.colorway.update({
+        where: { slug: input.slug },
+        data: toRowData(input),
+      });
+    }
+    throw error;
+  }
 }
 
 export async function deleteColorway(slug: string) {
