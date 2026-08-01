@@ -53,12 +53,9 @@ export default async function Home() {
       </section>
 
       <section className="bg-background">
-        <div className="flex gap-1 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+        <div className="grid grid-cols-2 gap-1 sm:grid-cols-4">
           {editorialImages.map((media, i) => (
-            <div
-              key={i}
-              className="relative aspect-[2/3] w-1/2 flex-shrink-0 overflow-hidden bg-border sm:w-1/4"
-            >
+            <div key={i} className="relative aspect-[2/3] overflow-hidden bg-border">
               {media?.type === "video" ? (
                 <AutoplayVideo className="h-full w-full object-cover" src={media.src} />
               ) : media?.type === "image" ? (
