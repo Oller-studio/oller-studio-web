@@ -3,6 +3,12 @@ import { getAllColorways } from "@/lib/colorways";
 import { ColorwaySwatchCard } from "@/components/shop/ColorwaySwatchCard";
 import { ColorwayPlaceholderCard } from "@/components/shop/ColorwayPlaceholderCard";
 
+// Without this, Next statically prerenders this page at build/deploy time
+// and serves it from Vercel's CDN cache — admin edits (price, stock,
+// availability, new colors) wouldn't show up on the live site until the
+// next deploy. Price/stock have to be correct on every load.
+export const dynamic = "force-dynamic";
+
 const GRID_SLOTS = 4;
 
 export default async function ShopPage() {
