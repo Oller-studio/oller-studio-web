@@ -66,6 +66,22 @@ export function BagsTable({ rows }: { rows: BagRow[] }) {
     router.refresh();
   }
 
+  async function duplicateSelected() {
+    const toDuplicate = rows.filter((r) => selected.has(r.slug));
+    if (toDuplicate.length === 0) return;
+    setBusy(true);
+    // Sequential, not parallel — same reasoning as the other bulk actions
+    // elsewhere in admin: concurrent writes can block on the same lock.
+    for (const row of toDuplicate) {
+      await fetch(`/api/admin/products/${row.productSlug}/variants/${row.slug}/duplicate`, {
+        method: "POST",
+      }).catch(() => {});
+    }
+    setBusy(false);
+    setSelected(new Set());
+    router.refresh();
+  }
+
   return (
     <div className="flex w-full min-w-0 flex-col gap-3">
       {selected.size > 0 && (
@@ -96,6 +112,14 @@ export function BagsTable({ rows }: { rows: BagRow[] }) {
               </option>
             ))}
           </select>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={duplicateSelected}
+            className="rounded-full border border-border px-3 py-1.5 text-sm font-semibold hover:bg-border/40 disabled:opacity-50"
+          >
+            Duplicate
+          </button>
           <button
             type="button"
             disabled={busy}
