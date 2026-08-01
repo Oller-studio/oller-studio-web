@@ -15,6 +15,20 @@ function slugify(text: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
+// Loose version for live typing in the URL field — lowercases and turns
+// whitespace into hyphens, but (unlike slugify above) doesn't collapse
+// repeated hyphens or trim leading/trailing ones. Running the strict
+// version on every keystroke stripped a hyphen the admin had just typed at
+// the end of the field before they could type the next character, making
+// it impossible to type or paste anything past the first hyphen. The full
+// slugify still runs once on blur/save to canonicalize the final value.
+function slugifyLive(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "");
+}
+
 function PillChevron({ open }: { open: boolean }) {
   return (
     <svg
@@ -947,8 +961,9 @@ export const ColorwayForm = forwardRef<
               value={displaySlug}
               onChange={(e) => {
                 setSlugTouched(true);
-                set("slug", slugify(e.target.value));
+                set("slug", slugifyLive(e.target.value));
               }}
+              onBlur={(e) => set("slug", slugify(e.target.value))}
               className="w-full px-3 py-2 outline-none"
             />
           </div>
