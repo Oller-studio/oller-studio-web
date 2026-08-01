@@ -15,9 +15,27 @@ export default async function AdminProductsPage({
     status?: string;
     material?: string;
     modelStatus?: string;
+    product?: string;
+    color?: string;
+    shopBadge?: string;
+    stock?: string;
+    priceMin?: string;
+    priceMax?: string;
   }>;
 }) {
-  const { q, tier, status, material, modelStatus } = await searchParams;
+  const {
+    q,
+    tier,
+    status,
+    material,
+    modelStatus,
+    product,
+    color,
+    shopBadge,
+    stock,
+    priceMin,
+    priceMax,
+  } = await searchParams;
   const query = q?.trim().toLowerCase() ?? "";
 
   const [allVariants, allProducts] = await Promise.all([
@@ -36,6 +54,19 @@ export default async function AdminProductsPage({
     : allVariants;
   if (tier) variants = variants.filter((v) => v.tier === tier);
   if (status) variants = variants.filter((v) => v.status === status);
+  if (product) variants = variants.filter((v) => v.productSlug === product);
+  if (color) variants = variants.filter((v) => v.name === color);
+  if (shopBadge) variants = variants.filter((v) => v.shopBadge === shopBadge);
+  if (stock === "in_stock") variants = variants.filter((v) => v.stockOnHand > 0);
+  if (stock === "print_to_order") variants = variants.filter((v) => v.stockOnHand === 0);
+  if (priceMin) {
+    const min = Number(priceMin) * 100;
+    variants = variants.filter((v) => (v.priceCents ?? v.product.basePriceCents) >= min);
+  }
+  if (priceMax) {
+    const max = Number(priceMax) * 100;
+    variants = variants.filter((v) => (v.priceCents ?? v.product.basePriceCents) <= max);
+  }
 
   const costs = allVariants.length
     ? await prisma.productCost.findMany({
@@ -92,18 +123,18 @@ export default async function AdminProductsPage({
   }
 
   const bagRows: BagRow[] = variants.map((v) => ({
-    slug: v.slug,
+    ...rowToVariantRow(v, costBySlug.get(v.slug), {
+      basePriceCents: v.product.basePriceCents,
+      currency: v.product.currency,
+    }),
     productSlug: v.productSlug,
     productName: v.product.name,
-    name: v.name,
-    tier: v.tier as BagRow["tier"],
-    status: v.status as BagRow["status"],
-    shopBadge: v.shopBadge as BagRow["shopBadge"],
-    priceCents: v.priceCents ?? v.product.basePriceCents,
-    currency: v.product.currency,
-    stockOnHand: v.stockOnHand,
-    image: (JSON.parse(v.images) as string[])[0],
   }));
+
+  // Dropdown options for the All bags filter — from the full unfiltered
+  // set, so picking one filter doesn't shrink what's offered for another.
+  const filterProducts = allProducts.map((p) => ({ slug: p.slug, name: p.name }));
+  const filterColors = [...new Set(allVariants.map((v) => v.name))].sort();
 
   return (
     <div className="flex flex-col gap-10">
@@ -133,11 +164,27 @@ export default async function AdminProductsPage({
       <div className="flex w-full min-w-0 flex-col gap-3">
         <h2 className="font-display text-lg font-semibold">All bags</h2>
 
-        <ProductsFilters q={q ?? ""} tier={tier ?? ""} status={status ?? ""} />
+        <ProductsFilters
+          filters={{
+            q: q ?? "",
+            tier: tier ?? "",
+            status: status ?? "",
+            product: product ?? "",
+            color: color ?? "",
+            shopBadge: shopBadge ?? "",
+            stock: stock ?? "",
+            priceMin: priceMin ?? "",
+            priceMax: priceMax ?? "",
+          }}
+          products={filterProducts}
+          colors={filterColors}
+        />
 
         {variants.length === 0 ? (
           <p className="text-sm text-muted">
-            {query || tier || status ? "No bags match that filter." : "No bags yet."}
+            {query || tier || status || product || color || shopBadge || stock || priceMin || priceMax
+              ? "No bags match that filter."
+              : "No bags yet."}
           </p>
         ) : (
           <BagsTable rows={bagRows} />

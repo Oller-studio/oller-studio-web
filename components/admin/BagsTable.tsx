@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -8,30 +8,38 @@ import {
   COLORWAY_STATUSES,
   STATUS_BADGE,
   STATUS_LABELS,
-  type ColorwayStatus,
 } from "@/lib/colorwayStatus";
 import { formatMoneyCents } from "@/lib/format";
-import { formatShopBadge, type ShopBadgeValue } from "@/lib/shopBadge";
+import { formatShopBadge } from "@/lib/shopBadge";
+import { ColorwayForm, type ColorwayFormState } from "./ColorwayForm";
+import type { VariantRow } from "./ColorVariantsList";
 
 const TIER_LABELS = { collection: "Collection", signature: "Signature" } as const;
 
-export type BagRow = {
-  slug: string;
+export type BagRow = VariantRow & {
   productSlug: string;
   productName: string;
-  name: string;
-  tier: "collection" | "signature";
-  status: ColorwayStatus;
-  shopBadge: ShopBadgeValue;
-  priceCents: number;
-  currency: string;
-  stockOnHand: number;
-  image?: string;
 };
+
+function Chevron({ open }: { open: boolean }) {
+  return (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 12 12"
+      fill="none"
+      className={`shrink-0 transition-transform ${open ? "rotate-90" : ""}`}
+      aria-hidden="true"
+    >
+      <path d="M4 2l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
 
 export function BagsTable({ rows }: { rows: BagRow[] }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
+  const [openSlug, setOpenSlug] = useState<string | null>(null);
   const router = useRouter();
 
   const allSelected = rows.length > 0 && selected.size === rows.length;
@@ -144,6 +152,7 @@ export function BagsTable({ rows }: { rows: BagRow[] }) {
                   className="h-4 w-4"
                 />
               </th>
+              <th className="whitespace-nowrap py-2 pr-3 text-left"></th>
               <th className="whitespace-nowrap py-2 pr-7 text-left"></th>
               <th className="whitespace-nowrap py-2 pr-7 text-left">Product</th>
               <th className="whitespace-nowrap py-2 pr-7 text-left">Color</th>
@@ -155,62 +164,89 @@ export function BagsTable({ rows }: { rows: BagRow[] }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {rows.map((v) => (
-              <tr key={v.slug} className={selected.has(v.slug) ? "bg-border/10" : undefined}>
-                <td className="py-3 pl-5 pr-3">
-                  <input
-                    type="checkbox"
-                    checked={selected.has(v.slug)}
-                    onChange={() => toggleOne(v.slug)}
-                    aria-label={`Select ${v.productName} — ${v.name}`}
-                    className="h-4 w-4"
-                  />
-                </td>
-                <td className="py-3 pr-7">
-                  {v.image ? (
-                    <Image
-                      src={v.image}
-                      alt=""
-                      width={36}
-                      height={36}
-                      className="h-9 w-9 rounded-lg border border-border object-cover"
-                    />
-                  ) : (
-                    <span className="block h-9 w-9 rounded-lg bg-border/40" />
-                  )}
-                </td>
-                <td className="whitespace-nowrap py-3 pr-7 text-sm font-semibold">
-                  <Link href={`/admin/products/${v.productSlug}`} className="hover:underline">
-                    {v.productName}
-                  </Link>
-                </td>
-                <td className="whitespace-nowrap py-3 pr-7 text-sm">
-                  <Link
-                    href={`/admin/products/${v.productSlug}/variants/${v.slug}`}
-                    className="hover:underline"
+            {rows.map((v) => {
+              const open = openSlug === v.slug;
+              return (
+                <Fragment key={v.slug}>
+                  <tr
+                    onClick={() => setOpenSlug(open ? null : v.slug)}
+                    className={`cursor-pointer hover:bg-border/10 ${
+                      selected.has(v.slug) ? "bg-border/10" : ""
+                    }`}
                   >
-                    {v.name}
-                  </Link>
-                </td>
-                <td className="whitespace-nowrap py-3 pr-7 text-sm font-medium">
-                  {formatMoneyCents(v.priceCents, v.currency)}
-                </td>
-                <td className="whitespace-nowrap py-3 pr-7 text-xs text-muted">
-                  {TIER_LABELS[v.tier]}
-                </td>
-                <td className="whitespace-nowrap py-3 pr-7 text-xs text-muted">
-                  {formatShopBadge(v)}
-                </td>
-                <td className="whitespace-nowrap py-3 pr-7 text-xs text-muted">
-                  {v.stockOnHand === 0 ? "Print to order" : `${v.stockOnHand} in stock`}
-                </td>
-                <td className="whitespace-nowrap py-3 pr-6 text-xs">
-                  <span className={`rounded-full px-2 py-0.5 ${STATUS_BADGE[v.status]}`}>
-                    {STATUS_LABELS[v.status]}
-                  </span>
-                </td>
-              </tr>
-            ))}
+                    <td className="py-3 pl-5 pr-3" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={selected.has(v.slug)}
+                        onChange={() => toggleOne(v.slug)}
+                        aria-label={`Select ${v.productName} — ${v.name}`}
+                        className="h-4 w-4"
+                      />
+                    </td>
+                    <td className="py-3 pr-3 text-muted">
+                      <Chevron open={open} />
+                    </td>
+                    <td className="py-3 pr-7">
+                      {v.image ? (
+                        <Image
+                          src={v.image}
+                          alt=""
+                          width={36}
+                          height={36}
+                          className="h-9 w-9 rounded-lg border border-border object-cover"
+                        />
+                      ) : (
+                        <span className="block h-9 w-9 rounded-lg bg-border/40" />
+                      )}
+                    </td>
+                    <td className="whitespace-nowrap py-3 pr-7 text-sm font-semibold">
+                      <Link
+                        href={`/admin/products/${v.productSlug}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="hover:underline"
+                      >
+                        {v.productName}
+                      </Link>
+                    </td>
+                    <td className="whitespace-nowrap py-3 pr-7 text-sm">{v.name}</td>
+                    <td className="whitespace-nowrap py-3 pr-7 text-sm font-medium">
+                      {formatMoneyCents(v.priceCents, v.currency)}
+                    </td>
+                    <td className="whitespace-nowrap py-3 pr-7 text-xs text-muted">
+                      {TIER_LABELS[v.tier]}
+                    </td>
+                    <td className="whitespace-nowrap py-3 pr-7 text-xs text-muted">
+                      {formatShopBadge(v)}
+                    </td>
+                    <td className="whitespace-nowrap py-3 pr-7 text-xs text-muted">
+                      {v.stockOnHand === 0 ? "Print to order" : `${v.stockOnHand} in stock`}
+                    </td>
+                    <td className="whitespace-nowrap py-3 pr-6 text-xs">
+                      <span className={`rounded-full px-2 py-0.5 ${STATUS_BADGE[v.status]}`}>
+                        {STATUS_LABELS[v.status]}
+                      </span>
+                    </td>
+                  </tr>
+                  {open && (
+                    <tr>
+                      <td colSpan={10} className="border-t border-border bg-border/5 p-5">
+                        <ColorwayForm
+                          mode="edit"
+                          productSlug={v.productSlug}
+                          productName={v.productName}
+                          initial={v.initial as Partial<ColorwayFormState>}
+                          onSaved={() => {
+                            setOpenSlug(null);
+                            router.refresh();
+                          }}
+                          onDeleted={() => setOpenSlug(null)}
+                        />
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              );
+            })}
           </tbody>
         </table>
       </div>
