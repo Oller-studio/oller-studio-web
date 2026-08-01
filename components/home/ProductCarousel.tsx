@@ -7,11 +7,11 @@ import type { CarouselSlide } from "@/lib/media";
 
 function ArrowIcon({ direction }: { direction: "left" | "right" }) {
   return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+    <svg width="22" height="22" viewBox="0 0 18 18" fill="none" aria-hidden="true">
       <path
         d={direction === "left" ? "M11 3.5L5.5 9l5.5 5.5" : "M7 3.5L12.5 9 7 14.5"}
         stroke="currentColor"
-        strokeWidth="1.6"
+        strokeWidth="2.2"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -59,7 +59,7 @@ export function ProductCarousel({ slides }: { slides: CarouselSlide[] }) {
         type="button"
         onClick={() => goTo(-1)}
         aria-label="Previous"
-        className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center text-foreground hover:opacity-70"
+        className="absolute left-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center text-foreground drop-shadow-[0_1px_3px_rgba(255,255,255,0.8)] hover:opacity-70"
       >
         <ArrowIcon direction="left" />
       </button>
@@ -67,7 +67,7 @@ export function ProductCarousel({ slides }: { slides: CarouselSlide[] }) {
         type="button"
         onClick={() => goTo(1)}
         aria-label="Next"
-        className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center text-foreground hover:opacity-70"
+        className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center text-foreground drop-shadow-[0_1px_3px_rgba(255,255,255,0.8)] hover:opacity-70"
       >
         <ArrowIcon direction="right" />
       </button>
