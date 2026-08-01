@@ -12,7 +12,7 @@ export function Header({ variant = "solid" }: HeaderProps) {
   const placeholder = isOverlay ? "placeholder:text-white/60" : "placeholder:text-muted";
   const border = isOverlay ? "border-white/20" : "border-foreground/30";
 
-  const navLinks = <Link href="/about">Our Story</Link>;
+  const navLinks = <Link href="/about">Our Universe</Link>;
 
   const icons = (
     <div className={`flex items-center gap-4 ${text}`}>
