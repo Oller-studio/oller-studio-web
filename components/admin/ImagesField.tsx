@@ -30,6 +30,10 @@ export function ImagesField({
   const uploadTargetIndex = useRef<number>(0);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
+  // Separate from overIndex/dragIndex above — those track dragging an
+  // already-uploaded photo to reorder it; this tracks dragging a file in
+  // from outside the browser (e.g. the desktop) to upload it.
+  const [fileDragOverIndex, setFileDragOverIndex] = useState<number | null>(null);
 
   function remove(index: number) {
     if (!confirm("Remove this photo?")) return;
@@ -64,16 +68,14 @@ export function ImagesField({
     fileInputRef.current?.click();
   }
 
-  async function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? []);
-    e.target.value = "";
+  async function uploadFiles(files: File[], startIndex: number) {
     if (!files.length) return;
 
     setUploading(true);
     setError(null);
 
     const next = [...images];
-    let index = uploadTargetIndex.current;
+    let index = startIndex;
     let failed = false;
 
     for (const file of files) {
@@ -99,6 +101,21 @@ export function ImagesField({
     onChange(next);
     if (failed) setError("Couldn't upload one of those photos.");
     setUploading(false);
+  }
+
+  async function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    await uploadFiles(files, uploadTargetIndex.current);
+  }
+
+  function handleFileDrop(e: React.DragEvent, index: number) {
+    e.preventDefault();
+    setFileDragOverIndex(null);
+    const files = Array.from(e.dataTransfer.files ?? []).filter((f) =>
+      f.type.startsWith("image/")
+    );
+    uploadFiles(files, index);
   }
 
   const slots = Array.from({ length: max }, (_, i) => images[i]);
@@ -191,11 +208,17 @@ export function ImagesField({
               key={i}
               type="button"
               onClick={() => openPicker(i)}
+              onDragOver={(e) => {
+                e.preventDefault();
+                if (fileDragOverIndex !== i) setFileDragOverIndex(i);
+              }}
+              onDragLeave={() => setFileDragOverIndex((cur) => (cur === i ? null : cur))}
+              onDrop={(e) => handleFileDrop(e, i)}
               disabled={uploading}
               aria-label="Upload photo"
-              className={`flex items-center justify-center rounded-xl border border-dashed border-border text-2xl text-muted hover:border-foreground hover:text-foreground disabled:opacity-50 ${
+              className={`flex items-center justify-center rounded-xl border border-dashed text-2xl text-muted hover:border-foreground hover:text-foreground disabled:opacity-50 ${
                 i === 0 ? "h-32 w-32" : "h-20 w-20"
-              }`}
+              } ${fileDragOverIndex === i ? "border-foreground bg-border/20" : "border-border"}`}
             >
               {uploading ? "…" : "+"}
             </button>

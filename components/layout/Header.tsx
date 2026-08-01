@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { site } from "@/content/site";
 import { CartButton } from "@/components/cart/CartButton";
+import { MobileMenu } from "./MobileMenu";
 
 type HeaderProps = {
   variant?: "solid" | "overlay";
@@ -55,20 +56,17 @@ export function Header({ variant = "solid" }: HeaderProps) {
         <div className="absolute right-6 top-1/2 -translate-y-1/2">{icons}</div>
       </div>
 
-      {/* Mobile: logo + icons on top, nav centered below */}
-      <div className="flex items-center justify-between px-6 py-5 sm:hidden">
-        <Link href="/" className={`font-wordmark text-2xl font-extrabold ${text}`}>
+      {/* Mobile: one row — hamburger left, logo truly centered, icons right */}
+      <div className="relative flex h-16 items-center px-4 sm:hidden">
+        <MobileMenu variant={variant} />
+        <Link
+          href="/"
+          className={`font-wordmark absolute left-1/2 -translate-x-1/2 text-2xl font-extrabold ${text}`}
+        >
           {site.name}
         </Link>
-        {icons}
+        <div className="ml-auto">{icons}</div>
       </div>
-      <nav
-        className={`flex items-center justify-center gap-6 border-t px-6 py-3 text-sm font-medium uppercase tracking-wide sm:hidden ${text} ${
-          isOverlay ? "border-white/20" : "border-border"
-        }`}
-      >
-        {navLinks}
-      </nav>
     </header>
   );
 }
