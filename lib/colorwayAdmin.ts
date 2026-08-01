@@ -48,6 +48,7 @@ export function rowToVariantRow(
       totalPieces: row.totalPieces?.toString() ?? "",
       piecesRemaining: row.piecesRemaining?.toString() ?? "",
       images,
+      hoverImageUrl: row.hoverImageUrl ?? "",
       matchedCarMake: row.matchedCarMake ?? "",
       matchedCarModel: row.matchedCarModel ?? "",
       matchedCarColorName: row.matchedCarColorName ?? "",

@@ -18,7 +18,8 @@ export function ProductCarousel({ slides }: { slides: CarouselSlide[] }) {
 }
 
 function ProductSlide({ slide }: { slide: CarouselSlide }) {
-  const [primary, secondary] = slide.images;
+  const primary = slide.images[0];
+  const secondary = slide.hoverImageUrl ?? slide.images[1];
 
   const content = (
     <div className="relative aspect-[2/3] w-full overflow-hidden bg-border">

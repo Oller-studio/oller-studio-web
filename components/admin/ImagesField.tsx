@@ -5,15 +5,23 @@ import Image from "next/image";
 
 // The first image is the hero shown large on the product page; the rest are
 // the small thumbnails next to it — order here is the order shown there.
+// Separately, ANY photo can be marked as the hover/swap photo on shop cards
+// and the homepage carousel (click "Set hover" on it) — independent of
+// gallery order, so reordering these never silently changes what shows on
+// hover. Leaving none marked falls back to the 2nd photo.
 // Always renders `max` slots (filled or empty) so the order is visible and
 // editable at a glance, instead of only showing filled slots + one "+".
 export function ImagesField({
   images,
   onChange,
+  hoverImageUrl,
+  onHoverImageChange,
   max = 4,
 }: {
   images: string[];
   onChange: (images: string[]) => void;
+  hoverImageUrl: string;
+  onHoverImageChange: (url: string) => void;
   max?: number;
 }) {
   const [uploading, setUploading] = useState(false);
@@ -25,6 +33,7 @@ export function ImagesField({
 
   function remove(index: number) {
     if (!confirm("Remove this photo?")) return;
+    if (images[index] === hoverImageUrl) onHoverImageChange("");
     onChange(images.filter((_, i) => i !== index));
   }
 
@@ -63,7 +72,7 @@ export function ImagesField({
     setUploading(true);
     setError(null);
 
-    let next = [...images];
+    const next = [...images];
     let index = uploadTargetIndex.current;
     let failed = false;
 
@@ -97,8 +106,9 @@ export function ImagesField({
   return (
     <div className="flex w-fit flex-col gap-2">
       <div className="flex w-fit flex-wrap items-start gap-3">
-        {slots.map((src, i) =>
-          src ? (
+        {slots.map((src, i) => {
+          const isHover = src ? (hoverImageUrl ? hoverImageUrl === src : i === 1) : false;
+          return src ? (
             <div
               key={i}
               draggable
@@ -138,6 +148,21 @@ export function ImagesField({
                   Main
                 </span>
               )}
+              {i > 0 &&
+                (isHover ? (
+                  <span className="absolute bottom-1 left-1 rounded-full bg-background/90 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted">
+                    Hover
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => onHoverImageChange(src)}
+                    title="Show this photo on hover, on shop cards and the homepage"
+                    className="absolute bottom-1 left-1 rounded-full bg-background/90 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted opacity-0 shadow group-hover:opacity-100 hover:text-foreground"
+                  >
+                    Set hover
+                  </button>
+                ))}
               <div className="absolute bottom-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100">
                 {i > 0 && (
                   <button
@@ -174,8 +199,8 @@ export function ImagesField({
             >
               {uploading ? "…" : "+"}
             </button>
-          )
-        )}
+          );
+        })}
       </div>
 
       <input

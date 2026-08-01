@@ -47,6 +47,7 @@ export type ColorwayFormState = {
   totalPieces: string;
   piecesRemaining: string;
   images: string[];
+  hoverImageUrl: string;
   matchedCarMake: string;
   matchedCarModel: string;
   matchedCarColorName: string;
@@ -84,6 +85,7 @@ function initialState(existing?: Partial<ColorwayFormState>): ColorwayFormState 
     totalPieces: existing?.totalPieces ?? "",
     piecesRemaining: existing?.piecesRemaining ?? "",
     images: existing?.images ?? [],
+    hoverImageUrl: existing?.hoverImageUrl ?? "",
     matchedCarMake: existing?.matchedCarMake ?? "",
     matchedCarModel: existing?.matchedCarModel ?? "",
     matchedCarColorName: existing?.matchedCarColorName ?? "",
@@ -133,6 +135,7 @@ function toInput(form: ColorwayFormState, productSlug: string): ColorwayInput {
     totalPieces: isLimited ? numOrNull(form.totalPieces) : null,
     piecesRemaining: isLimited ? numOrNull(form.piecesRemaining) : null,
     images: form.images.slice(0, 4),
+    hoverImageUrl: form.hoverImageUrl.trim() || null,
     matchedCarMake: isLimited ? form.matchedCarMake.trim() || null : null,
     matchedCarModel: isLimited ? form.matchedCarModel.trim() || null : null,
     matchedCarColorName: isLimited ? form.matchedCarColorName.trim() || null : null,
@@ -498,7 +501,13 @@ export const ColorwayForm = forwardRef<
 
       <div className="flex flex-col gap-1">
         <span className={labelClass}>Media (max 4)</span>
-        <ImagesField images={form.images} onChange={(v) => set("images", v)} max={4} />
+        <ImagesField
+          images={form.images}
+          onChange={(v) => set("images", v)}
+          hoverImageUrl={form.hoverImageUrl}
+          onHoverImageChange={(v) => set("hoverImageUrl", v)}
+          max={4}
+        />
       </div>
 
       <label className="flex items-center gap-2">

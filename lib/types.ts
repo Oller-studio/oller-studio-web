@@ -62,6 +62,9 @@ export type Colorway = {
   totalPieces?: number;
   piecesRemaining?: number;
   images: string[];
+  // Which of `images` shows on hover on shop cards/the homepage carousel —
+  // undefined falls back to images[1] (the 2nd photo).
+  hoverImageUrl?: string;
   composition?: { material: string | null; description: string | null };
   matchedCar?: Car;
   story?: string;

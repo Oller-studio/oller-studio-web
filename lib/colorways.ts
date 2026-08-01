@@ -88,6 +88,7 @@ function rowToColorway(row: ColorwayRow & { product: ProductModel }): Colorway {
     totalPieces: row.totalPieces ?? undefined,
     piecesRemaining: row.piecesRemaining ?? undefined,
     images: JSON.parse(row.images) as string[],
+    hoverImageUrl: row.hoverImageUrl ?? undefined,
     composition,
     matchedCar,
     story: row.story ?? undefined,
@@ -177,6 +178,7 @@ export type ColorwayInput = {
   totalPieces: number | null;
   piecesRemaining: number | null;
   images: string[];
+  hoverImageUrl: string | null;
   matchedCarMake: string | null;
   matchedCarModel: string | null;
   matchedCarColorName: string | null;
@@ -213,6 +215,7 @@ function toRowData(input: ColorwayInput) {
     totalPieces: input.totalPieces,
     piecesRemaining: input.piecesRemaining,
     images: JSON.stringify(input.images),
+    hoverImageUrl: input.hoverImageUrl,
     matchedCarMake: input.matchedCarMake,
     matchedCarModel: input.matchedCarModel,
     matchedCarColorName: input.matchedCarColorName,

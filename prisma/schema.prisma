@@ -181,6 +181,10 @@ model Colorway {
   totalPieces            Int?
   piecesRemaining        Int?
   images                 String   @default("[]")
+  // Which of `images` shows on hover on shop cards/the homepage carousel —
+  // independent of gallery order on the product page itself. Null falls
+  // back to images[1] (the 2nd photo), same as before this existed.
+  hoverImageUrl          String?
   matchedCarMake         String?
   matchedCarModel        String?
   matchedCarColorName    String?
