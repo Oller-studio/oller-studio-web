@@ -10,17 +10,15 @@ export function colorwaySeoTitle(colorway: Colorway): string {
 export function colorwaySeoDescription(colorway: Colorway): string {
   if (colorway.seoDescription?.trim()) return colorway.seoDescription.trim();
 
-  // Prefers the car-match story when there is one — that's OLLER's real
-  // differentiator, worth leading with in search results over generic
-  // product copy. Mirrors the same preference order as the admin's SEO
-  // field placeholder (ColorwayForm.tsx's suggestSeoDescription).
-  if (colorway.matchedCar) {
-    const car = [colorway.matchedCar.make, colorway.matchedCar.model].filter(Boolean).join(" ");
-    return `${colorway.product.name} in ${colorway.name}, matched to a ${car}${colorway.matchedCar.colorName ? ` in ${colorway.matchedCar.colorName}` : ""}. A sculptural, 3D-printed handbag by OLLER.`.slice(
-      0,
-      160
-    );
-  }
+  // Leads with the color's own story when there is one (unique per-color
+  // copy beats generic text for search), otherwise the brand-wide "sculptural
+  // handbag + spark curiosity" formula — emotion + searchable category,
+  // e.g. what people actually type ("3D printed handbags", "sculptural
+  // handbags"), not just the brand line on its own. Car-matching is
+  // campaign-specific messaging (varies per drop), not the default SEO
+  // voice, so it's not auto-generated here — mirrors the same preference
+  // order as the admin's SEO field placeholder (ColorwayForm.tsx's
+  // suggestSeoDescription).
   if (colorway.story?.trim()) return colorway.story.trim().slice(0, 160);
   return `${colorway.product.name} in ${colorway.name} — a sculptural, 3D-printed handbag designed to spark curiosity, by OLLER.`.slice(
     0,
