@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/db";
 
-export type EditorialSlot = { type: "video" | "image"; url: string } | null;
+// `href` is optional — a slot doesn't have to link anywhere, but usually
+// should point at the bag it's actually showing so the clip/photo doubles
+// as a direct path to buy, not just a mood shot.
+export type EditorialSlot = { type: "video" | "image"; url: string; href?: string } | null;
 
 export type HomePageRow = {
   heroVideoUrl: string | null;

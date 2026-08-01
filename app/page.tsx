@@ -60,25 +60,34 @@ export default async function Home() {
 
       <section className="bg-background">
         <div className="grid grid-cols-2 gap-1 sm:grid-cols-4">
-          {editorialImages.map((media, i) => (
-            <div key={i} className="relative aspect-[2/3] overflow-hidden bg-border">
-              {media?.type === "video" ? (
-                <AutoplayVideo className="h-full w-full object-cover" src={media.src} />
-              ) : media?.type === "image" ? (
-                <Image
-                  src={media.src}
-                  alt={`OLLER editorial ${i + 1}`}
-                  width={900}
-                  height={1125}
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center text-center text-xs text-muted">
-                  Editorial photo coming soon
-                </div>
-              )}
-            </div>
-          ))}
+          {editorialImages.map((media, i) => {
+            const cell = (
+              <div className="relative aspect-[2/3] overflow-hidden bg-border">
+                {media?.type === "video" ? (
+                  <AutoplayVideo className="h-full w-full object-cover" src={media.src} />
+                ) : media?.type === "image" ? (
+                  <Image
+                    src={media.src}
+                    alt={`OLLER editorial ${i + 1}`}
+                    width={900}
+                    height={1125}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-center text-xs text-muted">
+                    Editorial photo coming soon
+                  </div>
+                )}
+              </div>
+            );
+            return media?.href ? (
+              <Link key={i} href={media.href}>
+                {cell}
+              </Link>
+            ) : (
+              <div key={i}>{cell}</div>
+            );
+          })}
         </div>
       </section>
     </main>
