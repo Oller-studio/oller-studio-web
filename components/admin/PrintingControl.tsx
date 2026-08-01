@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { formatPrintTime } from "@/lib/format";
 
 export function PrintingControl({
   orderId,
@@ -14,11 +15,11 @@ export function PrintingControl({
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [, tick] = useState(0);
+  const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     if (!startedPrintingAt) return;
-    const interval = setInterval(() => tick((n) => n + 1), 30_000);
+    const interval = setInterval(() => setNow(Date.now()), 30_000);
     return () => clearInterval(interval);
   }, [startedPrintingAt]);
 
@@ -46,8 +47,9 @@ export function PrintingControl({
     );
   }
 
-  const elapsedMinutes = (Date.now() - new Date(startedPrintingAt).getTime()) / 60_000;
+  const elapsedMinutes = (now - new Date(startedPrintingAt).getTime()) / 60_000;
   const pct = printMinutes ? Math.min(100, Math.round((elapsedMinutes / printMinutes) * 100)) : null;
+  const remainingMinutes = printMinutes != null ? Math.max(0, printMinutes - elapsedMinutes) : null;
 
   return (
     <div className="flex w-full shrink-0 flex-col gap-1">
@@ -64,7 +66,13 @@ export function PrintingControl({
         </p>
       )}
       <div className="flex items-center justify-between gap-2">
-        {pct != null && <span className="text-xs text-muted">{pct}%</span>}
+        {remainingMinutes != null && (
+          <span className="text-xs text-muted">
+            {remainingMinutes > 0
+              ? `${formatPrintTime(Math.round(remainingMinutes))} left`
+              : "Should be done"}
+          </span>
+        )}
         <button
           type="button"
           onClick={() => advance("PRINTED")}

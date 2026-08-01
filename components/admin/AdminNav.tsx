@@ -31,7 +31,11 @@ const sections: Section[] = [
     href: "/admin/production",
     label: "Production",
     icon: ProductionIcon,
-    children: [{ href: "/admin/production/packaging", label: "Packaging" }],
+    children: [
+      { href: "/admin/production/orders", label: "Paid orders" },
+      { href: "/admin/production/packaging", label: "Packaging" },
+      { href: "/admin/production/repairs", label: "Repairs" },
+    ],
   },
   { href: "/admin/orders", label: "Orders", icon: OrdersIcon },
   {
