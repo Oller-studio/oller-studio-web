@@ -15,6 +15,20 @@ function slugify(text: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
+// Loose version for live typing in the URL field — lowercases and turns
+// whitespace into hyphens, but (unlike slugify above) doesn't collapse
+// repeated hyphens or trim leading/trailing ones. Running the strict
+// version on every keystroke stripped a hyphen the admin had just typed at
+// the end of the field before they could type the next character, making
+// it impossible to type or paste anything past the first hyphen. The full
+// slugify still runs once on blur/save to canonicalize the final value.
+function slugifyLive(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "");
+}
+
 function PillChevron({ open }: { open: boolean }) {
   return (
     <svg
@@ -203,6 +217,16 @@ export const ColorwayForm = forwardRef<
   // freely edit before saving) so a PATCH/DELETE always targets the row the
   // server can actually find, even mid-edit of a not-yet-saved rename.
   const currentSlugRef = useRef(initial?.slug ?? "");
+  // Whether the admin has personally customized the URL away from what the
+  // color's name would generate — starts true only if the saved slug
+  // already doesn't match `${productSlug}-${slugify(name)}` (a deliberate
+  // past customization, respect it), false otherwise so the URL keeps
+  // following the name live (same pattern as the SEO fields below) until
+  // they edit it directly.
+  const [slugTouched, setSlugTouched] = useState(
+    Boolean(initial?.slug) &&
+      initial?.slug !== `${productSlug}-${slugify(initial?.name ?? "")}`
+  );
   // Whether the admin has personally typed into the SEO title/description —
   // starts true if a value was already saved (respect it, don't overwrite),
   // false otherwise so the suggestion keeps auto-filling live as the color's
@@ -241,19 +265,13 @@ export const ColorwayForm = forwardRef<
   // Live, real (editable, not placeholder) suggestion shown for the SEO
   // fields until the admin actually types into one directly — computed
   // during render off the color's own current fields, not stored in state,
-  // so it stays fresh as those change without needing an effect.
+  // so it stays fresh as those change without needing an effect. The URL
+  // follows the same pattern.
   const displaySeoTitle = seoTitleTouched ? form.seoTitle : suggestSeoTitle(productName, form);
   const displaySeoDescription = seoDescriptionTouched
     ? form.seoDescription
     : suggestSeoDescription(productName, form);
-
-  function setName(name: string) {
-    setForm((f) => ({
-      ...f,
-      name,
-      slug: mode === "create" ? `${productSlug}-${slugify(name)}` : f.slug,
-    }));
-  }
+  const displaySlug = slugTouched ? form.slug : `${productSlug}-${slugify(form.name)}`;
 
   function selectStockMode(next: "printed_on_demand" | "stock_in_hand") {
     setStockMode(next);
@@ -273,11 +291,12 @@ export const ColorwayForm = forwardRef<
     // Save must always succeed as a draft, even half-filled — a blank
     // Color label shouldn't block persisting whatever was already entered.
     const name = form.name.trim() || "Untitled color";
-    const slug =
-      form.slug.trim() || `${productSlug}-${slugify(name)}-${Date.now().toString(36)}`;
-    // Untouched SEO fields save the live suggestion, not blank — it's
+    // Untouched URL/SEO fields save the live suggestion, not blank — it's
     // already showing as the real (non-placeholder) value on screen, so
     // what gets saved should match what the admin was actually looking at.
+    const slug = slugTouched
+      ? form.slug.trim() || `${productSlug}-${slugify(name)}-${Date.now().toString(36)}`
+      : `${productSlug}-${slugify(name)}`;
     const draftForm = {
       ...form,
       name,
@@ -351,13 +370,13 @@ export const ColorwayForm = forwardRef<
 
   async function saveCost() {
     const euros = Number.parseFloat(form.costPerItem);
-    if (!form.slug || Number.isNaN(euros) || euros < 0) return;
+    if (!displaySlug || Number.isNaN(euros) || euros < 0) return;
     setSavingCost(true);
     await fetch("/api/finance/product-cost", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        slug: form.slug,
+        slug: displaySlug,
         name: form.name,
         costCents: Math.round(euros * 100),
       }),
@@ -407,7 +426,7 @@ export const ColorwayForm = forwardRef<
           type="text"
           placeholder="Untitled color"
           value={form.name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => set("name", e.target.value)}
           onKeyDown={(e) => {
             const el = e.currentTarget;
             if (e.key === "ArrowRight" && el.selectionStart === el.value.length) {
@@ -416,7 +435,7 @@ export const ColorwayForm = forwardRef<
               firstSwatchInputRef.current?.select();
             }
           }}
-          className={`${inputClass} w-48`}
+          className={`${inputClass} w-48 sm:w-96`}
         />
       </div>
 
@@ -615,7 +634,7 @@ export const ColorwayForm = forwardRef<
               <button
                 type="button"
                 onClick={saveCost}
-                disabled={savingCost || !form.slug}
+                disabled={savingCost || !displaySlug}
                 className="rounded-full border border-border px-3 py-1.5 text-xs font-semibold hover:bg-border/40 disabled:opacity-50"
               >
                 {savingCost ? "Saving…" : "Save"}
@@ -939,8 +958,12 @@ export const ColorwayForm = forwardRef<
             </span>
             <input
               type="text"
-              value={form.slug}
-              onChange={(e) => set("slug", slugify(e.target.value))}
+              value={displaySlug}
+              onChange={(e) => {
+                setSlugTouched(true);
+                set("slug", slugifyLive(e.target.value));
+              }}
+              onBlur={(e) => set("slug", slugify(e.target.value))}
               className="w-full px-3 py-2 outline-none"
             />
           </div>

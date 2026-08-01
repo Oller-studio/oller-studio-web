@@ -224,6 +224,22 @@ export const ColorVariantsList = forwardRef<
     router.refresh();
   }
 
+  async function duplicateSelected() {
+    const slugs = [...selected];
+    if (slugs.length === 0) return;
+    setBusy(true);
+    // Sequential, not parallel — same reasoning as the other bulk actions:
+    // concurrent writes can block on the same lock.
+    for (const slug of slugs) {
+      await fetch(`/api/admin/products/${productSlug}/variants/${slug}/duplicate`, {
+        method: "POST",
+      }).catch(() => {});
+    }
+    setBusy(false);
+    setSelected(new Set());
+    router.refresh();
+  }
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex w-full flex-col gap-3">
@@ -334,6 +350,14 @@ export const ColorVariantsList = forwardRef<
                 </option>
               ))}
             </select>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={duplicateSelected}
+              className="rounded-full border border-border px-3 py-1.5 text-sm font-semibold hover:bg-border/40 disabled:opacity-50"
+            >
+              Duplicate
+            </button>
             <button
               type="button"
               disabled={busy}
