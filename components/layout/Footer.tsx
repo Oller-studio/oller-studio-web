@@ -50,7 +50,7 @@ export function Footer() {
                   <p className="text-sm font-bold uppercase tracking-wide">{site.name}</p>
                   <div className="mt-3 flex flex-col gap-2 text-sm text-muted">
                     <Link href="/about" className="hover:text-foreground">
-                      Our Story
+                      Our Universe
                     </Link>
                     <Link href="/contact" className="hover:text-foreground">
                       Contact

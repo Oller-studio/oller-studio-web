@@ -1,7 +1,14 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { getAllColorways } from "@/lib/colorways";
 import { ColorwaySwatchCard } from "@/components/shop/ColorwaySwatchCard";
 import { ColorwayPlaceholderCard } from "@/components/shop/ColorwayPlaceholderCard";
+
+export const metadata: Metadata = {
+  title: "Shop",
+  description:
+    "Sculptural, 3D-printed handbags by OLLER — digitally crafted Objects d'Art, made one at a time.",
+};
 
 // Without this, Next statically prerenders this page at build/deploy time
 // and serves it from Vercel's CDN cache — admin edits (price, stock,

@@ -243,7 +243,7 @@ const STATIC_PAGE_LABELS: Record<string, string> = {
   "/": "Home",
   "/shop": "Shop (collection)",
   "/faq": "FAQs",
-  "/about": "Our Story",
+  "/about": "Our Universe",
   "/contact": "Contact",
   "/account": "Account",
   "/wishlist": "Wishlist",
