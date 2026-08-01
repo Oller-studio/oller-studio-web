@@ -11,6 +11,7 @@ import {
   type ColorwayStatus,
 } from "@/lib/colorwayStatus";
 import { formatMoneyCents } from "@/lib/format";
+import { formatShopBadge, type ShopBadgeValue } from "@/lib/shopBadge";
 
 const TIER_LABELS = { collection: "Collection", signature: "Signature" } as const;
 
@@ -21,6 +22,7 @@ export type BagRow = {
   name: string;
   tier: "collection" | "signature";
   status: ColorwayStatus;
+  shopBadge: ShopBadgeValue;
   priceCents: number;
   currency: string;
   stockOnHand: number;
@@ -121,10 +123,11 @@ export function BagsTable({ rows }: { rows: BagRow[] }) {
               <th className="whitespace-nowrap py-2 pr-7 text-left"></th>
               <th className="whitespace-nowrap py-2 pr-7 text-left">Product</th>
               <th className="whitespace-nowrap py-2 pr-7 text-left">Color</th>
-              <th className="whitespace-nowrap py-2 pr-7 text-left">Tier</th>
-              <th className="whitespace-nowrap py-2 pr-7 text-left">Status</th>
               <th className="whitespace-nowrap py-2 pr-7 text-left">Price</th>
-              <th className="whitespace-nowrap py-2 pr-6 text-left">Stock on hand</th>
+              <th className="whitespace-nowrap py-2 pr-7 text-left">Tier</th>
+              <th className="whitespace-nowrap py-2 pr-7 text-left">Shop badge</th>
+              <th className="whitespace-nowrap py-2 pr-7 text-left">Stock on hand</th>
+              <th className="whitespace-nowrap py-2 pr-6 text-left">Status</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -165,19 +168,22 @@ export function BagsTable({ rows }: { rows: BagRow[] }) {
                     {v.name}
                   </Link>
                 </td>
-                <td className="whitespace-nowrap py-3 pr-7 text-xs text-muted">
-                  {TIER_LABELS[v.tier]}
-                </td>
-                <td className="whitespace-nowrap py-3 pr-7 text-xs">
-                  <span className={`rounded-full px-2 py-0.5 ${STATUS_BADGE[v.status]}`}>
-                    {STATUS_LABELS[v.status]}
-                  </span>
-                </td>
                 <td className="whitespace-nowrap py-3 pr-7 text-sm font-medium">
                   {formatMoneyCents(v.priceCents, v.currency)}
                 </td>
-                <td className="whitespace-nowrap py-3 pr-6 text-xs text-muted">
+                <td className="whitespace-nowrap py-3 pr-7 text-xs text-muted">
+                  {TIER_LABELS[v.tier]}
+                </td>
+                <td className="whitespace-nowrap py-3 pr-7 text-xs text-muted">
+                  {formatShopBadge(v)}
+                </td>
+                <td className="whitespace-nowrap py-3 pr-7 text-xs text-muted">
                   {v.stockOnHand === 0 ? "Print to order" : `${v.stockOnHand} in stock`}
+                </td>
+                <td className="whitespace-nowrap py-3 pr-6 text-xs">
+                  <span className={`rounded-full px-2 py-0.5 ${STATUS_BADGE[v.status]}`}>
+                    {STATUS_LABELS[v.status]}
+                  </span>
                 </td>
               </tr>
             ))}

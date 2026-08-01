@@ -20,3 +20,10 @@ export function formatPrice(amount: number, currency: string): string {
 export function formatLeadTime([min, max]: [number, number]): string {
   return `Ships in ${min}–${max} days`;
 }
+
+export function formatPrintTime(minutes: number | null): string {
+  if (minutes == null) return "—";
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}

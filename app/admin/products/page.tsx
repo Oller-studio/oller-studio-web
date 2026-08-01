@@ -54,6 +54,7 @@ export default async function AdminProductsPage({
       slug: p.slug,
       name: p.name,
       material: p.material,
+      printMinutes: p.printMinutes,
       swatches: [],
       variants: [],
     });
@@ -73,6 +74,7 @@ export default async function AdminProductsPage({
         slug: v.productSlug,
         name: v.product.name,
         material: v.product.material,
+        printMinutes: v.product.printMinutes,
         swatches: swatchColors[0] ? [swatchColors[0]] : [],
         variants: [variantRow],
       });
@@ -96,6 +98,7 @@ export default async function AdminProductsPage({
     name: v.name,
     tier: v.tier as BagRow["tier"],
     status: v.status as BagRow["status"],
+    shopBadge: v.shopBadge as BagRow["shopBadge"],
     priceCents: v.priceCents ?? v.product.basePriceCents,
     currency: v.product.currency,
     stockOnHand: v.stockOnHand,
