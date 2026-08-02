@@ -8,7 +8,11 @@ export function classifySource(url: URL, referer: string | null): string {
   if (!referer) return "Direct";
   try {
     const refererHost = new URL(referer).hostname.replace(/^www\./, "");
-    if (refererHost === url.hostname) return "Direct";
+    // Strip "www." from both sides — the site serves from www.oller.studio,
+    // so without this, internal navigation (referer www.oller.studio, page
+    // also www.oller.studio) never matched and got misclassified as a
+    // "Referral" from oller.studio itself.
+    if (refererHost === url.hostname.replace(/^www\./, "")) return "Direct";
     if (refererHost.includes("google")) return "Google (organic)";
     if (refererHost.includes("instagram")) return "Instagram (organic)";
     if (refererHost.includes("facebook") || refererHost.includes("fb.com")) return "Facebook (organic)";
@@ -63,7 +67,7 @@ export function classifyChannel(
   }
   try {
     const refererHost = new URL(referer).hostname.replace(/^www\./, "");
-    if (refererHost === url.hostname) return "Direct";
+    if (refererHost === url.hostname.replace(/^www\./, "")) return "Direct";
     if (
       refererHost.includes("google") ||
       refererHost.includes("bing") ||

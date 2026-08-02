@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
+import { classifyDevice } from "@/lib/device";
 
 type StartOrderBody = {
   paypalOrderId: string;
@@ -20,7 +21,13 @@ export async function POST(request: Request) {
     (sum, i) => sum + Math.round(i.price * 100) * i.quantity,
     0
   );
-  const source = (await cookies()).get("oller_src")?.value ?? null;
+  const cookieStore = await cookies();
+  const source = cookieStore.get("oller_src")?.value ?? null;
+  // Was never actually being captured here — every real order's channel
+  // stayed null, so "Sales attributed to marketing" always showed €0
+  // regardless of real marketing-driven sales.
+  const channel = cookieStore.get("oller_chan")?.value ?? null;
+  const device = classifyDevice(request.headers.get("user-agent"));
 
   await prisma.order.create({
     data: {
@@ -29,6 +36,8 @@ export async function POST(request: Request) {
       amountCents,
       currency: body.currency,
       source,
+      channel,
+      device,
       payerEmail: body.payerEmail || null,
       items: {
         create: body.items.map((i) => ({

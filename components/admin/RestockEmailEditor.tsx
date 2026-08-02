@@ -33,7 +33,7 @@ export function RestockEmailEditor({
       <p className="text-xs text-muted">
         Sent from the Waitlist page when you notify someone a sold-out color is ready for them.
         Use {"{{product}}"} and {"{{color}}"} anywhere below — they get filled in per person. The
-        "Get yours" button and private link are added automatically under your message.
+        &quot;Get yours&quot; button and private link are added automatically under your message.
       </p>
       <label className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-wide text-muted">
         Subject

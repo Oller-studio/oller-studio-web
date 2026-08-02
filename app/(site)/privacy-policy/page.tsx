@@ -1,4 +1,11 @@
+import type { Metadata } from "next";
 import { site } from "@/content/site";
+
+export const metadata: Metadata = {
+  title: "Privacy Policy",
+  description: "What personal data OLLER collects when you use oller.studio, and how it's used.",
+  alternates: { canonical: "/privacy-policy" },
+};
 
 export default function PrivacyPolicyPage() {
   return (

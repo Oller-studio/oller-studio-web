@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 import { createOrder } from "@/lib/paypal";
+import { classifyDevice } from "@/lib/device";
 
 type CreateApplePayOrderBody = {
   currency: string;
@@ -20,7 +21,10 @@ export async function POST(request: Request) {
     (sum, i) => sum + Math.round(i.price * 100) * i.quantity,
     0
   );
-  const source = (await cookies()).get("oller_src")?.value ?? null;
+  const cookieStore = await cookies();
+  const source = cookieStore.get("oller_src")?.value ?? null;
+  const channel = cookieStore.get("oller_chan")?.value ?? null;
+  const device = classifyDevice(request.headers.get("user-agent"));
 
   // Same "record before payment" pattern as the regular PayPal button's
   // /api/orders/start — lets the admin see this as an abandoned checkout if
@@ -32,6 +36,11 @@ export async function POST(request: Request) {
       amountCents,
       currency: body.currency,
       source,
+      channel,
+      device,
+      // Known for certain here — no need to wait for the webhook's
+      // payment_source parse, though that will confirm/overwrite it too.
+      paymentMethod: "Apple Pay",
       items: {
         create: body.items.map((i) => ({
           colorwaySlug: i.slug,

@@ -79,7 +79,11 @@ export function MobileMenu({ variant }: { variant: "solid" | "overlay" }) {
             ) : (
               <span>Saved</span>
             )}
-            {clerkConfigured ? <AccountControl className="w-fit" /> : <span>Login</span>}
+            {clerkConfigured ? (
+              <AccountControl className="w-fit" variant="inline" />
+            ) : (
+              <span>Login</span>
+            )}
           </div>
         </div>
       )}

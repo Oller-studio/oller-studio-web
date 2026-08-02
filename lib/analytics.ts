@@ -15,23 +15,27 @@ export type Overview = {
   revenueCents: number;
 };
 
-export async function getOverview(since: Date): Promise<Overview> {
+// `until` makes this usable for a bounded previous-period comparison (see
+// getOverviewTrend below) — omitted, it behaves exactly as before (open-ended).
+export async function getOverview(since: Date, until?: Date): Promise<Overview> {
+  const createdRange = until ? { gte: since, lt: until } : { gte: since };
+  const completedRange = until ? { gte: since, lt: until } : { gte: since };
   const [pageViews, visitorRows, bagViewRows, checkoutsStarted, completedOrders] =
     await Promise.all([
-      prisma.pageView.count({ where: { createdAt: { gte: since } } }),
+      prisma.pageView.count({ where: { createdAt: createdRange } }),
       prisma.pageView.findMany({
-        where: { createdAt: { gte: since } },
+        where: { createdAt: createdRange },
         distinct: ["sessionId"],
         select: { sessionId: true },
       }),
       prisma.pageView.findMany({
-        where: { createdAt: { gte: since }, path: { startsWith: "/shop/" } },
+        where: { createdAt: createdRange, path: { startsWith: "/shop/" } },
         distinct: ["sessionId"],
         select: { sessionId: true },
       }),
-      prisma.order.count({ where: { createdAt: { gte: since } } }),
+      prisma.order.count({ where: { createdAt: createdRange } }),
       prisma.order.findMany({
-        where: { completedAt: { gte: since } },
+        where: { completedAt: completedRange },
         select: { amountCents: true },
       }),
     ]);
@@ -86,6 +90,99 @@ export async function getFunnel(since: Date) {
     { label: "Started checkout", value: checkoutsStarted },
     { label: "Completed order", value: ordersCompleted },
   ];
+}
+
+export type ChannelFunnelRow = {
+  channel: string;
+  homeVisits: number;
+  scrolledPct: number;
+  bagClicksPct: number;
+  addedToCartPct: number;
+  checkoutsStartedPct: number;
+  completedPct: number;
+};
+
+// Same funnel as getFunnel, split by each session's first-touch channel —
+// answers "does Instagram traffic convert differently than a Google search
+// visitor". Every step is shown as % of that channel's own home visits
+// (mirrors how getFunnel expresses steps as % of the first step), so
+// channels are comparable to each other regardless of raw volume.
+export async function getFunnelByChannel(since: Date): Promise<ChannelFunnelRow[]> {
+  const [pageViewRows, scrollEvents, cartEvents, orders] = await Promise.all([
+    prisma.pageView.findMany({
+      where: { createdAt: { gte: since } },
+      select: { sessionId: true, channel: true, path: true, createdAt: true },
+      orderBy: { createdAt: "asc" },
+    }),
+    prisma.funnelEvent.findMany({
+      where: { name: "scroll_50", createdAt: { gte: since } },
+      select: { sessionId: true },
+    }),
+    prisma.funnelEvent.findMany({
+      where: { name: "add_to_cart", createdAt: { gte: since } },
+      select: { sessionId: true },
+    }),
+    prisma.order.findMany({
+      where: { createdAt: { gte: since } },
+      select: { channel: true, completedAt: true },
+    }),
+  ]);
+
+  // First-touch channel per session — FunnelEvent/Order don't always carry
+  // their own channel, so this is the shared lookup everything below joins
+  // against.
+  const channelBySession = new Map<string, string>();
+  for (const r of pageViewRows) {
+    if (!channelBySession.has(r.sessionId)) channelBySession.set(r.sessionId, r.channel || "Direct");
+  }
+
+  function addTo(map: Map<string, Set<string>>, channel: string, sessionId: string) {
+    if (!map.has(channel)) map.set(channel, new Set());
+    map.get(channel)!.add(sessionId);
+  }
+
+  const homeByChannel = new Map<string, Set<string>>();
+  const bagByChannel = new Map<string, Set<string>>();
+  for (const r of pageViewRows) {
+    const channel = channelBySession.get(r.sessionId) ?? "Direct";
+    if (r.path === "/") addTo(homeByChannel, channel, r.sessionId);
+    if (r.path.startsWith("/shop/")) addTo(bagByChannel, channel, r.sessionId);
+  }
+
+  const scrollByChannel = new Map<string, Set<string>>();
+  for (const e of scrollEvents) {
+    const channel = channelBySession.get(e.sessionId);
+    if (channel) addTo(scrollByChannel, channel, e.sessionId);
+  }
+  const cartByChannel = new Map<string, Set<string>>();
+  for (const e of cartEvents) {
+    const channel = channelBySession.get(e.sessionId);
+    if (channel) addTo(cartByChannel, channel, e.sessionId);
+  }
+
+  const checkoutsByChannel = new Map<string, number>();
+  const completedByChannel = new Map<string, number>();
+  for (const o of orders) {
+    const channel = o.channel || "Direct";
+    checkoutsByChannel.set(channel, (checkoutsByChannel.get(channel) ?? 0) + 1);
+    if (o.completedAt) completedByChannel.set(channel, (completedByChannel.get(channel) ?? 0) + 1);
+  }
+
+  return [...homeByChannel.keys()]
+    .map((channel) => {
+      const homeVisits = homeByChannel.get(channel)?.size ?? 0;
+      const pct = (n: number) => (homeVisits > 0 ? (n / homeVisits) * 100 : 0);
+      return {
+        channel,
+        homeVisits,
+        scrolledPct: pct(scrollByChannel.get(channel)?.size ?? 0),
+        bagClicksPct: pct(bagByChannel.get(channel)?.size ?? 0),
+        addedToCartPct: pct(cartByChannel.get(channel)?.size ?? 0),
+        checkoutsStartedPct: pct(checkoutsByChannel.get(channel) ?? 0),
+        completedPct: pct(completedByChannel.get(channel) ?? 0),
+      };
+    })
+    .sort((a, b) => b.homeVisits - a.homeVisits);
 }
 
 const CHANNEL_ORDER = [
@@ -287,14 +384,22 @@ function bucketKey(date: Date, hourly: boolean): string {
   return hourly ? date.toISOString().slice(0, 13) : date.toISOString().slice(0, 10);
 }
 
-// Fills in every bucket between `since` and now with 0 where there's no
-// data, so the line actually reaches "today" instead of stopping at the
-// last day something happened.
-function buildTimeline(since: Date, hourly: boolean, counts: Map<string, number>) {
+// Fills in every bucket between `since` and `until` (defaults to now) with 0
+// where there's no data, so the line actually reaches "today" instead of
+// stopping at the last day something happened. Passing an explicit `until`
+// lets a "previous period" series stop at the same number of buckets as the
+// current one, so the two can be overlaid point-for-point on one chart.
+function buildTimeline(
+  since: Date,
+  hourly: boolean,
+  counts: Map<string, number>,
+  until: Date = new Date()
+) {
   const points: { key: string; label: string; value: number }[] = [];
   const cursor = new Date(since);
-  hourly ? cursor.setMinutes(0, 0, 0) : cursor.setHours(0, 0, 0, 0);
-  const end = new Date();
+  if (hourly) cursor.setMinutes(0, 0, 0);
+  else cursor.setHours(0, 0, 0, 0);
+  const end = until;
 
   while (cursor <= end) {
     const key = bucketKey(cursor, hourly);
@@ -314,10 +419,16 @@ function buildTimeline(since: Date, hourly: boolean, counts: Map<string, number>
 export type TimelinePoint = { key: string; label: string; value: number };
 
 // One point per session's first pageview in that bucket, so ten pages
-// loaded by the same visitor in the same hour/day only count once.
-export async function getSessionsOverTime(since: Date, hourly: boolean): Promise<TimelinePoint[]> {
+// loaded by the same visitor in the same hour/day only count once. `until`
+// bounds the range (see buildTimeline) — used to pull a "previous period"
+// series with the same number of buckets as the current one.
+export async function getSessionsOverTime(
+  since: Date,
+  hourly: boolean,
+  until?: Date
+): Promise<TimelinePoint[]> {
   const rows = await prisma.pageView.findMany({
-    where: { createdAt: { gte: since } },
+    where: { createdAt: until ? { gte: since, lt: until } : { gte: since } },
     select: { sessionId: true, createdAt: true },
   });
   const seen = new Set<string>();
@@ -329,7 +440,87 @@ export async function getSessionsOverTime(since: Date, hourly: boolean): Promise
     seen.add(dedupeKey);
     counts.set(bucket, (counts.get(bucket) ?? 0) + 1);
   }
-  return buildTimeline(since, hourly, counts);
+  return buildTimeline(since, hourly, counts, until);
+}
+
+const DOW_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+// getDay() returns 0=Sun..6=Sat — reordered so the week reads Mon-first,
+// which is what "which days bring traffic" naturally means for a business.
+const DOW_ORDER = [1, 2, 3, 4, 5, 6, 0];
+
+// The site is a one-person Andorra-based studio, and Vercel's serverless
+// functions run in UTC — bucketing by date.getDay()/getHours() directly
+// would group sessions by UTC day/hour, not by the day/hour they actually
+// happened in Alicia's timezone (off by 1-2h, and sometimes a whole day for
+// late-evening visits). Every "by day of week" / "by hour" breakdown below
+// converts through this timezone instead.
+const BUSINESS_TIMEZONE = "Europe/Andorra";
+const WEEKDAY_INDEX: Record<string, number> = {
+  Sun: 0,
+  Mon: 1,
+  Tue: 2,
+  Wed: 3,
+  Thu: 4,
+  Fri: 5,
+  Sat: 6,
+};
+
+function localParts(date: Date): { hour: number; weekday: number } {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: BUSINESS_TIMEZONE,
+    hour: "numeric",
+    hourCycle: "h23",
+    weekday: "short",
+  }).formatToParts(date);
+  const hour = Number(parts.find((p) => p.type === "hour")?.value ?? date.getUTCHours());
+  const weekdayLabel = parts.find((p) => p.type === "weekday")?.value ?? "Sun";
+  return { hour: hour % 24, weekday: WEEKDAY_INDEX[weekdayLabel] ?? 0 };
+}
+
+// Groups pageviews into sessions (by first-seen timestamp) once, shared by
+// both the day-of-week and hour-of-day breakdowns below.
+async function firstSeenBySession(since: Date): Promise<Date[]> {
+  const rows = await prisma.pageView.findMany({
+    where: { createdAt: { gte: since } },
+    select: { sessionId: true, createdAt: true },
+    orderBy: { createdAt: "asc" },
+  });
+  const seen = new Map<string, Date>();
+  for (const r of rows) {
+    if (!seen.has(r.sessionId)) seen.set(r.sessionId, r.createdAt);
+  }
+  return [...seen.values()];
+}
+
+// Buckets each session (by its first pageview) into the day of the week it
+// happened on, summed across the whole range — answers "which days of the
+// week bring the most visitors" as opposed to a single day-by-day trend.
+export async function getSessionsByDayOfWeek(
+  since: Date
+): Promise<{ label: string; value: number }[]> {
+  const firstSeen = await firstSeenBySession(since);
+  const counts = new Array(7).fill(0) as number[];
+  for (const d of firstSeen) counts[localParts(d).weekday] += 1;
+  return DOW_ORDER.map((i, idx) => ({ label: DOW_LABELS[idx], value: counts[i] }));
+}
+
+// Same idea, bucketed by hour of day (0-23, in BUSINESS_TIMEZONE) — answers
+// "what time of day do people actually show up", summed across the whole
+// range rather than a single day's hourly trend.
+export async function getSessionsByHourOfDay(
+  since: Date
+): Promise<{ label: string; value: number }[]> {
+  const firstSeen = await firstSeenBySession(since);
+  const counts = new Array(24).fill(0) as number[];
+  for (const d of firstSeen) counts[localParts(d).hour] += 1;
+  // `hour` is already the correct BUSINESS_TIMEZONE bucket (0-23) — just
+  // format it as a 12h label directly, no further timezone conversion
+  // (running it back through Intl+timeZone here would shift it a second time).
+  return counts.map((value, hour) => {
+    const period = hour < 12 ? "AM" : "PM";
+    const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+    return { label: `${displayHour} ${period}`, value };
+  });
 }
 
 export async function getConversionRateOverTime(
@@ -562,4 +753,41 @@ export async function getPartnerPerformance(
     .slice(0, 5);
 
   return { overall, byLink };
+}
+
+// One row per completed order — "Unknown" covers orders placed before
+// device/paymentMethod started being captured (e.g. the imported first-
+// launch orders), not a tracking failure on new ones.
+export async function getOrdersByDevice(
+  since: Date
+): Promise<{ label: string; value: number }[]> {
+  const orders = await prisma.order.findMany({
+    where: { completedAt: { gte: since } },
+    select: { device: true },
+  });
+  const counts = new Map<string, number>();
+  for (const o of orders) {
+    const key = o.device || "Unknown";
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => b.value - a.value);
+}
+
+export async function getOrdersByPaymentMethod(
+  since: Date
+): Promise<{ label: string; value: number }[]> {
+  const orders = await prisma.order.findMany({
+    where: { completedAt: { gte: since } },
+    select: { paymentMethod: true },
+  });
+  const counts = new Map<string, number>();
+  for (const o of orders) {
+    const key = o.paymentMethod || "Unknown";
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => b.value - a.value);
 }

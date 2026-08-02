@@ -4,8 +4,7 @@ export type ShopBadgeValue =
   | "in_stock"
   | "coming_soon"
   | "limited_edition"
-  | "sold_out"
-  | "back_in_stock";
+  | "sold_out";
 
 // The raw admin-facing label — "X in stock" reads the real stockOnHand
 // number directly, so it can't go stale from a separately-typed count.
@@ -21,8 +20,6 @@ export function formatShopBadge(v: { shopBadge: ShopBadgeValue; stockOnHand: num
       return "Limited Edition";
     case "sold_out":
       return "Sold out";
-    case "back_in_stock":
-      return "Back in stock";
     default:
       return "Available";
   }

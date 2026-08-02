@@ -65,9 +65,7 @@ function rowToColorway(row: ColorwayRow & { product: ProductModel }): Colorway {
             ? { kind: "limited_edition" }
             : effectiveBadge === "sold_out"
               ? { kind: "sold_out" }
-              : effectiveBadge === "back_in_stock"
-                ? { kind: "back_in_stock" }
-                : { kind: "available" };
+              : { kind: "available" };
 
   const matchedCar = row.matchedCarMake
     ? {
@@ -203,7 +201,7 @@ export type ColorwayInput = {
   campaignQuote: string | null;
   campaignName: string | null;
   campaignRole: string | null;
-  shopBadge: "available" | "new" | "in_stock" | "coming_soon" | "limited_edition" | "sold_out" | "back_in_stock";
+  shopBadge: "available" | "new" | "in_stock" | "coming_soon" | "limited_edition" | "sold_out";
   stockOnHand: number;
   isFeatured: boolean;
   launchedAt: string;

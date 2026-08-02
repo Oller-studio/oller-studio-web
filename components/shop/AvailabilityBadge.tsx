@@ -61,14 +61,6 @@ export function AvailabilityBadge({
     );
   }
 
-  if (shopBadge.kind === "back_in_stock") {
-    return (
-      <span className="text-[11px] font-bold uppercase tracking-wide text-foreground">
-        Back in stock
-      </span>
-    );
-  }
-
   return (
     <span className="text-[11px] font-bold uppercase tracking-wide text-foreground">
       Available

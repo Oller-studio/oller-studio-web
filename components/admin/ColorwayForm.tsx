@@ -72,7 +72,7 @@ export type ColorwayFormState = {
   campaignQuote: string;
   campaignName: string;
   campaignRole: string;
-  shopBadge: "available" | "new" | "in_stock" | "coming_soon" | "limited_edition" | "sold_out" | "back_in_stock";
+  shopBadge: "available" | "new" | "in_stock" | "coming_soon" | "limited_edition" | "sold_out";
   stockOnHand: string;
   isFeatured: boolean;
   launchedAt: string;
@@ -181,8 +181,10 @@ export type ColorwayFormHandle = {
 // Live, specific-to-this-color suggestions for the SEO fields below — shown
 // as the input's placeholder, so leaving it blank saves exactly this (see
 // lib/seo.ts, which mirrors this same logic for the storefront side).
+// No "| OLLER" here — the root layout's title template ("%s | OLLER")
+// already appends it, so a manual suffix here doubled up as "... | OLLER | OLLER".
 function suggestSeoTitle(productName: string, form: ColorwayFormState): string {
-  return `${productName} — ${form.name || "Color"} | OLLER`;
+  return `${productName} — ${form.name || "Color"}`;
 }
 
 // Leads with the color's own story when there's one (unique per-color copy
@@ -821,7 +823,6 @@ export const ColorwayForm = forwardRef<
             <option value="coming_soon">Coming soon</option>
             <option value="limited_edition">Limited Edition</option>
             <option value="sold_out">Sold out</option>
-            <option value="back_in_stock">Back in stock</option>
           </select>
           {form.shopBadge === "coming_soon" && (
             <label className="flex items-center gap-2 text-xs text-muted">

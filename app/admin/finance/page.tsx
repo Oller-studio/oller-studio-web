@@ -111,7 +111,7 @@ export default async function AdminFinancePage({
         <h2 className="font-display text-lg font-semibold">Fixed costs</h2>
         <p className="text-sm text-muted">
           Recurring costs (rent, tools, subscriptions) — prorated by day over
-          whatever range you're viewing above.
+          whatever range you&apos;re viewing above.
         </p>
         <FixedCostManager costs={fixedCosts} />
       </section>

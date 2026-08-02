@@ -23,8 +23,7 @@ export function rowToVariantRow(
       | "in_stock"
       | "coming_soon"
       | "limited_edition"
-      | "sold_out"
-      | "back_in_stock",
+      | "sold_out",
     piecesRemaining: row.piecesRemaining,
     totalPieces: row.totalPieces,
     stockOnHand: row.stockOnHand,
@@ -65,8 +64,7 @@ export function rowToVariantRow(
         | "in_stock"
         | "coming_soon"
         | "limited_edition"
-        | "sold_out"
-        | "back_in_stock",
+        | "sold_out",
       stockOnHand: row.stockOnHand.toString(),
       isFeatured: row.isFeatured,
       launchedAt: row.launchedAt,
