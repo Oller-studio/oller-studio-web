@@ -25,7 +25,7 @@ const SITE_DESCRIPTION =
   "Discover sculptural 3D-printed handbags by OLLER. Digitally crafted Objects d'Art designed to spark curiosity and start conversations.";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://oller.studio"),
+  metadataBase: new URL("https://www.oller.studio"),
   title: {
     default: "OLLER — Sculptural 3D-Printed Handbags",
     template: "%s | OLLER",
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "OLLER — Sculptural 3D-Printed Handbags",
     description: SITE_DESCRIPTION,
-    url: "https://oller.studio",
+    url: "https://www.oller.studio",
     siteName: "OLLER",
     images: ["/images/home/hero.jpg"],
     type: "website",
@@ -47,14 +47,17 @@ export const metadata: Metadata = {
   },
 };
 
-// Tells Google this is a real brand/organization (name, logo, social
-// profiles) rather than leaving it to guess from page text alone.
+// Tells Google (and AI answer engines — this is the kind of concise, factual
+// block they lean on when summarizing what a brand is) that this is a real
+// brand/organization, not just page text to guess meaning from.
 const organizationJsonLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
   name: "OLLER",
-  url: "https://oller.studio",
-  logo: "https://oller.studio/images/home/hero.jpg",
+  description:
+    "OLLER is a founder-led studio creating sculptural, 3D-printed handbags — Objects d'Art made to order, designed by Alicia Oller.",
+  url: "https://www.oller.studio",
+  logo: "https://www.oller.studio/images/home/hero.jpg",
   sameAs: ["https://www.instagram.com/oller.studio/", "https://www.tiktok.com/@ali.oller"],
 };
 
