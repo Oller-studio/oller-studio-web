@@ -30,19 +30,27 @@ function rowToColorway(row: ColorwayRow & { product: ProductModel }): Colorway {
   // Scheduled launch: while launchedAt hasn't happened yet, the color reads
   // as Coming Soon no matter what Shop Badge is set to in the admin —
   // computed here on every read, so it flips over on its own the moment the
-  // date passes, with nothing to remember to go toggle by hand. Once that
-  // date passes, a badge that was itself "coming_soon" settles to Available
-  // (its natural end state); any other badge just takes over as stored.
-  // launchedAt is a date-only string ("2026-08-01"), which parses as
-  // midnight — comparing against the END of that day instead means a color
-  // launching today still reads as Coming Soon for the rest of today,
-  // rather than "in the future" already being false by 00:00:01.
+  // date passes, with nothing to remember to go toggle by hand. This is a
+  // strict start-of-day check: launching a color includes setting
+  // launchedAt to today, so the override only applies on days strictly
+  // before that (a badge set for today, e.g. Sold Out, takes effect today).
+  const now = new Date();
+  const isBeforeLaunch = new Date(row.launchedAt) > now;
+
+  // Separately: once the launch day has fully passed, a badge that's still
+  // sitting on "coming_soon" (forgotten to update) settles to Available on
+  // its own. launchedAt is a date-only string ("2026-08-01"), which parses
+  // as midnight — comparing against the END of that day instead of the
+  // start means a color that's launching today still reads Coming Soon for
+  // the rest of today if that's genuinely what's set, instead of flipping
+  // to Available by 00:00:01.
   const launchEndOfDay = new Date(row.launchedAt);
   launchEndOfDay.setHours(23, 59, 59, 999);
-  const isScheduled = launchEndOfDay > new Date();
-  const effectiveBadge = isScheduled
+  const staleComingSoon = row.shopBadge === "coming_soon" && launchEndOfDay <= now;
+
+  const effectiveBadge = isBeforeLaunch
     ? "coming_soon"
-    : row.shopBadge === "coming_soon"
+    : staleComingSoon
       ? "available"
       : row.shopBadge;
 

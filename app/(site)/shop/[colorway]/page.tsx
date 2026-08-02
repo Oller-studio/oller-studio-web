@@ -22,10 +22,10 @@ const DEFAULT_BULLETS = [
   "Lightweight sculptural silhouette",
 ];
 
-export async function generateStaticParams() {
-  const colorways = await getAllColorways({ publishedOnly: true });
-  return colorways.map((c) => ({ colorway: c.slug }));
-}
+// Price/availability have to be correct on every load — verified locally
+// that without this, a color's page could serve a stale cached shopBadge
+// (e.g. still showing Sold Out after switching to Coming Soon in admin).
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
