@@ -5,6 +5,7 @@ import { getFinanceSummary } from "@/lib/finance";
 import {
   getOverview,
   getFunnel,
+  getFunnelByChannel,
   getTrafficChannels,
   getSalesAttribution,
   getTrafficTable,
@@ -94,6 +95,7 @@ export default async function AnalyticsPage({
     finance,
     previousFinance,
     funnel,
+    funnelByChannel,
     channels,
     attribution,
     trafficTable,
@@ -112,6 +114,7 @@ export default async function AnalyticsPage({
     getFinanceSummary(since),
     getFinanceSummary(previousSince, since),
     getFunnel(since),
+    getFunnelByChannel(since),
     getTrafficChannels(since),
     getSalesAttribution(since),
     getTrafficTable(since),
@@ -384,6 +387,53 @@ export default async function AnalyticsPage({
             integration we don&apos;t have yet.
           </p>
         </div>
+      </div>
+
+      <div className={boxClass}>
+        <MetricLabel
+          label="Funnel by channel"
+          description="Each step shown as a % of that channel's own home visits, so a small channel and a big one compare on equal footing."
+        />
+        {funnelByChannel.length === 0 ? (
+          <p className="text-sm text-muted">No visits yet in this range.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[720px] border-collapse text-sm">
+              <thead>
+                <tr className="text-xs font-semibold uppercase tracking-wide text-muted">
+                  <th className="py-1 pr-2 text-left">Channel</th>
+                  <th className="py-1 pr-2 text-right">Home visits</th>
+                  <th className="py-1 pr-2 text-right">Scrolled &gt;50%</th>
+                  <th className="py-1 pr-2 text-right">Clicked a bag</th>
+                  <th className="py-1 pr-2 text-right">Added to cart</th>
+                  <th className="py-1 pr-2 text-right">Checkout</th>
+                  <th className="py-1 text-right">Completed</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {funnelByChannel.map((row) => {
+                  const Icon = iconForChannel(row.channel);
+                  return (
+                    <tr key={row.channel}>
+                      <td className="py-1 pr-2">
+                        <span className="flex items-center gap-1.5 font-medium">
+                          <Icon />
+                          {CHANNEL_LABELS[row.channel] ?? row.channel}
+                        </span>
+                      </td>
+                      <td className="py-1 pr-2 text-right">{row.homeVisits}</td>
+                      <td className="py-1 pr-2 text-right">{row.scrolledPct.toFixed(0)}%</td>
+                      <td className="py-1 pr-2 text-right">{row.bagClicksPct.toFixed(0)}%</td>
+                      <td className="py-1 pr-2 text-right">{row.addedToCartPct.toFixed(0)}%</td>
+                      <td className="py-1 pr-2 text-right">{row.checkoutsStartedPct.toFixed(0)}%</td>
+                      <td className="py-1 text-right font-medium">{row.completedPct.toFixed(0)}%</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       <div className={boxClass}>

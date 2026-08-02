@@ -92,6 +92,99 @@ export async function getFunnel(since: Date) {
   ];
 }
 
+export type ChannelFunnelRow = {
+  channel: string;
+  homeVisits: number;
+  scrolledPct: number;
+  bagClicksPct: number;
+  addedToCartPct: number;
+  checkoutsStartedPct: number;
+  completedPct: number;
+};
+
+// Same funnel as getFunnel, split by each session's first-touch channel —
+// answers "does Instagram traffic convert differently than a Google search
+// visitor". Every step is shown as % of that channel's own home visits
+// (mirrors how getFunnel expresses steps as % of the first step), so
+// channels are comparable to each other regardless of raw volume.
+export async function getFunnelByChannel(since: Date): Promise<ChannelFunnelRow[]> {
+  const [pageViewRows, scrollEvents, cartEvents, orders] = await Promise.all([
+    prisma.pageView.findMany({
+      where: { createdAt: { gte: since } },
+      select: { sessionId: true, channel: true, path: true, createdAt: true },
+      orderBy: { createdAt: "asc" },
+    }),
+    prisma.funnelEvent.findMany({
+      where: { name: "scroll_50", createdAt: { gte: since } },
+      select: { sessionId: true },
+    }),
+    prisma.funnelEvent.findMany({
+      where: { name: "add_to_cart", createdAt: { gte: since } },
+      select: { sessionId: true },
+    }),
+    prisma.order.findMany({
+      where: { createdAt: { gte: since } },
+      select: { channel: true, completedAt: true },
+    }),
+  ]);
+
+  // First-touch channel per session — FunnelEvent/Order don't always carry
+  // their own channel, so this is the shared lookup everything below joins
+  // against.
+  const channelBySession = new Map<string, string>();
+  for (const r of pageViewRows) {
+    if (!channelBySession.has(r.sessionId)) channelBySession.set(r.sessionId, r.channel || "Direct");
+  }
+
+  function addTo(map: Map<string, Set<string>>, channel: string, sessionId: string) {
+    if (!map.has(channel)) map.set(channel, new Set());
+    map.get(channel)!.add(sessionId);
+  }
+
+  const homeByChannel = new Map<string, Set<string>>();
+  const bagByChannel = new Map<string, Set<string>>();
+  for (const r of pageViewRows) {
+    const channel = channelBySession.get(r.sessionId) ?? "Direct";
+    if (r.path === "/") addTo(homeByChannel, channel, r.sessionId);
+    if (r.path.startsWith("/shop/")) addTo(bagByChannel, channel, r.sessionId);
+  }
+
+  const scrollByChannel = new Map<string, Set<string>>();
+  for (const e of scrollEvents) {
+    const channel = channelBySession.get(e.sessionId);
+    if (channel) addTo(scrollByChannel, channel, e.sessionId);
+  }
+  const cartByChannel = new Map<string, Set<string>>();
+  for (const e of cartEvents) {
+    const channel = channelBySession.get(e.sessionId);
+    if (channel) addTo(cartByChannel, channel, e.sessionId);
+  }
+
+  const checkoutsByChannel = new Map<string, number>();
+  const completedByChannel = new Map<string, number>();
+  for (const o of orders) {
+    const channel = o.channel || "Direct";
+    checkoutsByChannel.set(channel, (checkoutsByChannel.get(channel) ?? 0) + 1);
+    if (o.completedAt) completedByChannel.set(channel, (completedByChannel.get(channel) ?? 0) + 1);
+  }
+
+  return [...homeByChannel.keys()]
+    .map((channel) => {
+      const homeVisits = homeByChannel.get(channel)?.size ?? 0;
+      const pct = (n: number) => (homeVisits > 0 ? (n / homeVisits) * 100 : 0);
+      return {
+        channel,
+        homeVisits,
+        scrolledPct: pct(scrollByChannel.get(channel)?.size ?? 0),
+        bagClicksPct: pct(bagByChannel.get(channel)?.size ?? 0),
+        addedToCartPct: pct(cartByChannel.get(channel)?.size ?? 0),
+        checkoutsStartedPct: pct(checkoutsByChannel.get(channel) ?? 0),
+        completedPct: pct(completedByChannel.get(channel) ?? 0),
+      };
+    })
+    .sort((a, b) => b.homeVisits - a.homeVisits);
+}
+
 const CHANNEL_ORDER = [
   "Direct",
   "Organic Search",
