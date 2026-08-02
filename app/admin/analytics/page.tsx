@@ -8,6 +8,7 @@ import {
   getSalesAttribution,
   getTrafficTable,
   getSessionsOverTime,
+  getSessionsByDayOfWeek,
   getConversionRateOverTime,
   getSessionsByDevice,
   getSessionsByLocation,
@@ -16,6 +17,8 @@ import {
 } from "@/lib/analytics";
 import { iconForSource, iconForChannel } from "@/components/admin/SourceIcons";
 import { LineChart } from "@/components/admin/LineChart";
+import { ComparisonLineChart } from "@/components/admin/ComparisonLineChart";
+import { DayOfWeekChart } from "@/components/admin/DayOfWeekChart";
 import { DonutChart } from "@/components/admin/DonutChart";
 import { MetricLabel } from "@/components/admin/MetricLabel";
 import { CHART_COLORS } from "@/lib/chartColors";
@@ -81,6 +84,8 @@ export default async function AnalyticsPage({
     attribution,
     trafficTable,
     sessionsOverTime,
+    previousSessionsOverTime,
+    dayOfWeek,
     conversionOverTime,
     byDevice,
     byLocation,
@@ -94,6 +99,8 @@ export default async function AnalyticsPage({
     getSalesAttribution(since),
     getTrafficTable(since),
     getSessionsOverTime(since, hourly),
+    getSessionsOverTime(previousSince, hourly, since),
+    getSessionsByDayOfWeek(since),
     getConversionRateOverTime(since, hourly),
     getSessionsByDevice(since),
     getSessionsByLocation(since),
@@ -103,6 +110,14 @@ export default async function AnalyticsPage({
 
   const maxFunnel = funnel[0]?.value || 1;
   const maxChannel = channels[0]?.visitors || 1;
+  // Merged by index, not calendar date — the two periods cover different
+  // dates but the same number of buckets, so "day 3 of this period" lines up
+  // against "day 3 of last period" for a direct shape comparison.
+  const sessionsComparison = sessionsOverTime.map((p, i) => ({
+    label: p.label,
+    current: p.value,
+    previous: previousSessionsOverTime[i]?.value ?? 0,
+  }));
 
   return (
     <div className="flex flex-col gap-6">
@@ -187,8 +202,20 @@ export default async function AnalyticsPage({
             description="Same visitors, tracked through each step from Home visit to purchase."
           />
           <div className="flex flex-col gap-3">
-            {funnel.map((step) => {
+            {funnel.map((step, i) => {
               const pct = maxFunnel ? (step.value / maxFunnel) * 100 : 0;
+              const prevValue = i > 0 ? funnel[i - 1].value : null;
+              const isLast = i === funnel.length - 1;
+              // Every mid-funnel step shows drop-off since the step before it;
+              // the last one shows overall conversion from the very first step
+              // instead — "6% of everyone who landed on Home completed an order".
+              const dropoffPct = isLast
+                ? maxFunnel > 0
+                  ? (step.value / maxFunnel) * 100
+                  : null
+                : prevValue && prevValue > 0
+                  ? ((prevValue - step.value) / prevValue) * 100
+                  : null;
               return (
                 <div key={step.label} className="flex flex-col gap-1">
                   <div className="flex items-center justify-between text-sm">
@@ -198,6 +225,16 @@ export default async function AnalyticsPage({
                     </span>
                   </div>
                   <Bar pct={pct} />
+                  {dropoffPct !== null && (
+                    <span
+                      className={`self-end text-xs font-medium ${
+                        isLast ? "text-emerald-600" : "text-accent"
+                      }`}
+                    >
+                      {isLast ? "✓" : "▼"} {Math.round(Math.abs(dropoffPct))}%{" "}
+                      {isLast ? "conversion" : "drop-off"}
+                    </span>
+                  )}
                 </div>
               );
             })}
@@ -291,16 +328,30 @@ export default async function AnalyticsPage({
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
-        <div className={boxClass}>
-          <MetricLabel
-            label="Sessions over time"
-            description="Unique sessions per day (or per hour, on the 24h view)."
-          />
+      <div className={boxClass}>
+        <MetricLabel
+          label="Sessions: this period vs. last period"
+          description="Same number of days/hours, overlaid — shows whether traffic is trending up or down, not just the raw total."
+        />
+        <div className="flex items-baseline gap-3">
           <p className="text-2xl font-semibold">
             {sessionsOverTime.reduce((sum, p) => sum + p.value, 0).toLocaleString()}
           </p>
-          <LineChart points={sessionsOverTime} color="#d2001f" />
+          <TrendChip
+            current={sessionsOverTime.reduce((sum, p) => sum + p.value, 0)}
+            previous={previousSessionsOverTime.reduce((sum, p) => sum + p.value, 0)}
+          />
+        </div>
+        <ComparisonLineChart points={sessionsComparison} />
+      </div>
+
+      <div className="grid grid-cols-3 gap-4">
+        <div className={boxClass}>
+          <MetricLabel
+            label="Traffic by day of week"
+            description="Sessions summed by weekday across this whole range — which days actually bring visitors."
+          />
+          <DayOfWeekChart data={dayOfWeek} />
         </div>
 
         <div className={boxClass}>

@@ -291,14 +291,21 @@ function bucketKey(date: Date, hourly: boolean): string {
   return hourly ? date.toISOString().slice(0, 13) : date.toISOString().slice(0, 10);
 }
 
-// Fills in every bucket between `since` and now with 0 where there's no
-// data, so the line actually reaches "today" instead of stopping at the
-// last day something happened.
-function buildTimeline(since: Date, hourly: boolean, counts: Map<string, number>) {
+// Fills in every bucket between `since` and `until` (defaults to now) with 0
+// where there's no data, so the line actually reaches "today" instead of
+// stopping at the last day something happened. Passing an explicit `until`
+// lets a "previous period" series stop at the same number of buckets as the
+// current one, so the two can be overlaid point-for-point on one chart.
+function buildTimeline(
+  since: Date,
+  hourly: boolean,
+  counts: Map<string, number>,
+  until: Date = new Date()
+) {
   const points: { key: string; label: string; value: number }[] = [];
   const cursor = new Date(since);
   hourly ? cursor.setMinutes(0, 0, 0) : cursor.setHours(0, 0, 0, 0);
-  const end = new Date();
+  const end = until;
 
   while (cursor <= end) {
     const key = bucketKey(cursor, hourly);
@@ -318,10 +325,16 @@ function buildTimeline(since: Date, hourly: boolean, counts: Map<string, number>
 export type TimelinePoint = { key: string; label: string; value: number };
 
 // One point per session's first pageview in that bucket, so ten pages
-// loaded by the same visitor in the same hour/day only count once.
-export async function getSessionsOverTime(since: Date, hourly: boolean): Promise<TimelinePoint[]> {
+// loaded by the same visitor in the same hour/day only count once. `until`
+// bounds the range (see buildTimeline) — used to pull a "previous period"
+// series with the same number of buckets as the current one.
+export async function getSessionsOverTime(
+  since: Date,
+  hourly: boolean,
+  until?: Date
+): Promise<TimelinePoint[]> {
   const rows = await prisma.pageView.findMany({
-    where: { createdAt: { gte: since } },
+    where: { createdAt: until ? { gte: since, lt: until } : { gte: since } },
     select: { sessionId: true, createdAt: true },
   });
   const seen = new Set<string>();
@@ -333,7 +346,32 @@ export async function getSessionsOverTime(since: Date, hourly: boolean): Promise
     seen.add(dedupeKey);
     counts.set(bucket, (counts.get(bucket) ?? 0) + 1);
   }
-  return buildTimeline(since, hourly, counts);
+  return buildTimeline(since, hourly, counts, until);
+}
+
+const DOW_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+// getDay() returns 0=Sun..6=Sat — reordered so the week reads Mon-first,
+// which is what "which days bring traffic" naturally means for a business.
+const DOW_ORDER = [1, 2, 3, 4, 5, 6, 0];
+
+// Buckets each session (by its first pageview) into the day of the week it
+// happened on, summed across the whole range — answers "which days of the
+// week bring the most visitors" as opposed to a single day-by-day trend.
+export async function getSessionsByDayOfWeek(
+  since: Date
+): Promise<{ day: string; sessions: number }[]> {
+  const rows = await prisma.pageView.findMany({
+    where: { createdAt: { gte: since } },
+    select: { sessionId: true, createdAt: true },
+    orderBy: { createdAt: "asc" },
+  });
+  const firstSeenBySession = new Map<string, Date>();
+  for (const r of rows) {
+    if (!firstSeenBySession.has(r.sessionId)) firstSeenBySession.set(r.sessionId, r.createdAt);
+  }
+  const counts = new Array(7).fill(0) as number[];
+  for (const d of firstSeenBySession.values()) counts[d.getDay()] += 1;
+  return DOW_ORDER.map((i, idx) => ({ day: DOW_LABELS[idx], sessions: counts[i] }));
 }
 
 export async function getConversionRateOverTime(
