@@ -512,6 +512,7 @@ export default async function AnalyticsPage({
       </div>
 
       {/* 5. Audience composition. */}
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted">Visitors</p>
       <div className={boxClass}>
         <MetricLabel
           label="Sessions by device type"
@@ -526,6 +527,7 @@ export default async function AnalyticsPage({
 
       {/* Buyers specifically — different question than "who visits" above:
           what device/payment method do the people who actually pay use. */}
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted">Buyers</p>
       <div className="grid grid-cols-2 gap-4">
         <div className={boxClass}>
           <MetricLabel

@@ -4,6 +4,7 @@ import { getFeaturedColorway } from "@/lib/colorways";
 import { getHeroMedia, getHomeCarouselSlides, getHomeEditorialImages } from "@/lib/media";
 import { TopBar } from "@/components/layout/TopBar";
 import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
 import { ProductCarousel } from "@/components/home/ProductCarousel";
 import { AutoplayVideo } from "@/components/home/AutoplayVideo";
 import { ScrollTracker } from "@/components/analytics/ScrollTracker";
@@ -90,6 +91,8 @@ export default async function Home() {
           })}
         </div>
       </section>
+
+      <Footer />
     </main>
   );
 }
