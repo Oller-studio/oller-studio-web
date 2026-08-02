@@ -10,21 +10,23 @@ type OrderConfirmationOrder = {
   amountCents: number;
   currency: string;
   items: { name: string; quantity: number; unitAmountCents: number; colorwaySlug: string }[];
+  shippingName: string | null;
+  shippingAddress: string | null;
+  shippingCity: string | null;
 };
 
-export async function sendOrderConfirmationEmail(
-  to: string,
-  subject: string,
+// Pure HTML builder, no send — pulled out so the admin can preview the exact
+// same markup that would actually go out, without triggering a real send.
+// The "View your order" button always points at the tracking page, which is
+// gated behind sign-in — so this one email works whether the buyer already
+// has an account or not, no separate variant to maintain.
+export function renderOrderConfirmationHtml(
   message: string,
   orderNumber: string,
   order: OrderConfirmationOrder,
   itemImages: Record<string, string | null>,
   trackingUrl: string,
-  accountUrl: string,
-  hasAccount: boolean,
 ) {
-  if (!resend) return;
-
   const itemsHtml = order.items
     .map((item) => {
       const img = itemImages[item.colorwaySlug];
@@ -36,30 +38,100 @@ export async function sendOrderConfirmationEmail(
     })
     .join("");
 
-  const accountLineHtml = hasAccount
-    ? `<a href="${accountUrl}" style="font-size:12px;color:#6b6b6b;">See all your orders in your account</a>`
-    : `<a href="${accountUrl}" style="font-size:12px;color:#6b6b6b;">Create an account to see all your orders in one place</a>`;
+  const totalQuantity = order.items.reduce((sum, item) => sum + item.quantity, 0);
+  const headline =
+    totalQuantity > 1
+      ? "Your OLLER pieces are taking shape."
+      : "Your OLLER piece is taking shape.";
+
+  const hasShipping = order.shippingName || order.shippingAddress || order.shippingCity;
+  const shippingHtml = hasShipping
+    ? `<tr><td style="padding:24px 32px 0;">
+        <p style="font-size:11px;font-weight:bold;letter-spacing:0.08em;text-transform:uppercase;color:#6b6b6b;margin:0 0 8px;">Shipping information</p>
+        <p style="font-size:14px;margin:0;line-height:1.5;">
+          ${[order.shippingName, order.shippingAddress, order.shippingCity].filter(Boolean).join("<br />")}
+        </p>
+      </td></tr>`
+    : "";
+
+  return `<div style="background:#f5f5f5;padding:32px 16px;font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;">
+    <table role="presentation" width="100%" style="max-width:520px;margin:0 auto;background:#fff;">
+      <tr><td style="padding:32px 32px 0;text-align:center;"><span style="font-family:Arial,Helvetica,sans-serif;font-size:24px;font-weight:800;">OLLER</span></td></tr>
+      <tr><td style="padding:8px 32px 0;text-align:center;"><div style="font-size:12px;color:#6b6b6b;letter-spacing:0.04em;">ORDER #${orderNumber}</div></td></tr>
+      <tr><td style="padding:20px 32px 0;"><div style="font-family:Georgia,serif;font-size:22px;">${headline}</div></td></tr>
+      <tr><td style="padding:16px 32px 0;"><p style="font-size:14px;white-space:pre-line;margin:0;">${message}</p></td></tr>
+      <tr><td style="padding:12px 32px 0;"><p style="font-size:14px;color:#6b6b6b;margin:0;">Track your order anytime to see its latest status.</p></td></tr>
+      <tr><td style="padding:20px 32px 4px;text-align:center;"><a href="${trackingUrl}" style="display:inline-block;background:#0a0a0a;color:#fff;font-size:13px;font-weight:bold;letter-spacing:0.06em;text-decoration:none;padding:14px 30px;border-radius:2px;">VIEW YOUR ORDER</a></td></tr>
+      <tr><td style="padding:32px 32px 0;">
+        <p style="font-size:11px;font-weight:bold;letter-spacing:0.08em;text-transform:uppercase;color:#6b6b6b;margin:0 0 8px;">Order summary</p>
+        <table role="presentation" width="100%" style="border-collapse:collapse;">${itemsHtml}
+          <tr><td colspan="2" style="padding:12px 0;font-size:14px;font-weight:bold;">Total</td><td style="padding:12px 0;font-size:14px;font-weight:bold;text-align:right;">${(order.amountCents / 100).toFixed(2)} ${order.currency}</td></tr>
+        </table>
+      </td></tr>
+      ${shippingHtml}
+      <tr><td style="padding:32px 32px 32px;border-top:1px solid #e5e5e5;margin-top:24px;">
+        <p style="font-size:11px;font-weight:bold;letter-spacing:0.08em;text-transform:uppercase;color:#6b6b6b;margin:24px 0 8px;">Questions?</p>
+        <p style="font-size:13px;color:#6b6b6b;margin:0;">Reply to this email or contact us at hello@oller.studio.</p>
+      </td></tr>
+    </table>
+  </div>`;
+}
+
+export async function sendOrderConfirmationEmail(
+  to: string,
+  subject: string,
+  message: string,
+  orderNumber: string,
+  order: OrderConfirmationOrder,
+  itemImages: Record<string, string | null>,
+  trackingUrl: string,
+) {
+  if (!resend) return;
 
   try {
     await resend.emails.send({
       from: FROM,
       to,
       subject,
-      html: `<div style="background:#f5f5f5;padding:32px 16px;font-family:Arial,Helvetica,sans-serif;">
-        <table role="presentation" width="100%" style="max-width:520px;margin:0 auto;background:#fff;">
-          <tr><td style="padding:32px 32px 4px;text-align:center;"><span style="font-family:Georgia,serif;font-size:20px;letter-spacing:0.12em;">OLLER</span></td></tr>
-          <tr><td style="padding:8px 32px 0;text-align:center;"><div style="font-size:12px;color:#6b6b6b;letter-spacing:0.04em;">ORDER ${orderNumber}</div></td></tr>
-          <tr><td style="padding:12px 32px 0;"><p style="font-size:14px;white-space:pre-line;">${message}</p></td></tr>
-          <tr><td style="padding:20px 32px 0;"><table role="presentation" width="100%" style="border-collapse:collapse;">${itemsHtml}
-            <tr><td colspan="2" style="padding:12px 0;font-size:14px;font-weight:bold;">Total</td><td style="padding:12px 0;font-size:14px;font-weight:bold;text-align:right;">${(order.amountCents / 100).toFixed(2)} ${order.currency}</td></tr>
-          </table></td></tr>
-          <tr><td style="padding:20px 32px 4px;text-align:center;"><a href="${trackingUrl}" style="display:inline-block;background:#d2001f;color:#fff;font-size:13px;font-weight:bold;letter-spacing:0.06em;text-decoration:none;padding:14px 30px;border-radius:2px;">TRACK YOUR ORDER</a></td></tr>
-          <tr><td style="padding:10px 32px 32px;text-align:center;">${accountLineHtml}</td></tr>
-        </table>
-      </div>`,
+      html: renderOrderConfirmationHtml(message, orderNumber, order, itemImages, trackingUrl),
     });
   } catch (error) {
     console.error("sendOrderConfirmationEmail error", error);
+  }
+}
+
+// Pure HTML builder, no send — same reasoning as renderOrderConfirmationHtml:
+// lets the admin preview exactly what would go out.
+export function renderOrderShippedHtml(message: string, orderNumber: string, trackingUrl: string) {
+  return `
+    <div style="font-family: Georgia, serif; max-width: 480px; margin: 0 auto; color: #1a1a1a;">
+      <h1 style="font-family: Arial, Helvetica, sans-serif; font-size: 22px; font-weight: 800;">OLLER</h1>
+      <p style="font-size: 12px; color: #6b6b6b; letter-spacing: 0.04em;">ORDER #${orderNumber}</p>
+      <p style="white-space: pre-wrap;">${message}</p>
+      <p style="margin: 24px 0;"><a href="${trackingUrl}" style="display: inline-block; background: #0a0a0a; color: #fff; padding: 12px 24px; text-decoration: none; text-transform: uppercase; letter-spacing: 0.05em; font-size: 13px;">View your order</a></p>
+      <p style="margin-top: 32px; font-size: 13px; color: #777;">— OLLER Studio</p>
+    </div>
+  `;
+}
+
+export async function sendOrderShippedEmail(
+  to: string,
+  subject: string,
+  message: string,
+  orderNumber: string,
+  trackingUrl: string,
+) {
+  if (!resend) return;
+
+  try {
+    await resend.emails.send({
+      from: FROM,
+      to,
+      subject,
+      html: renderOrderShippedHtml(message, orderNumber, trackingUrl),
+    });
+  } catch (error) {
+    console.error("sendOrderShippedEmail error", error);
   }
 }
 

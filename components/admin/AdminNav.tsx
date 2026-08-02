@@ -10,8 +10,8 @@ import {
   OrdersIcon,
   CustomersIcon,
   ProductsIcon,
-  PagesIcon,
   MarketingIcon,
+  SettingsIcon,
   FinanceIcon,
   AnalyticsIcon,
   SupportIcon,
@@ -46,23 +46,25 @@ const sections: Section[] = [
   },
   { href: "/admin/products", label: "Products", icon: ProductsIcon },
   {
-    href: "/admin/pages",
-    label: "Pages",
-    icon: PagesIcon,
-    children: [{ href: "/admin/pages/home", label: "Home" }],
-  },
-  {
     href: "/admin/marketing",
     label: "Marketing",
     icon: MarketingIcon,
     children: [
       { href: "/admin/marketing/partners", label: "Partners" },
       { href: "/admin/marketing/offers", label: "Offers" },
-      { href: "/admin/marketing/emails", label: "Emails" },
     ],
   },
   { href: "/admin/finance", label: "Finance", icon: FinanceIcon },
   { href: "/admin/analytics", label: "Analytics", icon: AnalyticsIcon },
+  {
+    href: "/admin/settings",
+    label: "Settings",
+    icon: SettingsIcon,
+    children: [
+      { href: "/admin/pages", label: "Pages" },
+      { href: "/admin/marketing/emails", label: "Emails" },
+    ],
+  },
   { href: "/admin/support", label: "Support", icon: SupportIcon, comingSoon: true },
 ];
 

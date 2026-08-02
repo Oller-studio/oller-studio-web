@@ -4,9 +4,9 @@ import { useState } from "react";
 
 // Kept as a literal (not imported from lib/emailTemplates.ts) so this client
 // component doesn't pull the Prisma-backed module into the browser bundle.
-const ORDER_CONFIRMATION_TEMPLATE_KEY = "order_confirmation";
+const ORDER_SHIPPED_TEMPLATE_KEY = "order_shipped";
 
-export function OrderConfirmationEmailEditor({
+export function OrderShippedEmailEditor({
   initialSubject,
   initialMessage,
 }: {
@@ -23,20 +23,18 @@ export function OrderConfirmationEmailEditor({
     const res = await fetch("/api/admin/email-templates", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ key: ORDER_CONFIRMATION_TEMPLATE_KEY, subject, message }),
+      body: JSON.stringify({ key: ORDER_SHIPPED_TEMPLATE_KEY, subject, message }),
     }).catch(() => null);
     setStatus(res && res.ok ? "saved" : "error");
   }
 
   async function preview() {
     setPreviewError(false);
-    // Open the tab synchronously (still inside the click handler) so
-    // browsers don't treat it as a blocked popup once the fetch resolves.
     const win = window.open("", "_blank");
     const res = await fetch("/api/admin/email-templates/preview", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ key: ORDER_CONFIRMATION_TEMPLATE_KEY, subject, message }),
+      body: JSON.stringify({ key: ORDER_SHIPPED_TEMPLATE_KEY, subject, message }),
     }).catch(() => null);
     if (!res || !res.ok || !win) {
       win?.close();
@@ -50,11 +48,11 @@ export function OrderConfirmationEmailEditor({
 
   return (
     <div className="flex w-full max-w-xl flex-col gap-3 rounded-xl border border-border bg-background p-4 shadow-sm">
-      <p className="text-sm font-semibold uppercase tracking-wide">Order confirmation</p>
+      <p className="text-sm font-semibold uppercase tracking-wide">Order shipped</p>
       <p className="text-xs text-muted">
-        Sent automatically the moment a payment is confirmed. Use {"{{firstName}}"} anywhere
-        below — it gets filled in per order. Item photos, total, shipping address, and the
-        &ldquo;View your order&rdquo; button are added automatically under your message.
+        Sent when you mark an order as Sent in Production, with the option to skip it that time.
+        Use {"{{firstName}}"} anywhere below — it gets filled in per order. The tracking button is
+        added automatically under your message.
       </p>
       <label className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-wide text-muted">
         Subject

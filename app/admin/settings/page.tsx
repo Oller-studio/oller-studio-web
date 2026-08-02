@@ -1,14 +1,14 @@
 import Link from "next/link";
 
 const CARDS = [
-  { href: "/admin/marketing/partners", label: "Partners", description: "Referrals and influencers, with tracked links." },
-  { href: "/admin/marketing/offers", label: "Offers", description: "Discount codes and promotions." },
+  { href: "/admin/pages", label: "Pages", description: "Hero video/photo and the editorial strip." },
+  { href: "/admin/marketing/emails", label: "Emails", description: "Copy for emails sent from the admin." },
 ];
 
-export default function MarketingPage() {
+export default function SettingsPage() {
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="font-display text-3xl font-semibold">Marketing</h1>
+      <h1 className="font-display text-3xl font-semibold">Settings</h1>
       <div className="flex flex-wrap gap-4">
         {CARDS.map((c) => (
           <Link

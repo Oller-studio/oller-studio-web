@@ -10,7 +10,13 @@ export const ORDER_CONFIRMATION_TEMPLATE_KEY = "order_confirmation";
 
 export const DEFAULT_ORDER_CONFIRMATION_SUBJECT = "Your OLLER order is confirmed";
 export const DEFAULT_ORDER_CONFIRMATION_MESSAGE =
-  "Hi {{customerName}}, thank you for your order! Here's what's on its way — we'll let you know as soon as it ships.";
+  "Hi {{firstName}}, thank you for your order. Your piece is now being prepared, and we'll keep you updated as it moves through each stage of its journey.";
+
+export const ORDER_SHIPPED_TEMPLATE_KEY = "order_shipped";
+
+export const DEFAULT_ORDER_SHIPPED_SUBJECT = "Your OLLER order has shipped";
+export const DEFAULT_ORDER_SHIPPED_MESSAGE =
+  "Hi {{firstName}}, your piece is on its way to you.";
 
 export async function getEmailTemplate(key: string) {
   const row = await prisma.emailTemplate.findUnique({ where: { key } });
@@ -20,6 +26,9 @@ export async function getEmailTemplate(key: string) {
   }
   if (key === ORDER_CONFIRMATION_TEMPLATE_KEY) {
     return { subject: DEFAULT_ORDER_CONFIRMATION_SUBJECT, message: DEFAULT_ORDER_CONFIRMATION_MESSAGE };
+  }
+  if (key === ORDER_SHIPPED_TEMPLATE_KEY) {
+    return { subject: DEFAULT_ORDER_SHIPPED_SUBJECT, message: DEFAULT_ORDER_SHIPPED_MESSAGE };
   }
   return { subject: "", message: "" };
 }

@@ -2,14 +2,17 @@ import {
   getEmailTemplate,
   RESTOCK_TEMPLATE_KEY,
   ORDER_CONFIRMATION_TEMPLATE_KEY,
+  ORDER_SHIPPED_TEMPLATE_KEY,
 } from "@/lib/emailTemplates";
 import { RestockEmailEditor } from "@/components/admin/RestockEmailEditor";
 import { OrderConfirmationEmailEditor } from "@/components/admin/OrderConfirmationEmailEditor";
+import { OrderShippedEmailEditor } from "@/components/admin/OrderShippedEmailEditor";
 
 export default async function AdminMarketingEmailsPage() {
-  const [restockTemplate, orderConfirmationTemplate] = await Promise.all([
+  const [restockTemplate, orderConfirmationTemplate, orderShippedTemplate] = await Promise.all([
     getEmailTemplate(RESTOCK_TEMPLATE_KEY),
     getEmailTemplate(ORDER_CONFIRMATION_TEMPLATE_KEY),
+    getEmailTemplate(ORDER_SHIPPED_TEMPLATE_KEY),
   ]);
 
   return (
@@ -21,6 +24,10 @@ export default async function AdminMarketingEmailsPage() {
       <OrderConfirmationEmailEditor
         initialSubject={orderConfirmationTemplate.subject}
         initialMessage={orderConfirmationTemplate.message}
+      />
+      <OrderShippedEmailEditor
+        initialSubject={orderShippedTemplate.subject}
+        initialMessage={orderShippedTemplate.message}
       />
       <RestockEmailEditor
         initialSubject={restockTemplate.subject}

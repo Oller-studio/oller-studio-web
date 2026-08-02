@@ -4,7 +4,6 @@ import { prisma } from "@/lib/db";
 import { markWaitlistPurchased } from "@/lib/waitlist";
 import { sendOrderConfirmationEmail } from "@/lib/resend";
 import { getEmailTemplate, fillTemplate, ORDER_CONFIRMATION_TEMPLATE_KEY } from "@/lib/emailTemplates";
-import { hasAccountForEmail } from "@/lib/accounts";
 import { formatOrderNumber } from "@/lib/format";
 import { getSiteUrl } from "@/lib/siteUrl";
 
@@ -151,6 +150,9 @@ async function sendOrderConfirmation(
     amountCents: number;
     currency: string;
     payerName: string | null;
+    shippingName: string | null;
+    shippingAddress: string | null;
+    shippingCity: string | null;
     items: { name: string; quantity: number; unitAmountCents: number; colorwaySlug: string }[];
   },
   payerEmail: string
@@ -163,24 +165,18 @@ async function sendOrderConfirmation(
     colorways.map((c) => [c.slug, (JSON.parse(c.images) as string[])[0] ?? null])
   );
 
-  const [template, hasAccount] = await Promise.all([
-    getEmailTemplate(ORDER_CONFIRMATION_TEMPLATE_KEY),
-    hasAccountForEmail(payerEmail),
-  ]);
-
+  const template = await getEmailTemplate(ORDER_CONFIRMATION_TEMPLATE_KEY);
   const siteUrl = getSiteUrl();
   const firstName = order.payerName?.split(" ")[0] ?? "there";
 
   await sendOrderConfirmationEmail(
     payerEmail,
     template.subject,
-    fillTemplate(template.message, { customerName: firstName }),
+    fillTemplate(template.message, { firstName }),
     formatOrderNumber(order.id),
     order,
     itemImages,
-    `${siteUrl}/orders/track/${order.id}`,
-    `${siteUrl}/account`,
-    hasAccount
+    `${siteUrl}/orders/track/${order.id}`
   );
 }
 
