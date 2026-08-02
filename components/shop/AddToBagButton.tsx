@@ -13,6 +13,7 @@ type AddToBagButtonProps = {
   currency: string;
   image?: string;
   shopBadge: ShopBadge;
+  tier: "collection" | "signature";
   piecesRemaining?: number;
   // Set when the visitor arrived via a private waitlist link — lets this one
   // person buy a sold-out color without changing the public Shop Badge.
@@ -27,6 +28,7 @@ export function AddToBagButton({
   currency,
   image,
   shopBadge,
+  tier,
   piecesRemaining,
   forceUnlocked,
 }: AddToBagButtonProps) {
@@ -38,7 +40,17 @@ export function AddToBagButton({
   if (isSoldOut) {
     return (
       <div className="flex flex-col gap-3">
-        <NotifyMeForm slug={slug} productName={productName} colorName={name} />
+        <NotifyMeForm
+          slug={slug}
+          productName={productName}
+          colorName={name}
+          // Collection colors are always print-to-order, never truly gone —
+          // "sold out" just means not ready right now, so this reads as a
+          // request rather than a wait for restock. Signature pieces are a
+          // real numbered edition that closes for good, so Notify Me (for
+          // the next drop) is the honest framing there.
+          mode={tier === "collection" ? "request" : "notify"}
+        />
       </div>
     );
   }

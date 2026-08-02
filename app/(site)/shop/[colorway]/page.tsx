@@ -239,6 +239,7 @@ export default async function ColorwayPage({
               currency={colorway.product.currency}
               image={colorway.images[0]}
               shopBadge={colorway.shopBadge}
+              tier={colorway.tier}
               piecesRemaining={colorway.piecesRemaining}
               forceUnlocked={hasWaitlistAccess}
             />

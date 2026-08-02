@@ -6,12 +6,34 @@ type NotifyMeFormProps = {
   slug: string;
   productName: string;
   colorName: string;
+  // "request" = collection tier, always print-to-order — framed as asking
+  // for one to be made. "notify" = signature tier, a closed numbered
+  // edition — framed as waiting to hear about the next drop.
+  mode: "notify" | "request";
 };
 
-export function NotifyMeForm({ slug, productName, colorName }: NotifyMeFormProps) {
+const COPY = {
+  notify: {
+    button: "Notify Me",
+    title: "Notify Me",
+    body: "Enter your email below and we'll let you know as soon as this is back in stock.",
+    submit: "Notify Me When Available",
+    done: (email: string) => `We'll email you at ${email} as soon as this is back in stock.`,
+  },
+  request: {
+    button: "Request Print on Demand",
+    title: "Request Print on Demand",
+    body: "This color is print-to-order — leave your email and we'll get in touch about printing one for you.",
+    submit: "Send Request",
+    done: (email: string) => `We'll email you at ${email} about getting one printed.`,
+  },
+} as const;
+
+export function NotifyMeForm({ slug, productName, colorName, mode }: NotifyMeFormProps) {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "saving" | "done" | "error">("idle");
+  const copy = COPY[mode];
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -36,7 +58,7 @@ export function NotifyMeForm({ slug, productName, colorName }: NotifyMeFormProps
         onClick={() => setOpen(true)}
         className="block w-full border border-foreground py-3.5 text-center text-sm font-semibold uppercase tracking-wide text-foreground transition-colors hover:bg-foreground hover:text-background"
       >
-        Notify Me
+        {copy.button}
       </button>
 
       {open && (
@@ -48,7 +70,7 @@ export function NotifyMeForm({ slug, productName, colorName }: NotifyMeFormProps
               <button type="button" aria-label="Close" onClick={close} className="text-xl">
                 ✕
               </button>
-              <p className="font-display text-2xl font-semibold leading-tight">Notify Me</p>
+              <p className="font-display text-2xl font-semibold leading-tight">{copy.title}</p>
               <span aria-hidden="true" className="w-5" />
             </div>
 
@@ -58,15 +80,10 @@ export function NotifyMeForm({ slug, productName, colorName }: NotifyMeFormProps
               </p>
 
               {status === "done" ? (
-                <p className="text-sm text-muted">
-                  We&apos;ll email you at {email} as soon as this is back in stock.
-                </p>
+                <p className="text-sm text-muted">{copy.done(email)}</p>
               ) : (
                 <>
-                  <p className="text-sm text-muted">
-                    Enter your email below and we&apos;ll let you know as soon as this is back in
-                    stock.
-                  </p>
+                  <p className="text-sm text-muted">{copy.body}</p>
                   <form onSubmit={submit} className="flex flex-col gap-3">
                     <input
                       type="email"
@@ -81,7 +98,7 @@ export function NotifyMeForm({ slug, productName, colorName }: NotifyMeFormProps
                       disabled={status === "saving"}
                       className="block w-full border border-foreground py-3.5 text-center text-sm font-semibold uppercase tracking-wide text-foreground transition-colors hover:bg-foreground hover:text-background disabled:opacity-50"
                     >
-                      {status === "saving" ? "…" : "Notify Me When Available"}
+                      {status === "saving" ? "…" : copy.submit}
                     </button>
                     {status === "error" && (
                       <p className="text-xs text-red-600">Something went wrong — try again.</p>
