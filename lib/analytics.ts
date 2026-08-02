@@ -354,24 +354,79 @@ const DOW_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 // which is what "which days bring traffic" naturally means for a business.
 const DOW_ORDER = [1, 2, 3, 4, 5, 6, 0];
 
-// Buckets each session (by its first pageview) into the day of the week it
-// happened on, summed across the whole range — answers "which days of the
-// week bring the most visitors" as opposed to a single day-by-day trend.
-export async function getSessionsByDayOfWeek(
-  since: Date
-): Promise<{ day: string; sessions: number }[]> {
+// The site is a one-person Andorra-based studio, and Vercel's serverless
+// functions run in UTC — bucketing by date.getDay()/getHours() directly
+// would group sessions by UTC day/hour, not by the day/hour they actually
+// happened in Alicia's timezone (off by 1-2h, and sometimes a whole day for
+// late-evening visits). Every "by day of week" / "by hour" breakdown below
+// converts through this timezone instead.
+const BUSINESS_TIMEZONE = "Europe/Andorra";
+const WEEKDAY_INDEX: Record<string, number> = {
+  Sun: 0,
+  Mon: 1,
+  Tue: 2,
+  Wed: 3,
+  Thu: 4,
+  Fri: 5,
+  Sat: 6,
+};
+
+function localParts(date: Date): { hour: number; weekday: number } {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: BUSINESS_TIMEZONE,
+    hour: "numeric",
+    hourCycle: "h23",
+    weekday: "short",
+  }).formatToParts(date);
+  const hour = Number(parts.find((p) => p.type === "hour")?.value ?? date.getUTCHours());
+  const weekdayLabel = parts.find((p) => p.type === "weekday")?.value ?? "Sun";
+  return { hour: hour % 24, weekday: WEEKDAY_INDEX[weekdayLabel] ?? 0 };
+}
+
+// Groups pageviews into sessions (by first-seen timestamp) once, shared by
+// both the day-of-week and hour-of-day breakdowns below.
+async function firstSeenBySession(since: Date): Promise<Date[]> {
   const rows = await prisma.pageView.findMany({
     where: { createdAt: { gte: since } },
     select: { sessionId: true, createdAt: true },
     orderBy: { createdAt: "asc" },
   });
-  const firstSeenBySession = new Map<string, Date>();
+  const seen = new Map<string, Date>();
   for (const r of rows) {
-    if (!firstSeenBySession.has(r.sessionId)) firstSeenBySession.set(r.sessionId, r.createdAt);
+    if (!seen.has(r.sessionId)) seen.set(r.sessionId, r.createdAt);
   }
+  return [...seen.values()];
+}
+
+// Buckets each session (by its first pageview) into the day of the week it
+// happened on, summed across the whole range — answers "which days of the
+// week bring the most visitors" as opposed to a single day-by-day trend.
+export async function getSessionsByDayOfWeek(
+  since: Date
+): Promise<{ label: string; value: number }[]> {
+  const firstSeen = await firstSeenBySession(since);
   const counts = new Array(7).fill(0) as number[];
-  for (const d of firstSeenBySession.values()) counts[d.getDay()] += 1;
-  return DOW_ORDER.map((i, idx) => ({ day: DOW_LABELS[idx], sessions: counts[i] }));
+  for (const d of firstSeen) counts[localParts(d).weekday] += 1;
+  return DOW_ORDER.map((i, idx) => ({ label: DOW_LABELS[idx], value: counts[i] }));
+}
+
+// Same idea, bucketed by hour of day (0-23, in BUSINESS_TIMEZONE) — answers
+// "what time of day do people actually show up", summed across the whole
+// range rather than a single day's hourly trend.
+export async function getSessionsByHourOfDay(
+  since: Date
+): Promise<{ label: string; value: number }[]> {
+  const firstSeen = await firstSeenBySession(since);
+  const counts = new Array(24).fill(0) as number[];
+  for (const d of firstSeen) counts[localParts(d).hour] += 1;
+  // `hour` is already the correct BUSINESS_TIMEZONE bucket (0-23) — just
+  // format it as a 12h label directly, no further timezone conversion
+  // (running it back through Intl+timeZone here would shift it a second time).
+  return counts.map((value, hour) => {
+    const period = hour < 12 ? "AM" : "PM";
+    const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+    return { label: `${displayHour} ${period}`, value };
+  });
 }
 
 export async function getConversionRateOverTime(

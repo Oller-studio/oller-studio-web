@@ -9,6 +9,7 @@ import {
   getTrafficTable,
   getSessionsOverTime,
   getSessionsByDayOfWeek,
+  getSessionsByHourOfDay,
   getConversionRateOverTime,
   getSessionsByDevice,
   getSessionsByLocation,
@@ -18,7 +19,7 @@ import {
 import { iconForSource, iconForChannel } from "@/components/admin/SourceIcons";
 import { LineChart } from "@/components/admin/LineChart";
 import { ComparisonLineChart } from "@/components/admin/ComparisonLineChart";
-import { DayOfWeekChart } from "@/components/admin/DayOfWeekChart";
+import { CategoryBarChart } from "@/components/admin/CategoryBarChart";
 import { DonutChart } from "@/components/admin/DonutChart";
 import { MetricLabel } from "@/components/admin/MetricLabel";
 import { CHART_COLORS } from "@/lib/chartColors";
@@ -86,6 +87,7 @@ export default async function AnalyticsPage({
     sessionsOverTime,
     previousSessionsOverTime,
     dayOfWeek,
+    hourOfDay,
     conversionOverTime,
     byDevice,
     byLocation,
@@ -101,6 +103,7 @@ export default async function AnalyticsPage({
     getSessionsOverTime(since, hourly),
     getSessionsOverTime(previousSince, hourly, since),
     getSessionsByDayOfWeek(since),
+    getSessionsByHourOfDay(since),
     getConversionRateOverTime(since, hourly),
     getSessionsByDevice(since),
     getSessionsByLocation(since),
@@ -345,15 +348,25 @@ export default async function AnalyticsPage({
         <ComparisonLineChart points={sessionsComparison} />
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <div className={boxClass}>
           <MetricLabel
             label="Traffic by day of week"
             description="Sessions summed by weekday across this whole range — which days actually bring visitors."
           />
-          <DayOfWeekChart data={dayOfWeek} />
+          <CategoryBarChart data={dayOfWeek} />
         </div>
 
+        <div className={boxClass}>
+          <MetricLabel
+            label="Traffic by hour of day"
+            description="Sessions summed by hour (your local time) across this whole range — when people actually show up."
+          />
+          <CategoryBarChart data={hourOfDay} />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
         <div className={boxClass}>
           <MetricLabel
             label="Conversion rate over time"
