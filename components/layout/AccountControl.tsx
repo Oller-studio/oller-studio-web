@@ -35,11 +35,13 @@ export function AccountControl({ className, variant = "dropdown" }: AccountContr
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, [menuOpen]);
 
+  // Gated by isSignedIn everywhere it's read below, so a stale `true` left
+  // over from a previous session can't leak admin controls to a signed-out
+  // view — no need to reset it here too.
+  const effectiveIsAdmin = isSignedIn && isAdmin;
+
   useEffect(() => {
-    if (!isSignedIn) {
-      setIsAdmin(false);
-      return;
-    }
+    if (!isSignedIn) return;
     let cancelled = false;
     fetch("/api/admin/status")
       .then((res) => res.json())
@@ -63,7 +65,7 @@ export function AccountControl({ className, variant = "dropdown" }: AccountContr
           Hi, {user.firstName ?? "there"}
         </p>
         <div className="mt-3 flex flex-col gap-3">
-          {isAdmin && (
+          {effectiveIsAdmin && (
             <Link href="/admin" className="font-medium">
               Admin
             </Link>
@@ -90,7 +92,7 @@ export function AccountControl({ className, variant = "dropdown" }: AccountContr
             <p className="px-4 py-2 text-sm font-semibold">
               Hi, {user.firstName ?? "there"}
             </p>
-            {isAdmin && (
+            {effectiveIsAdmin && (
               <Link
                 href="/admin"
                 onClick={() => setMenuOpen(false)}

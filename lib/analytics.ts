@@ -397,7 +397,8 @@ function buildTimeline(
 ) {
   const points: { key: string; label: string; value: number }[] = [];
   const cursor = new Date(since);
-  hourly ? cursor.setMinutes(0, 0, 0) : cursor.setHours(0, 0, 0, 0);
+  if (hourly) cursor.setMinutes(0, 0, 0);
+  else cursor.setHours(0, 0, 0, 0);
   const end = until;
 
   while (cursor <= end) {

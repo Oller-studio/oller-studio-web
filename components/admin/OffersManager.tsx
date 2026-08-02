@@ -275,9 +275,13 @@ export function OffersManager({
   useEffect(() => {
     const editId = searchParams.get("edit");
     if (!editId) return;
-    const match = offers.find((o) => o.id === editId);
-    if (match) setEditingOffer(match);
-    router.replace("/admin/marketing/offers");
+    // Deferred one microtask so the setState call happens in a callback
+    // rather than synchronously at the top of the effect body.
+    Promise.resolve().then(() => {
+      const match = offers.find((o) => o.id === editId);
+      if (match) setEditingOffer(match);
+      router.replace("/admin/marketing/offers");
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
