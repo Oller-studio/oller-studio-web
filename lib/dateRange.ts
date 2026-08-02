@@ -9,6 +9,12 @@ export const DATE_RANGES: { key: DateRangeKey; label: string }[] = [
   { key: "12m", label: "12 months" },
 ];
 
+// Same-length window immediately before `since` — lets a dashboard show
+// "+12% vs last period" without hardcoding a second range calculation.
+export function previousPeriodSince(since: Date): Date {
+  return new Date(since.getTime() - (Date.now() - since.getTime()));
+}
+
 export function resolveDateRange(key: string | undefined) {
   const normalized = DATE_RANGES.find((r) => r.key === key)?.key ?? "30d";
   const since = new Date();

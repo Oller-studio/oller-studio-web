@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { formatMoneyCents } from "@/lib/format";
-import { DATE_RANGES, resolveDateRange } from "@/lib/dateRange";
+import { DATE_RANGES, resolveDateRange, previousPeriodSince } from "@/lib/dateRange";
 import {
   getOverview,
   getFunnel,
@@ -18,6 +18,27 @@ import { iconForSource, iconForChannel } from "@/components/admin/SourceIcons";
 import { LineChart } from "@/components/admin/LineChart";
 import { DonutChart } from "@/components/admin/DonutChart";
 import { MetricLabel } from "@/components/admin/MetricLabel";
+import { CHART_COLORS } from "@/lib/chartColors";
+
+// Small "+12% vs last period" chip — up is green (more is always better for
+// every metric on this dashboard: visitors, orders, revenue...).
+function TrendChip({ current, previous }: { current: number; previous: number }) {
+  if (previous === 0 && current === 0) return null;
+  if (previous === 0) {
+    return <span className="text-xs font-medium text-emerald-600">New</span>;
+  }
+  const pct = ((current - previous) / previous) * 100;
+  const flat = Math.abs(pct) < 0.5;
+  return (
+    <span
+      className={`text-xs font-medium ${
+        flat ? "text-muted" : pct > 0 ? "text-emerald-600" : "text-accent"
+      }`}
+    >
+      {flat ? "±0%" : `${pct > 0 ? "▲" : "▼"} ${Math.abs(pct).toFixed(0)}%`}
+    </span>
+  );
+}
 
 const boxClass = "flex flex-col gap-3 rounded-xl border border-border bg-background p-4";
 
@@ -29,13 +50,13 @@ const CHANNEL_LABELS: Record<string, string> = {
   "Organic Social": "Social",
 };
 
-function Bar({ pct }: { pct: number }) {
+function Bar({ pct, color }: { pct: number; color?: string }) {
   const clamped = Math.min(Math.max(pct, pct > 0 ? 2 : 0), 100);
   return (
     <div className="h-2 w-full overflow-hidden rounded-full bg-border/40">
       <div
-        className="h-2 rounded-full bg-foreground"
-        style={{ width: `${clamped}%` }}
+        className="h-2 rounded-full"
+        style={{ width: `${clamped}%`, backgroundColor: color ?? "var(--color-foreground)" }}
       />
     </div>
   );
@@ -50,8 +71,11 @@ export default async function AnalyticsPage({
   const { key: activeRange, since } = resolveDateRange(rangeParam);
   const hourly = activeRange === "24h";
 
+  const previousSince = previousPeriodSince(since);
+
   const [
     overview,
+    previousOverview,
     funnel,
     channels,
     attribution,
@@ -64,6 +88,7 @@ export default async function AnalyticsPage({
     topProducts,
   ] = await Promise.all([
     getOverview(since),
+    getOverview(previousSince, since),
     getFunnel(since),
     getTrafficChannels(since),
     getSalesAttribution(since),
@@ -105,37 +130,52 @@ export default async function AnalyticsPage({
           {
             label: "Visitors",
             value: overview.visitors.toLocaleString(),
+            current: overview.visitors,
+            previous: previousOverview.visitors,
             description: "Unique sessions with at least one page view in this range.",
           },
           {
             label: "Page views",
             value: overview.pageViews.toLocaleString(),
+            current: overview.pageViews,
+            previous: previousOverview.pageViews,
             description: "Total pages loaded, including repeat pages from the same session.",
           },
           {
             label: "Bag views",
             value: overview.bagViews.toLocaleString(),
+            current: overview.bagViews,
+            previous: previousOverview.bagViews,
             description: "Sessions that visited at least one product page.",
           },
           {
             label: "Checkouts started",
             value: overview.checkoutsStarted.toLocaleString(),
+            current: overview.checkoutsStarted,
+            previous: previousOverview.checkoutsStarted,
             description: "Orders created the moment someone clicks pay — includes abandoned ones.",
           },
           {
             label: "Orders",
             value: overview.ordersCompleted.toLocaleString(),
+            current: overview.ordersCompleted,
+            previous: previousOverview.ordersCompleted,
             description: "Orders that were actually completed (payment captured).",
           },
           {
             label: "Revenue",
             value: formatMoneyCents(overview.revenueCents, "EUR"),
+            current: overview.revenueCents,
+            previous: previousOverview.revenueCents,
             description: "Total amount from completed orders.",
           },
         ].map((c) => (
           <div key={c.label} className={boxClass}>
             <MetricLabel label={c.label} description={c.description} size="xs" />
-            <p className="text-2xl font-semibold">{c.value}</p>
+            <div className="flex items-baseline gap-2">
+              <p className="text-2xl font-semibold">{c.value}</p>
+              <TrendChip current={c.current} previous={c.previous} />
+            </div>
           </div>
         ))}
       </div>
@@ -173,7 +213,7 @@ export default async function AnalyticsPage({
             <p className="text-sm text-muted">No visits yet in this range.</p>
           ) : (
             <div className="flex flex-col gap-3">
-              {channels.map((c) => {
+              {channels.map((c, i) => {
                 const pct = maxChannel ? (c.visitors / maxChannel) * 100 : 0;
                 const Icon = iconForChannel(c.channel);
                 return (
@@ -185,7 +225,7 @@ export default async function AnalyticsPage({
                       </span>
                       <span className="text-muted">{c.visitors.toLocaleString()}</span>
                     </div>
-                    <Bar pct={pct} />
+                    <Bar pct={pct} color={CHART_COLORS[i % CHART_COLORS.length]} />
                   </div>
                 );
               })}
@@ -260,7 +300,7 @@ export default async function AnalyticsPage({
           <p className="text-2xl font-semibold">
             {sessionsOverTime.reduce((sum, p) => sum + p.value, 0).toLocaleString()}
           </p>
-          <LineChart points={sessionsOverTime} />
+          <LineChart points={sessionsOverTime} color="#d2001f" />
         </div>
 
         <div className={boxClass}>
@@ -273,7 +313,7 @@ export default async function AnalyticsPage({
               ? `${((overview.ordersCompleted / Math.max(overview.visitors, 1)) * 100).toFixed(1)}%`
               : "0%"}
           </p>
-          <LineChart points={conversionOverTime} />
+          <LineChart points={conversionOverTime} color="#5b7a6b" suffix="%" />
         </div>
 
         <div className={boxClass}>

@@ -15,23 +15,27 @@ export type Overview = {
   revenueCents: number;
 };
 
-export async function getOverview(since: Date): Promise<Overview> {
+// `until` makes this usable for a bounded previous-period comparison (see
+// getOverviewTrend below) — omitted, it behaves exactly as before (open-ended).
+export async function getOverview(since: Date, until?: Date): Promise<Overview> {
+  const createdRange = until ? { gte: since, lt: until } : { gte: since };
+  const completedRange = until ? { gte: since, lt: until } : { gte: since };
   const [pageViews, visitorRows, bagViewRows, checkoutsStarted, completedOrders] =
     await Promise.all([
-      prisma.pageView.count({ where: { createdAt: { gte: since } } }),
+      prisma.pageView.count({ where: { createdAt: createdRange } }),
       prisma.pageView.findMany({
-        where: { createdAt: { gte: since } },
+        where: { createdAt: createdRange },
         distinct: ["sessionId"],
         select: { sessionId: true },
       }),
       prisma.pageView.findMany({
-        where: { createdAt: { gte: since }, path: { startsWith: "/shop/" } },
+        where: { createdAt: createdRange, path: { startsWith: "/shop/" } },
         distinct: ["sessionId"],
         select: { sessionId: true },
       }),
-      prisma.order.count({ where: { createdAt: { gte: since } } }),
+      prisma.order.count({ where: { createdAt: createdRange } }),
       prisma.order.findMany({
-        where: { completedAt: { gte: since } },
+        where: { completedAt: completedRange },
         select: { amountCents: true },
       }),
     ]);
