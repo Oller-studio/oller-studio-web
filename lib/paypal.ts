@@ -101,7 +101,27 @@ export type OrderDetails = {
   shippingName: string | null;
   shippingAddress: string | null;
   shippingCity: string | null;
+  paymentMethod: string | null;
 };
+
+// PayPal's payment_source is an object with exactly one key naming how the
+// buyer actually paid — "paypal" covers a PayPal balance/linked bank/saved
+// card, "card" is a guest card charge with no PayPal account involved.
+const PAYMENT_SOURCE_LABELS: Record<string, string> = {
+  paypal: "PayPal",
+  card: "Card",
+  venmo: "Venmo",
+  apple_pay: "Apple Pay",
+  google_pay: "Google Pay",
+  pay_upon_invoice: "Pay Upon Invoice",
+};
+
+function paymentMethodFromSource(paymentSource: Record<string, unknown> | undefined): string | null {
+  if (!paymentSource) return null;
+  const key = Object.keys(paymentSource)[0];
+  if (!key) return null;
+  return PAYMENT_SOURCE_LABELS[key] ?? key;
+}
 
 // The capture webhook doesn't reliably include payer/shipping details —
 // fetch the full order for what's actually needed to ship the piece.
@@ -118,6 +138,7 @@ export async function getOrderDetails(orderId: string): Promise<OrderDetails> {
       shippingName: null,
       shippingAddress: null,
       shippingCity: null,
+      paymentMethod: null,
     };
   }
 
@@ -140,6 +161,7 @@ export async function getOrderDetails(orderId: string): Promise<OrderDetails> {
         };
       };
     }[];
+    payment_source?: Record<string, unknown>;
   };
 
   const given = data.payer?.name?.given_name;
@@ -161,5 +183,6 @@ export async function getOrderDetails(orderId: string): Promise<OrderDetails> {
     shippingName: shipping?.name?.full_name ?? null,
     shippingAddress,
     shippingCity: addr?.admin_area_2 ?? null,
+    paymentMethod: paymentMethodFromSource(data.payment_source),
   };
 }

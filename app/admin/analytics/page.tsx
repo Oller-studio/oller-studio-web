@@ -15,6 +15,8 @@ import {
   getConversionRateOverTime,
   getSessionsByDevice,
   getSessionsByLocation,
+  getOrdersByDevice,
+  getOrdersByPaymentMethod,
   getTopPages,
   getTopProducts,
 } from "@/lib/analytics";
@@ -106,6 +108,8 @@ export default async function AnalyticsPage({
     conversionOverTime,
     byDevice,
     byLocation,
+    ordersByDevice,
+    ordersByPaymentMethod,
     topPages,
     topProducts,
   ] = await Promise.all([
@@ -125,6 +129,8 @@ export default async function AnalyticsPage({
     getConversionRateOverTime(since, hourly),
     getSessionsByDevice(since),
     getSessionsByLocation(since),
+    getOrdersByDevice(since),
+    getOrdersByPaymentMethod(since),
     getTopPages(since),
     getTopProducts(since),
   ]);
@@ -516,6 +522,34 @@ export default async function AnalyticsPage({
         ) : (
           <DonutChart segments={byDevice.map((d) => ({ label: d.device, value: d.sessions }))} />
         )}
+      </div>
+
+      {/* Buyers specifically — different question than "who visits" above:
+          what device/payment method do the people who actually pay use. */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className={boxClass}>
+          <MetricLabel
+            label="Orders by device"
+            description="Completed orders by the device used at checkout. 'Unknown' predates this being tracked."
+          />
+          {ordersByDevice.length === 0 ? (
+            <p className="text-sm text-muted">No completed orders yet in this range.</p>
+          ) : (
+            <DonutChart segments={ordersByDevice} />
+          )}
+        </div>
+
+        <div className={boxClass}>
+          <MetricLabel
+            label="Orders by payment method"
+            description="How buyers actually paid, from PayPal's own record — PayPal balance/card, Card (guest), Venmo, Apple Pay..."
+          />
+          {ordersByPaymentMethod.length === 0 ? (
+            <p className="text-sm text-muted">No completed orders yet in this range.</p>
+          ) : (
+            <DonutChart segments={ordersByPaymentMethod} />
+          )}
+        </div>
       </div>
 
       {/* 6. Long-tail detail tables. */}

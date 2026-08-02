@@ -753,3 +753,40 @@ export async function getPartnerPerformance(
 
   return { overall, byLink };
 }
+
+// One row per completed order — "Unknown" covers orders placed before
+// device/paymentMethod started being captured (e.g. the imported first-
+// launch orders), not a tracking failure on new ones.
+export async function getOrdersByDevice(
+  since: Date
+): Promise<{ label: string; value: number }[]> {
+  const orders = await prisma.order.findMany({
+    where: { completedAt: { gte: since } },
+    select: { device: true },
+  });
+  const counts = new Map<string, number>();
+  for (const o of orders) {
+    const key = o.device || "Unknown";
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => b.value - a.value);
+}
+
+export async function getOrdersByPaymentMethod(
+  since: Date
+): Promise<{ label: string; value: number }[]> {
+  const orders = await prisma.order.findMany({
+    where: { completedAt: { gte: since } },
+    select: { paymentMethod: true },
+  });
+  const counts = new Map<string, number>();
+  for (const o of orders) {
+    const key = o.paymentMethod || "Unknown";
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => b.value - a.value);
+}
