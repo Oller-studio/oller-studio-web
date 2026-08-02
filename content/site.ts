@@ -9,9 +9,9 @@ export const site = {
     "Luxury fashion has spent decades repeating the same shapes, the same leather, the same seams. I build forms that were impossible before — shaped digitally, brought to life layer by layer, in my own studio. Not traditional craft. A new one.",
   founder: {
     name: "Alicia Oller",
-    role: "Founder & Designer",
+    role: "Founder",
     quote:
-      "My new obsession is creating forms that feel new. Every signature starts as an obsession — a shape I can't stop thinking about — until I build it myself, layer by layer. Not made for everyone. Made for the few who get it.",
+      "My obsession is creating wearable objects that make you stop and wonder: what is that?\n\nShapes that exist somewhere between art, design and fashion.",
   },
   deliveryPolicy: [
     "Most orders are shipped within 24–48 hours of purchase, subject to availability and payment verification. Once shipped, delivery typically takes 6–10 business days, depending on destination.",
