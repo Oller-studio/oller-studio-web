@@ -31,6 +31,7 @@ export const metadata: Metadata = {
     template: "%s | OLLER",
   },
   description: SITE_DESCRIPTION,
+  alternates: { canonical: "/" },
   openGraph: {
     title: "OLLER — Sculptural 3D-Printed Handbags",
     description: SITE_DESCRIPTION,

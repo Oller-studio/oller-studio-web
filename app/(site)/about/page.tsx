@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: "Our Universe",
   description:
     "OLLER creates Objects d'Art that spark curiosity — sculptural, 3D-printed handbags where creativity comes before convention, and imagination becomes wearable.",
+  alternates: { canonical: "/about" },
 };
 
 export default function AboutPage() {

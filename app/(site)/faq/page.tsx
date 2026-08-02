@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: "FAQ",
   description:
     "Shipping times, payment, returns, and customs — everything you need to know before ordering an OLLER sculptural handbag.",
+  alternates: { canonical: "/faq" },
 };
 
 const faqJsonLd = {
