@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { formatMoneyCents } from "@/lib/format";
 import { DATE_RANGES, resolveDateRange, previousPeriodSince } from "@/lib/dateRange";
+import { getFinanceSummary } from "@/lib/finance";
 import {
   getOverview,
   getFunnel,
@@ -24,19 +25,29 @@ import { DonutChart } from "@/components/admin/DonutChart";
 import { MetricLabel } from "@/components/admin/MetricLabel";
 import { CHART_COLORS } from "@/lib/chartColors";
 
-// Small "+12% vs last period" chip — up is green (more is always better for
-// every metric on this dashboard: visitors, orders, revenue...).
-function TrendChip({ current, previous }: { current: number; previous: number }) {
+// Small "+12% vs last period" chip — up is green for most metrics (more
+// visitors/orders/revenue is better). Pass invert for metrics where a lower
+// number is the good outcome (e.g. cart abandonment rate).
+function TrendChip({
+  current,
+  previous,
+  invert = false,
+}: {
+  current: number;
+  previous: number;
+  invert?: boolean;
+}) {
   if (previous === 0 && current === 0) return null;
   if (previous === 0) {
     return <span className="text-xs font-medium text-emerald-600">New</span>;
   }
   const pct = ((current - previous) / previous) * 100;
   const flat = Math.abs(pct) < 0.5;
+  const isGood = invert ? pct < 0 : pct > 0;
   return (
     <span
       className={`text-xs font-medium ${
-        flat ? "text-muted" : pct > 0 ? "text-emerald-600" : "text-accent"
+        flat ? "text-muted" : isGood ? "text-emerald-600" : "text-accent"
       }`}
     >
       {flat ? "±0%" : `${pct > 0 ? "▲" : "▼"} ${Math.abs(pct).toFixed(0)}%`}
@@ -80,6 +91,8 @@ export default async function AnalyticsPage({
   const [
     overview,
     previousOverview,
+    finance,
+    previousFinance,
     funnel,
     channels,
     attribution,
@@ -96,6 +109,8 @@ export default async function AnalyticsPage({
   ] = await Promise.all([
     getOverview(since),
     getOverview(previousSince, since),
+    getFinanceSummary(since),
+    getFinanceSummary(previousSince, since),
     getFunnel(since),
     getTrafficChannels(since),
     getSalesAttribution(since),
@@ -110,6 +125,22 @@ export default async function AnalyticsPage({
     getTopPages(since),
     getTopProducts(since),
   ]);
+
+  const cartAbandonmentRate =
+    overview.checkoutsStarted > 0
+      ? ((overview.checkoutsStarted - overview.ordersCompleted) / overview.checkoutsStarted) * 100
+      : 0;
+  const previousCartAbandonmentRate =
+    previousOverview.checkoutsStarted > 0
+      ? ((previousOverview.checkoutsStarted - previousOverview.ordersCompleted) /
+          previousOverview.checkoutsStarted) *
+        100
+      : 0;
+  const aovCents = overview.ordersCompleted > 0 ? overview.revenueCents / overview.ordersCompleted : 0;
+  const previousAovCents =
+    previousOverview.ordersCompleted > 0
+      ? previousOverview.revenueCents / previousOverview.ordersCompleted
+      : 0;
 
   const maxFunnel = funnel[0]?.value || 1;
   const maxChannel = channels[0]?.visitors || 1;
@@ -187,12 +218,36 @@ export default async function AnalyticsPage({
             previous: previousOverview.revenueCents,
             description: "Total amount from completed orders.",
           },
+          {
+            label: "Avg. order value",
+            value: overview.ordersCompleted > 0 ? formatMoneyCents(aovCents, "EUR") : "—",
+            current: aovCents,
+            previous: previousAovCents,
+            description: "Revenue ÷ completed orders — how much a typical order is worth.",
+          },
+          {
+            label: "Cart abandonment",
+            value: overview.checkoutsStarted > 0 ? `${cartAbandonmentRate.toFixed(0)}%` : "—",
+            current: cartAbandonmentRate,
+            previous: previousCartAbandonmentRate,
+            invert: true,
+            description: "Checkouts started that never completed. Lower is better.",
+          },
+          {
+            label: "Gross profit",
+            value: formatMoneyCents(finance.grossProfitCents, "EUR"),
+            current: finance.grossProfitCents,
+            previous: previousFinance.grossProfitCents,
+            description: finance.hasCostData
+              ? "Revenue minus PayPal fees and cost of goods (Admin > Finance)."
+              : "No product costs entered yet (Admin > Finance) — this is just net revenue for now.",
+          },
         ].map((c) => (
           <div key={c.label} className={boxClass}>
             <MetricLabel label={c.label} description={c.description} size="xs" />
             <div className="flex items-baseline gap-2">
               <p className="text-2xl font-semibold">{c.value}</p>
-              <TrendChip current={c.current} previous={c.previous} />
+              <TrendChip current={c.current} previous={c.previous} invert={"invert" in c && c.invert} />
             </div>
           </div>
         ))}
