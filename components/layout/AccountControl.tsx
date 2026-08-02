@@ -7,9 +7,16 @@ import { useAuthModal } from "@/components/auth/auth-modal-context";
 
 type AccountControlProps = {
   className?: string;
+  // "dropdown" (default) is the desktop TopBar's floating menu, which
+  // needs room below the button to open into. Inside the mobile drawer the
+  // button sits near the bottom of the screen (mt-auto), so that same
+  // absolute dropdown rendered off-screen below the viewport — nothing
+  // visibly happened on tap. "inline" renders the same links directly in
+  // the page flow instead, like WishlistControl already does for mobile.
+  variant?: "dropdown" | "inline";
 };
 
-export function AccountControl({ className }: AccountControlProps) {
+export function AccountControl({ className, variant = "dropdown" }: AccountControlProps) {
   const { isLoaded, isSignedIn, user } = useUser();
   const { signOut } = useClerk();
   const { open } = useAuthModal();
@@ -47,6 +54,29 @@ export function AccountControl({ className }: AccountControlProps) {
 
   if (!isLoaded) {
     return <span className={className} aria-hidden="true" />;
+  }
+
+  if (isSignedIn && variant === "inline") {
+    return (
+      <div className={className}>
+        <p className="text-xs font-normal normal-case text-muted">
+          Hi, {user.firstName ?? "there"}
+        </p>
+        <div className="mt-3 flex flex-col gap-3">
+          {isAdmin && (
+            <Link href="/admin" className="font-medium">
+              Admin
+            </Link>
+          )}
+          <Link href="/account" className="font-medium">
+            Overview
+          </Link>
+          <button type="button" onClick={() => signOut()} className="text-left font-medium">
+            Sign out
+          </button>
+        </div>
+      </div>
+    );
   }
 
   if (isSignedIn) {
