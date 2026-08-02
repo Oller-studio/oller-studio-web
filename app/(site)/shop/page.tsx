@@ -8,6 +8,7 @@ export const metadata: Metadata = {
   title: "Shop",
   description:
     "Sculptural, 3D-printed handbags by OLLER — digitally crafted Objects d'Art, made one at a time.",
+  alternates: { canonical: "/shop" },
 };
 
 // Without this, Next statically prerenders this page at build/deploy time
