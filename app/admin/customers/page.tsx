@@ -3,6 +3,9 @@ import { formatMoneyCents } from "@/lib/format";
 import { getCountryName } from "@/lib/countryIso";
 import { WorldMap } from "@/components/admin/WorldMap";
 import { Flag } from "@/components/admin/Flag";
+import { MetricLabel } from "@/components/admin/MetricLabel";
+
+const boxClass = "flex flex-col gap-2 rounded-xl border border-border bg-background p-4";
 
 function YesNoBadge({ value }: { value: boolean | null }) {
   if (value === null) {
@@ -33,9 +36,60 @@ export default async function AdminCustomersPage() {
     .slice(0, 5);
   const topCities = [...cityCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
 
+  const totalCustomers = customers.length;
+  const repeatCustomers = customers.filter((c) => c.orderCount > 1).length;
+  const repeatRate = totalCustomers > 0 ? (repeatCustomers / totalCustomers) * 100 : 0;
+  const avgLtvCents =
+    totalCustomers > 0
+      ? customers.reduce((sum, c) => sum + c.amountSpentCents, 0) / totalCustomers
+      : 0;
+  const withAccount = customers.filter((c) => c.hasAccount).length;
+  const accountRate = totalCustomers > 0 ? (withAccount / totalCustomers) * 100 : 0;
+
   return (
     <div className="flex flex-col gap-6">
       <h1 className="font-display text-3xl font-semibold">Customers</h1>
+
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div className={boxClass}>
+          <MetricLabel
+            label="Customers"
+            description="Distinct payer emails with at least one completed order."
+            size="xs"
+          />
+          <p className="text-2xl font-semibold">{totalCustomers}</p>
+        </div>
+        <div className={boxClass}>
+          <MetricLabel
+            label="Repeat purchase rate"
+            description="Customers with more than one completed order."
+            size="xs"
+          />
+          <p className="text-2xl font-semibold">
+            {totalCustomers > 0 ? `${repeatRate.toFixed(0)}%` : "—"}
+          </p>
+        </div>
+        <div className={boxClass}>
+          <MetricLabel
+            label="Avg. lifetime value"
+            description="Total spent across all their orders, averaged across all customers."
+            size="xs"
+          />
+          <p className="text-2xl font-semibold">
+            {totalCustomers > 0 ? formatMoneyCents(avgLtvCents, "EUR") : "—"}
+          </p>
+        </div>
+        <div className={boxClass}>
+          <MetricLabel
+            label="Have an account"
+            description="Created a login instead of checking out as a guest."
+            size="xs"
+          />
+          <p className="text-2xl font-semibold">
+            {totalCustomers > 0 ? `${accountRate.toFixed(0)}%` : "—"}
+          </p>
+        </div>
+      </div>
 
       <div className="w-full max-w-full overflow-x-auto rounded-xl border border-border">
         <table className="w-max min-w-full border-collapse">
