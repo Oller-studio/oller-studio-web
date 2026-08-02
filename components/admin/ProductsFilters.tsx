@@ -11,7 +11,6 @@ const SHOP_BADGES = [
   "coming_soon",
   "limited_edition",
   "sold_out",
-  "back_in_stock",
 ] as const;
 
 const SHOP_BADGE_LABELS: Record<(typeof SHOP_BADGES)[number], string> = {
@@ -21,7 +20,6 @@ const SHOP_BADGE_LABELS: Record<(typeof SHOP_BADGES)[number], string> = {
   coming_soon: "Coming soon",
   limited_edition: "Limited Edition",
   sold_out: "Sold out",
-  back_in_stock: "Back in stock",
 };
 
 type Filters = {
@@ -34,6 +32,7 @@ type Filters = {
   stock: string;
   priceMin: string;
   priceMax: string;
+  priceSort: string;
 };
 
 export function ProductsFilters({
@@ -78,14 +77,15 @@ export function ProductsFilters({
       filters.status ||
       filters.product ||
       filters.color ||
-      filters.shopBadge ||
       filters.stock ||
       filters.priceMin ||
-      filters.priceMax
+      filters.priceMax ||
+      filters.priceSort
   );
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center gap-3">
       <form
         className="flex gap-2"
         onSubmit={(e) => {
@@ -176,23 +176,56 @@ export function ProductsFilters({
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs uppercase tracking-wide text-muted">Min price</label>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs uppercase tracking-wide text-muted">Price</label>
+                  <div className="flex items-center gap-0.5">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigate({ priceSort: filters.priceSort === "asc" ? "" : "asc" })
+                      }
+                      aria-label="Sort price ascending"
+                      title="Sort price low to high"
+                      className={`rounded p-1 hover:bg-border/40 ${
+                        filters.priceSort === "asc" ? "text-foreground" : "text-muted"
+                      }`}
+                    >
+                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+                        <path d="M5 8V2M2 5l3-3 3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigate({ priceSort: filters.priceSort === "desc" ? "" : "desc" })
+                      }
+                      aria-label="Sort price descending"
+                      title="Sort price high to low"
+                      className={`rounded p-1 hover:bg-border/40 ${
+                        filters.priceSort === "desc" ? "text-foreground" : "text-muted"
+                      }`}
+                    >
+                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+                        <path d="M5 2v6M2 5l3 3 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
                   <input
                     type="number"
                     min={0}
+                    placeholder="Min"
                     value={priceMin}
                     onChange={(e) => setPriceMin(e.target.value)}
                     onBlur={() => navigate({ priceMin })}
                     className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
                   />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs uppercase tracking-wide text-muted">Max price</label>
                   <input
                     type="number"
                     min={0}
+                    placeholder="Max"
                     value={priceMax}
                     onChange={(e) => setPriceMax(e.target.value)}
                     onBlur={() => navigate({ priceMax })}
@@ -211,22 +244,6 @@ export function ProductsFilters({
                   <option value="">All tiers</option>
                   <option value="collection">Collection</option>
                   <option value="signature">Signature</option>
-                </select>
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="text-xs uppercase tracking-wide text-muted">Shop badge</label>
-                <select
-                  value={filters.shopBadge}
-                  onChange={(e) => navigate({ shopBadge: e.target.value })}
-                  className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                >
-                  <option value="">All badges</option>
-                  {SHOP_BADGES.map((b) => (
-                    <option key={b} value={b}>
-                      {SHOP_BADGE_LABELS[b]}
-                    </option>
-                  ))}
                 </select>
               </div>
 
@@ -274,6 +291,7 @@ export function ProductsFilters({
                       stock: "",
                       priceMin: "",
                       priceMax: "",
+                      priceSort: "",
                     });
                   }}
                   className="self-start text-xs text-muted underline underline-offset-2 hover:text-foreground"
@@ -284,6 +302,35 @@ export function ProductsFilters({
             </div>
           </div>
         )}
+      </div>
+      </div>
+
+      <div className="flex w-fit flex-wrap gap-1 rounded-full border border-border p-1 text-sm">
+        <button
+          type="button"
+          onClick={() => navigate({ shopBadge: "" })}
+          className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1 ${
+            filters.shopBadge === ""
+              ? "bg-foreground text-background"
+              : "text-muted hover:text-foreground"
+          }`}
+        >
+          All
+        </button>
+        {SHOP_BADGES.map((b) => (
+          <button
+            key={b}
+            type="button"
+            onClick={() => navigate({ shopBadge: filters.shopBadge === b ? "" : b })}
+            className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1 ${
+              filters.shopBadge === b
+                ? "bg-foreground text-background"
+                : "text-muted hover:text-foreground"
+            }`}
+          >
+            {SHOP_BADGE_LABELS[b]}
+          </button>
+        ))}
       </div>
     </div>
   );

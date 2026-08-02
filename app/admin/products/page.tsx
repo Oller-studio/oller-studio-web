@@ -21,6 +21,7 @@ export default async function AdminProductsPage({
     stock?: string;
     priceMin?: string;
     priceMax?: string;
+    priceSort?: string;
   }>;
 }) {
   const {
@@ -35,6 +36,7 @@ export default async function AdminProductsPage({
     stock,
     priceMin,
     priceMax,
+    priceSort,
   } = await searchParams;
   const query = q?.trim().toLowerCase() ?? "";
 
@@ -66,6 +68,14 @@ export default async function AdminProductsPage({
   if (priceMax) {
     const max = Number(priceMax) * 100;
     variants = variants.filter((v) => (v.priceCents ?? v.product.basePriceCents) <= max);
+  }
+  if (priceSort === "asc" || priceSort === "desc") {
+    const direction = priceSort === "asc" ? 1 : -1;
+    variants = [...variants].sort(
+      (a, b) =>
+        direction *
+        ((a.priceCents ?? a.product.basePriceCents) - (b.priceCents ?? b.product.basePriceCents))
+    );
   }
 
   const costs = allVariants.length
@@ -175,6 +185,7 @@ export default async function AdminProductsPage({
             stock: stock ?? "",
             priceMin: priceMin ?? "",
             priceMax: priceMax ?? "",
+            priceSort: priceSort ?? "",
           }}
           products={filterProducts}
           colors={filterColors}

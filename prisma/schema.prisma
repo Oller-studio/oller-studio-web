@@ -197,7 +197,7 @@ model Colorway {
   campaignRole           String?
   // Single source of truth for what customers see on the shop grid and
   // product page badge — "available" | "new" | "in_stock" | "coming_soon" |
-  // "sold_out" | "back_in_stock". Also drives whether Add to Bag is active
+  // "limited_edition" | "sold_out". Also drives whether Add to Bag is active
   // (everything except sold_out). Replaces what used to be spread across
   // availabilityStatus + a separate "mark as new" + "show stock" checkbox.
   shopBadge              String   @default("available")

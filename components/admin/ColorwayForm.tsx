@@ -72,7 +72,7 @@ export type ColorwayFormState = {
   campaignQuote: string;
   campaignName: string;
   campaignRole: string;
-  shopBadge: "available" | "new" | "in_stock" | "coming_soon" | "limited_edition" | "sold_out" | "back_in_stock";
+  shopBadge: "available" | "new" | "in_stock" | "coming_soon" | "limited_edition" | "sold_out";
   stockOnHand: string;
   isFeatured: boolean;
   launchedAt: string;
@@ -823,7 +823,6 @@ export const ColorwayForm = forwardRef<
             <option value="coming_soon">Coming soon</option>
             <option value="limited_edition">Limited Edition</option>
             <option value="sold_out">Sold out</option>
-            <option value="back_in_stock">Back in stock</option>
           </select>
           {form.shopBadge === "coming_soon" && (
             <label className="flex items-center gap-2 text-xs text-muted">
