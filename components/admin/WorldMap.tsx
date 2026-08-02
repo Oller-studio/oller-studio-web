@@ -43,10 +43,7 @@ export function WorldMap({ countryCounts }: { countryCounts: Record<string, numb
               stroke="#ffffff"
               strokeWidth={0.5}
             >
-              <title>
-                {c.name}
-                {count > 0 ? ` — ${count} customer${count === 1 ? "" : "s"}` : ""}
-              </title>
+              <title>{`${c.name}${count > 0 ? ` — ${count} customer${count === 1 ? "" : "s"}` : ""}`}</title>
             </path>
           );
         })}
