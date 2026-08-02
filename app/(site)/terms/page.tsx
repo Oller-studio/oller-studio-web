@@ -1,4 +1,11 @@
+import type { Metadata } from "next";
 import { site } from "@/content/site";
+
+export const metadata: Metadata = {
+  title: "Terms and Conditions",
+  description: "The terms that apply when you place an order on oller.studio.",
+  alternates: { canonical: "/terms" },
+};
 
 export default function TermsPage() {
   return (

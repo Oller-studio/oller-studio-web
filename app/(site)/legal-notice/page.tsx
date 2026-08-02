@@ -1,4 +1,11 @@
+import type { Metadata } from "next";
 import { site } from "@/content/site";
+
+export const metadata: Metadata = {
+  title: "Legal Notice",
+  description: "Legal and business identification details for OLLER Studio.",
+  alternates: { canonical: "/legal-notice" },
+};
 
 export default function LegalNoticePage() {
   return (

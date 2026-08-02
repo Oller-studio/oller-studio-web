@@ -181,8 +181,10 @@ export type ColorwayFormHandle = {
 // Live, specific-to-this-color suggestions for the SEO fields below — shown
 // as the input's placeholder, so leaving it blank saves exactly this (see
 // lib/seo.ts, which mirrors this same logic for the storefront side).
+// No "| OLLER" here — the root layout's title template ("%s | OLLER")
+// already appends it, so a manual suffix here doubled up as "... | OLLER | OLLER".
 function suggestSeoTitle(productName: string, form: ColorwayFormState): string {
-  return `${productName} — ${form.name || "Color"} | OLLER`;
+  return `${productName} — ${form.name || "Color"}`;
 }
 
 // Leads with the color's own story when there's one (unique per-color copy
