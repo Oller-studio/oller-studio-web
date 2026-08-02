@@ -177,6 +177,7 @@ export default async function AnalyticsPage({
         </div>
       </div>
 
+      {/* 1. Top-line outcomes — the numbers that answer "how's the business doing". */}
       <div className="grid grid-cols-3 gap-4 lg:grid-cols-6">
         {[
           {
@@ -256,6 +257,25 @@ export default async function AnalyticsPage({
         ))}
       </div>
 
+      {/* 2. Trend — is the top-line trajectory going up or down. */}
+      <div className={boxClass}>
+        <MetricLabel
+          label="Sessions: this period vs. last period"
+          description="Same number of days/hours, overlaid — shows whether traffic is trending up or down, not just the raw total."
+        />
+        <div className="flex items-baseline gap-3">
+          <p className="text-2xl font-semibold">
+            {sessionsOverTime.reduce((sum, p) => sum + p.value, 0).toLocaleString()}
+          </p>
+          <TrendChip
+            current={sessionsOverTime.reduce((sum, p) => sum + p.value, 0)}
+            previous={previousSessionsOverTime.reduce((sum, p) => sum + p.value, 0)}
+          />
+        </div>
+        <ComparisonLineChart points={sessionsComparison} />
+      </div>
+
+      {/* 3. Diagnostics — where people drop off and which channels convert. */}
       <div className="flex flex-wrap gap-4">
         <div className={`${boxClass} w-72 shrink-0`}>
           <MetricLabel
@@ -436,41 +456,6 @@ export default async function AnalyticsPage({
         )}
       </div>
 
-      <div className={boxClass}>
-        <MetricLabel
-          label="Sessions: this period vs. last period"
-          description="Same number of days/hours, overlaid — shows whether traffic is trending up or down, not just the raw total."
-        />
-        <div className="flex items-baseline gap-3">
-          <p className="text-2xl font-semibold">
-            {sessionsOverTime.reduce((sum, p) => sum + p.value, 0).toLocaleString()}
-          </p>
-          <TrendChip
-            current={sessionsOverTime.reduce((sum, p) => sum + p.value, 0)}
-            previous={previousSessionsOverTime.reduce((sum, p) => sum + p.value, 0)}
-          />
-        </div>
-        <ComparisonLineChart points={sessionsComparison} />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div className={boxClass}>
-          <MetricLabel
-            label="Traffic by day of week"
-            description="Sessions summed by weekday across this whole range — which days actually bring visitors."
-          />
-          <CategoryBarChart data={dayOfWeek} />
-        </div>
-
-        <div className={boxClass}>
-          <MetricLabel
-            label="Traffic by hour of day"
-            description="Sessions summed by hour (your local time) across this whole range — when people actually show up."
-          />
-          <CategoryBarChart data={hourOfDay} />
-        </div>
-      </div>
-
       <div className="grid grid-cols-2 gap-4">
         <div className={boxClass}>
           <MetricLabel
@@ -501,47 +486,39 @@ export default async function AnalyticsPage({
         </div>
       </div>
 
+      {/* 4. Timing patterns — when people show up, useful for content/social scheduling. */}
       <div className="grid grid-cols-2 gap-4">
         <div className={boxClass}>
           <MetricLabel
-            label="Sessions by device type"
-            description="Sessions split by Desktop, Mobile, or Tablet, guessed from the browser's user agent."
+            label="Traffic by day of week"
+            description="Sessions summed by weekday across this whole range — which days actually bring visitors."
           />
-          {byDevice.length === 0 ? (
-            <p className="text-sm text-muted">No visits yet in this range.</p>
-          ) : (
-            <DonutChart segments={byDevice.map((d) => ({ label: d.device, value: d.sessions }))} />
-          )}
+          <CategoryBarChart data={dayOfWeek} />
         </div>
 
         <div className={boxClass}>
           <MetricLabel
-            label="Sessions by location"
-            description="Sessions by country/region/city — only available once deployed on Vercel."
+            label="Traffic by hour of day"
+            description="Sessions summed by hour (your local time) across this whole range — when people actually show up."
           />
-          {byLocation.length === 0 ? (
-            <p className="text-sm text-muted">
-              No location data yet — this only populates once deployed on Vercel.
-            </p>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {byLocation.map((l) => {
-                const max = byLocation[0].sessions || 1;
-                return (
-                  <div key={l.label} className="flex flex-col gap-1">
-                    <div className="flex items-center justify-between text-sm">
-                      <span>{l.label}</span>
-                      <span className="text-muted">{l.sessions}</span>
-                    </div>
-                    <Bar pct={(l.sessions / max) * 100} />
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          <CategoryBarChart data={hourOfDay} />
         </div>
       </div>
 
+      {/* 5. Audience composition. */}
+      <div className={boxClass}>
+        <MetricLabel
+          label="Sessions by device type"
+          description="Sessions split by Desktop, Mobile, or Tablet, guessed from the browser's user agent."
+        />
+        {byDevice.length === 0 ? (
+          <p className="text-sm text-muted">No visits yet in this range.</p>
+        ) : (
+          <DonutChart segments={byDevice.map((d) => ({ label: d.device, value: d.sessions }))} />
+        )}
+      </div>
+
+      {/* 6. Long-tail detail tables. */}
       <div className="grid grid-cols-2 gap-4">
         <div className={boxClass}>
           <MetricLabel
@@ -609,6 +586,35 @@ export default async function AnalyticsPage({
             </table>
           )}
         </div>
+      </div>
+
+      {/* 7. Location — last on purpose: it only grows (more countries over
+          time), so it shouldn't push everything else down as it does. */}
+      <div className={boxClass}>
+        <MetricLabel
+          label="Sessions by location"
+          description="Sessions by country/region/city — only available once deployed on Vercel."
+        />
+        {byLocation.length === 0 ? (
+          <p className="text-sm text-muted">
+            No location data yet — this only populates once deployed on Vercel.
+          </p>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {byLocation.map((l) => {
+              const max = byLocation[0].sessions || 1;
+              return (
+                <div key={l.label} className="flex flex-col gap-1">
+                  <div className="flex items-center justify-between text-sm">
+                    <span>{l.label}</span>
+                    <span className="text-muted">{l.sessions}</span>
+                  </div>
+                  <Bar pct={(l.sessions / max) * 100} />
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
