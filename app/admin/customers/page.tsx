@@ -30,8 +30,8 @@ export default async function AdminCustomersPage() {
   }
   const topCountries = Object.entries(countryCounts)
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 8);
-  const topCities = [...cityCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8);
+    .slice(0, 5);
+  const topCities = [...cityCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
 
   return (
     <div className="flex flex-col gap-6">

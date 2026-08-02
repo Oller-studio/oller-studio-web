@@ -6,7 +6,10 @@ function colorForShare(share: number): string {
   if (share <= 0) return "#ececec";
   const from = { r: 0xf5, g: 0xe4, b: 0xe6 };
   const to = { r: 0xd2, g: 0x00, b: 0x1f };
-  const t = Math.sqrt(share); // sqrt so mid-low counts still read as visibly warm
+  // Linear, not sqrt — sqrt compresses the gap between "1 customer" and "the
+  // top country", so with only a handful of countries they all looked about
+  // equally saturated instead of the top one clearly standing out.
+  const t = share;
   const r = Math.round(from.r + (to.r - from.r) * t);
   const g = Math.round(from.g + (to.g - from.g) * t);
   const b = Math.round(from.b + (to.b - from.b) * t);
