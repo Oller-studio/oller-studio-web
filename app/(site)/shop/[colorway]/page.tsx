@@ -44,7 +44,7 @@ export async function generateMetadata({
     openGraph: {
       title,
       description,
-      url: `https://oller.studio/shop/${colorway.slug}`,
+      url: `https://www.oller.studio/shop/${colorway.slug}`,
       images: image ? [image] : undefined,
       type: "website",
     },
@@ -116,7 +116,7 @@ export default async function ColorwayPage({
     brand: { "@type": "Brand", name: "OLLER" },
     offers: {
       "@type": "Offer",
-      url: `https://oller.studio/shop/${colorway.slug}`,
+      url: `https://www.oller.studio/shop/${colorway.slug}`,
       priceCurrency: colorway.product.currency,
       price: colorway.price,
       availability,
@@ -126,13 +126,13 @@ export default async function ColorwayPage({
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: "https://oller.studio" },
-      { "@type": "ListItem", position: 2, name: "Bags", item: "https://oller.studio/shop" },
+      { "@type": "ListItem", position: 1, name: "Home", item: "https://www.oller.studio" },
+      { "@type": "ListItem", position: 2, name: "Bags", item: "https://www.oller.studio/shop" },
       {
         "@type": "ListItem",
         position: 3,
         name: colorway.product.name,
-        item: `https://oller.studio/shop/${colorway.slug}`,
+        item: `https://www.oller.studio/shop/${colorway.slug}`,
       },
     ],
   };

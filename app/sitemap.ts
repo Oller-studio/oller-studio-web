@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { getAllColorways } from "@/lib/colorways";
 
-const BASE_URL = "https://oller.studio";
+const BASE_URL = "https://www.oller.studio";
 
 const STATIC_ROUTES = [
   { path: "", priority: 1, changeFrequency: "daily" as const },

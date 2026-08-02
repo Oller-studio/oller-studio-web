@@ -13,7 +13,7 @@ export async function GET() {
   const shopLines = colorways
     .map(
       (c) =>
-        `- [${c.product.name} — ${c.name}](https://oller.studio/shop/${c.slug}): ${formatPrice(c.price, c.product.currency)}`
+        `- [${c.product.name} — ${c.name}](https://www.oller.studio/shop/${c.slug}): ${formatPrice(c.price, c.product.currency)}`
     )
     .join("\n");
 
@@ -25,15 +25,15 @@ OLLER is a small, founder-led studio. Every piece begins as a digital sculpture 
 
 ## Shop
 
-- [All colors](https://oller.studio/shop): the full current collection
+- [All colors](https://www.oller.studio/shop): the full current collection
 ${shopLines}
 
 ## About
 
-- [Our Universe](https://oller.studio/about): the brand's story and positioning
-- [FAQ](https://oller.studio/faq): shipping, payment, returns, customs
-- [Contact](https://oller.studio/contact)
-- [Collab With Us](https://oller.studio/collab-with-us)
+- [Our Universe](https://www.oller.studio/about): the brand's story and positioning
+- [FAQ](https://www.oller.studio/faq): shipping, payment, returns, customs
+- [Contact](https://www.oller.studio/contact)
+- [Collab With Us](https://www.oller.studio/collab-with-us)
 
 ## Notes
 
