@@ -47,12 +47,15 @@ export const metadata: Metadata = {
   },
 };
 
-// Tells Google this is a real brand/organization (name, logo, social
-// profiles) rather than leaving it to guess from page text alone.
+// Tells Google (and AI answer engines — this is the kind of concise, factual
+// block they lean on when summarizing what a brand is) that this is a real
+// brand/organization, not just page text to guess meaning from.
 const organizationJsonLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
   name: "OLLER",
+  description:
+    "OLLER is a founder-led studio creating sculptural, 3D-printed handbags — Objects d'Art made to order, designed by Alicia Oller.",
   url: "https://oller.studio",
   logo: "https://oller.studio/images/home/hero.jpg",
   sameAs: ["https://www.instagram.com/oller.studio/", "https://www.tiktok.com/@ali.oller"],

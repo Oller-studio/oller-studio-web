@@ -35,9 +35,25 @@ export async function generateMetadata({
   const { colorway: slug } = await params;
   const colorway = await getColorwayBySlug(slug);
   if (!colorway) return {};
+  const title = colorwaySeoTitle(colorway);
+  const description = colorwaySeoDescription(colorway);
+  const image = colorway.images[0];
   return {
-    title: colorwaySeoTitle(colorway),
-    description: colorwaySeoDescription(colorway),
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      url: `https://oller.studio/shop/${colorway.slug}`,
+      images: image ? [image] : undefined,
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: image ? [image] : undefined,
+    },
   };
 }
 
@@ -106,6 +122,20 @@ export default async function ColorwayPage({
       availability,
     },
   };
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: "https://oller.studio" },
+      { "@type": "ListItem", position: 2, name: "Bags", item: "https://oller.studio/shop" },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: colorway.product.name,
+        item: `https://oller.studio/shop/${colorway.slug}`,
+      },
+    ],
+  };
 
   const accordionItems: { label: string; content: ReactNode }[] = [];
 
@@ -155,6 +185,10 @@ export default async function ColorwayPage({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       {isAdmin && colorway.status !== "active" && colorway.status !== "unlisted" && (
         <div className="bg-foreground px-6 py-2 text-center text-xs font-semibold uppercase tracking-wide text-background">

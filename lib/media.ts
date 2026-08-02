@@ -50,7 +50,7 @@ export async function getHomeCarouselSlides(): Promise<CarouselSlide[]> {
       return {
         images: colorway.images,
         hoverImageUrl: colorway.hoverImageUrl,
-        alt: colorway.name,
+        alt: `${colorway.product.name} — ${colorway.name} sculptural handbag by OLLER`,
         href: `/shop/${colorway.slug}`,
       };
     }

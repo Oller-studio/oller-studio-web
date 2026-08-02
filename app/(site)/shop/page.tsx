@@ -18,12 +18,25 @@ export const dynamic = "force-dynamic";
 
 const GRID_SLOTS = 4;
 
+const breadcrumbJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: [
+    { "@type": "ListItem", position: 1, name: "Home", item: "https://oller.studio" },
+    { "@type": "ListItem", position: 2, name: "Bags", item: "https://oller.studio/shop" },
+  ],
+};
+
 export default async function ShopPage() {
   const colorways = await getAllColorways({ publishedOnly: true });
   const placeholders = Math.max(0, GRID_SLOTS - colorways.length);
 
   return (
     <main className="pb-10 pt-4">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       <div className="max-w-7xl px-6">
         <p className="text-left text-xs text-muted">
           <Link href="/" className="hover:text-foreground">
