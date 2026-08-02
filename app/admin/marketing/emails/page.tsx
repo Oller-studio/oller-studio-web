@@ -1,8 +1,16 @@
-import { getEmailTemplate, RESTOCK_TEMPLATE_KEY } from "@/lib/emailTemplates";
+import {
+  getEmailTemplate,
+  RESTOCK_TEMPLATE_KEY,
+  ORDER_CONFIRMATION_TEMPLATE_KEY,
+} from "@/lib/emailTemplates";
 import { RestockEmailEditor } from "@/components/admin/RestockEmailEditor";
+import { OrderConfirmationEmailEditor } from "@/components/admin/OrderConfirmationEmailEditor";
 
 export default async function AdminMarketingEmailsPage() {
-  const template = await getEmailTemplate(RESTOCK_TEMPLATE_KEY);
+  const [restockTemplate, orderConfirmationTemplate] = await Promise.all([
+    getEmailTemplate(RESTOCK_TEMPLATE_KEY),
+    getEmailTemplate(ORDER_CONFIRMATION_TEMPLATE_KEY),
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -10,7 +18,14 @@ export default async function AdminMarketingEmailsPage() {
       <p className="max-w-xl text-sm text-muted">
         Copy for emails sent from the admin. More templates land here as we add them.
       </p>
-      <RestockEmailEditor initialSubject={template.subject} initialMessage={template.message} />
+      <OrderConfirmationEmailEditor
+        initialSubject={orderConfirmationTemplate.subject}
+        initialMessage={orderConfirmationTemplate.message}
+      />
+      <RestockEmailEditor
+        initialSubject={restockTemplate.subject}
+        initialMessage={restockTemplate.message}
+      />
     </div>
   );
 }

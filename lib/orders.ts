@@ -79,3 +79,22 @@ export async function getOrderList(since: Date) {
     abandoned: orders.filter((o) => o.status === "PENDING"),
   };
 }
+
+// Powers the public, no-login order-tracking page — the link in the
+// confirmation email, never a guessable customer-facing surface otherwise.
+export async function getOrderById(id: string) {
+  return prisma.order.findUnique({
+    where: { id },
+    include: { items: true },
+  });
+}
+
+// Powers the "your orders" list on the account page — only ever called with
+// the signed-in Clerk user's own verified email, never a client-supplied one.
+export async function getOrdersByEmail(email: string) {
+  return prisma.order.findMany({
+    where: { payerEmail: email, completedAt: { not: null } },
+    include: { items: true },
+    orderBy: { createdAt: "desc" },
+  });
+}

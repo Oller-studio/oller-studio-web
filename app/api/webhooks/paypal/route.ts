@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { verifyPaypalWebhook, getOrderDetails } from "@/lib/paypal";
 import { prisma } from "@/lib/db";
 import { markWaitlistPurchased } from "@/lib/waitlist";
+import { sendOrderConfirmationEmail } from "@/lib/resend";
+import { getEmailTemplate, fillTemplate, ORDER_CONFIRMATION_TEMPLATE_KEY } from "@/lib/emailTemplates";
+import { hasAccountForEmail } from "@/lib/accounts";
+import { formatOrderNumber } from "@/lib/format";
+import { getSiteUrl } from "@/lib/siteUrl";
 
 type PaypalCaptureCompletedEvent = {
   event_type: "PAYMENT.CAPTURE.COMPLETED";
@@ -129,9 +134,54 @@ async function handleCaptureCompleted(event: PaypalCaptureCompletedEvent) {
         await markWaitlistPurchased(item.colorwaySlug, payerEmail);
       }
     }
+
+    if (payerEmail) {
+      await sendOrderConfirmation(order, payerEmail).catch((err) =>
+        console.error("Failed to send order confirmation email:", err)
+      );
+    }
   }
 
   return NextResponse.json({ received: true });
+}
+
+async function sendOrderConfirmation(
+  order: {
+    id: string;
+    amountCents: number;
+    currency: string;
+    payerName: string | null;
+    items: { name: string; quantity: number; unitAmountCents: number; colorwaySlug: string }[];
+  },
+  payerEmail: string
+) {
+  const colorways = await prisma.colorway.findMany({
+    where: { slug: { in: order.items.map((i) => i.colorwaySlug) } },
+    select: { slug: true, images: true },
+  });
+  const itemImages = Object.fromEntries(
+    colorways.map((c) => [c.slug, (JSON.parse(c.images) as string[])[0] ?? null])
+  );
+
+  const [template, hasAccount] = await Promise.all([
+    getEmailTemplate(ORDER_CONFIRMATION_TEMPLATE_KEY),
+    hasAccountForEmail(payerEmail),
+  ]);
+
+  const siteUrl = getSiteUrl();
+  const firstName = order.payerName?.split(" ")[0] ?? "there";
+
+  await sendOrderConfirmationEmail(
+    payerEmail,
+    template.subject,
+    fillTemplate(template.message, { customerName: firstName }),
+    formatOrderNumber(order.id),
+    order,
+    itemImages,
+    `${siteUrl}/orders/track/${order.id}`,
+    `${siteUrl}/account`,
+    hasAccount
+  );
 }
 
 async function handleRefund(event: PaypalRefundEvent) {
