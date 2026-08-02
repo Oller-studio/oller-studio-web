@@ -25,11 +25,14 @@ export function TopBar({ variant = "solid" }: TopBarProps) {
       </p>
       <Link
         href="/shop"
-        className="absolute left-1/2 top-1/2 max-w-[60%] -translate-x-1/2 -translate-y-1/2 truncate text-center hover:opacity-80"
+        className="absolute left-1/2 top-1/2 max-w-[80%] -translate-x-1/2 -translate-y-1/2 truncate text-center hover:opacity-80 sm:max-w-[60%]"
       >
         {site.campaignLine} — Shop the Collection
       </Link>
-      <div className="absolute right-6 top-1/2 flex -translate-y-1/2 items-center gap-4 whitespace-nowrap opacity-70">
+      {/* Wishlist/account live in the hamburger menu on mobile instead —
+          crammed in here too, they crowded out the ticker text (truncating
+          it) on narrow phones. */}
+      <div className="absolute right-6 top-1/2 hidden -translate-y-1/2 items-center gap-4 whitespace-nowrap opacity-70 sm:flex">
         {clerkConfigured ? (
           <WishlistControl className="text-base leading-none hover:opacity-80" />
         ) : (

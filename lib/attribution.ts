@@ -29,9 +29,14 @@ export type TrafficChannel =
   | "Unknown";
 
 // Coarser bucket than classifySource, for the Traffic channels chart —
-// UTM-tagged links are assumed to be paid (see the note above), search
-// engines become "Organic Search", social platforms become "Organic
+// search engines become "Organic Search", social platforms become "Organic
 // Social", and any other referring site is "Referral".
+//
+// A UTM-tagged link is only "Ads" if utm_medium actually says so (real ad
+// platforms like Meta/Google Ads auto-append utm_medium=cpc or similar) —
+// a manually tagged link (e.g. a TikTok bio link with ?utm_source=tiktok-bio
+// so it tracks reliably even when TikTok's in-app browser strips the
+// referrer) is still organic just because it's tagged.
 //
 // `secFetchSite` (the Sec-Fetch-Site request header) disambiguates true
 // direct traffic from a referrer that a browser/ad-blocker stripped for
@@ -43,7 +48,14 @@ export function classifyChannel(
   referer: string | null,
   secFetchSite?: string | null
 ): TrafficChannel {
-  if (url.searchParams.get("utm_source")) return "Ads";
+  const utmSource = url.searchParams.get("utm_source");
+  if (utmSource) {
+    const utmMedium = url.searchParams.get("utm_medium") ?? "";
+    if (/cpc|ppc|paid|\bad\b|ads/i.test(utmMedium)) return "Ads";
+    if (/tiktok|instagram|facebook|\bfb\b|pinterest/i.test(utmSource)) return "Organic Social";
+    if (/google|bing|duckduckgo|yahoo/i.test(utmSource)) return "Organic Search";
+    return "Referral";
+  }
 
   if (!referer) {
     if (secFetchSite === "cross-site") return "Unknown";

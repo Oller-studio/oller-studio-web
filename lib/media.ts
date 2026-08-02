@@ -58,7 +58,7 @@ export async function getHomeCarouselSlides(): Promise<CarouselSlide[]> {
   });
 }
 
-export type EditorialMedia = { type: "video" | "image"; src: string };
+export type EditorialMedia = { type: "video" | "image"; src: string; href?: string };
 
 // 4-up editorial strip, same layout as the product carousel above it, in
 // left-to-right display order. Whatever's set from Admin > Pages > Home
@@ -69,7 +69,7 @@ export async function getHomeEditorialImages(): Promise<(EditorialMedia | null)[
   const row = await getHomePageRow();
   return [3, 1, 2, 4].map((n, i) => {
     const slot = row.editorial[i];
-    if (slot) return { type: slot.type, src: slot.url };
+    if (slot) return { type: slot.type, src: slot.url, href: slot.href };
 
     const videoRel = `/videos/home/editorial-${n}.mp4`;
     if (fs.existsSync(path.join(process.cwd(), "public", videoRel))) {
