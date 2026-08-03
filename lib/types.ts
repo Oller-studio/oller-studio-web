@@ -20,8 +20,7 @@ export type ShopBadge =
   | { kind: "in_stock" }
   | { kind: "coming_soon" }
   | { kind: "limited_edition" }
-  | { kind: "sold_out" }
-  | { kind: "back_in_stock" };
+  | { kind: "sold_out" };
 
 // "collection" = standing colorway, always orderable, no artificial scarcity.
 // "signature" = a one-off drop tied to a specific story (e.g. a car match) — real numbered scarcity, closes for good.

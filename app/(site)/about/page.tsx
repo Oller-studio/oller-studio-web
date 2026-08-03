@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: "Our Universe",
   description:
     "OLLER creates Objects d'Art that spark curiosity — sculptural, 3D-printed handbags where creativity comes before convention, and imagination becomes wearable.",
+  alternates: { canonical: "/about" },
 };
 
 export default function AboutPage() {
@@ -36,8 +37,14 @@ export default function AboutPage() {
         <p className="font-semibold text-foreground">Welcome to OLLER.</p>
       </div>
 
-      <blockquote className="mt-16 border-t border-border pt-10 font-display text-2xl font-medium leading-snug">
-        &ldquo;{site.founder.quote}&rdquo;
+      <blockquote className="mt-16 flex flex-col gap-4 border-t border-border pt-10 font-display text-2xl font-medium leading-snug">
+        {site.founder.quote.split("\n\n").map((paragraph, i, arr) => (
+          <p key={i}>
+            {i === 0 && "“"}
+            {paragraph}
+            {i === arr.length - 1 && "”"}
+          </p>
+        ))}
       </blockquote>
       <p className="mt-4 text-sm font-semibold uppercase tracking-wide text-muted">
         — {site.founder.name}, {site.founder.role}

@@ -8,7 +8,11 @@ export function classifySource(url: URL, referer: string | null): string {
   if (!referer) return "Direct";
   try {
     const refererHost = new URL(referer).hostname.replace(/^www\./, "");
-    if (refererHost === url.hostname) return "Direct";
+    // Strip "www." from both sides — the site serves from www.oller.studio,
+    // so without this, internal navigation (referer www.oller.studio, page
+    // also www.oller.studio) never matched and got misclassified as a
+    // "Referral" from oller.studio itself.
+    if (refererHost === url.hostname.replace(/^www\./, "")) return "Direct";
     if (refererHost.includes("google")) return "Google (organic)";
     if (refererHost.includes("instagram")) return "Instagram (organic)";
     if (refererHost.includes("facebook") || refererHost.includes("fb.com")) return "Facebook (organic)";
@@ -29,9 +33,14 @@ export type TrafficChannel =
   | "Unknown";
 
 // Coarser bucket than classifySource, for the Traffic channels chart —
-// UTM-tagged links are assumed to be paid (see the note above), search
-// engines become "Organic Search", social platforms become "Organic
+// search engines become "Organic Search", social platforms become "Organic
 // Social", and any other referring site is "Referral".
+//
+// A UTM-tagged link is only "Ads" if utm_medium actually says so (real ad
+// platforms like Meta/Google Ads auto-append utm_medium=cpc or similar) —
+// a manually tagged link (e.g. a TikTok bio link with ?utm_source=tiktok-bio
+// so it tracks reliably even when TikTok's in-app browser strips the
+// referrer) is still organic just because it's tagged.
 //
 // `secFetchSite` (the Sec-Fetch-Site request header) disambiguates true
 // direct traffic from a referrer that a browser/ad-blocker stripped for
@@ -43,7 +52,14 @@ export function classifyChannel(
   referer: string | null,
   secFetchSite?: string | null
 ): TrafficChannel {
-  if (url.searchParams.get("utm_source")) return "Ads";
+  const utmSource = url.searchParams.get("utm_source");
+  if (utmSource) {
+    const utmMedium = url.searchParams.get("utm_medium") ?? "";
+    if (/cpc|ppc|paid|\bad\b|ads/i.test(utmMedium)) return "Ads";
+    if (/tiktok|instagram|facebook|\bfb\b|pinterest/i.test(utmSource)) return "Organic Social";
+    if (/google|bing|duckduckgo|yahoo/i.test(utmSource)) return "Organic Search";
+    return "Referral";
+  }
 
   if (!referer) {
     if (secFetchSite === "cross-site") return "Unknown";
@@ -51,7 +67,7 @@ export function classifyChannel(
   }
   try {
     const refererHost = new URL(referer).hostname.replace(/^www\./, "");
-    if (refererHost === url.hostname) return "Direct";
+    if (refererHost === url.hostname.replace(/^www\./, "")) return "Direct";
     if (
       refererHost.includes("google") ||
       refererHost.includes("bing") ||

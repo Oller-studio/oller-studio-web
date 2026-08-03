@@ -35,7 +35,11 @@ model Order {
   // Same coarse bucket as PageView.channel — powers "Sales attributed to
   // marketing" on the Analytics dashboard.
   channel           String?
+  // "Desktop" | "Mobile" | "Tablet" — same classifyDevice() sniff as
+  // PageView.device, captured at checkout start.
   device            String?
+  // Human-readable label from PayPal's payment_source ("PayPal", "Card",
+  // "Venmo", "Apple Pay"...) — null for orders placed before this was added.
   paymentMethod     String?
   fulfillmentStatus String      @default("NEW_ORDER")
   startedPrintingAt DateTime?
@@ -209,7 +213,7 @@ model Colorway {
   campaignRole           String?
   // Single source of truth for what customers see on the shop grid and
   // product page badge — "available" | "new" | "in_stock" | "coming_soon" |
-  // "sold_out" | "back_in_stock". Also drives whether Add to Bag is active
+  // "limited_edition" | "sold_out". Also drives whether Add to Bag is active
   // (everything except sold_out). Replaces what used to be spread across
   // availabilityStatus + a separate "mark as new" + "show stock" checkbox.
   shopBadge              String   @default("available")

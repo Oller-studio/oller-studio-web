@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: "Collab With Us",
   description:
     "Creators, material innovators, and collaborators — partner with OLLER on sculptural, 3D-printed handbags.",
+  alternates: { canonical: "/collab-with-us" },
 };
 
 export default function CollabWithUsPage() {

@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import Image from "next/image";
 import type { EditorialSlot } from "@/lib/homePage";
 
-type MediaValue = { type: "video" | "image"; url: string } | null;
+type MediaValue = { type: "video" | "image"; url: string; href?: string } | null;
 
 async function uploadFile(file: File): Promise<string | null> {
   const formData = new FormData();
@@ -45,7 +45,7 @@ function MediaSlot({
       setError("Couldn't upload that file.");
       return;
     }
-    onChange({ type: file.type.startsWith("video") ? "video" : "image", url });
+    onChange({ type: file.type.startsWith("video") ? "video" : "image", url, href: value?.href });
   }
 
   return (
@@ -176,13 +176,25 @@ export function HomePageForm({
         </p>
         <div className="flex flex-wrap gap-4">
           {editorial.map((slot, i) => (
-            <MediaSlot
-              key={i}
-              label={`Slot ${i + 1}`}
-              accept="video/mp4,video/quicktime,image/png,image/jpeg,image/webp"
-              value={slot}
-              onChange={(v) => setEditorialAt(i, v)}
-            />
+            <div key={i} className="flex flex-col gap-1.5">
+              <MediaSlot
+                label={`Slot ${i + 1}`}
+                accept="video/mp4,video/quicktime,image/png,image/jpeg,image/webp"
+                value={slot}
+                onChange={(v) => setEditorialAt(i, v)}
+              />
+              <input
+                type="text"
+                value={slot?.href ?? ""}
+                onChange={(e) =>
+                  slot && setEditorialAt(i, { ...slot, href: e.target.value.trim() || undefined })
+                }
+                disabled={!slot}
+                placeholder="/shop/color-slug"
+                title="Which bag this clip/photo links to when clicked"
+                className="w-40 rounded-lg border border-border bg-background px-2 py-1 text-xs outline-none disabled:opacity-40"
+              />
+            </div>
           ))}
         </div>
       </div>

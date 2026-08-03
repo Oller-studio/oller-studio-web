@@ -40,12 +40,13 @@ function proratedFixedCostsCents(
   }, 0);
 }
 
-export async function getFinanceSummary(since: Date) {
-  const until = new Date();
-
+// `until` defaults to now (matches the prior always-open-ended behavior) —
+// passing an explicit bound lets a "previous period" comparison use the
+// same window length as the current one, instead of always running to now.
+export async function getFinanceSummary(since: Date, until: Date = new Date()) {
   const [orders, productCosts, fixedCosts] = await Promise.all([
     prisma.order.findMany({
-      where: { createdAt: { gte: since }, completedAt: { not: null } },
+      where: { createdAt: { gte: since, lt: until }, completedAt: { not: null } },
       include: { items: true },
     }),
     getProductCosts(),

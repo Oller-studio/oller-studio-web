@@ -1,7 +1,13 @@
 import type { MetadataRoute } from "next";
 import { getAllColorways } from "@/lib/colorways";
 
-const BASE_URL = "https://oller.studio";
+// Without this, Next statically generates the sitemap once at build/deploy
+// time — a color published (or unpublished) between deploys wouldn't show
+// up (or wouldn't disappear) until the next one. Also lets this build
+// without needing real database access (discovered while wiring up CI).
+export const dynamic = "force-dynamic";
+
+const BASE_URL = "https://www.oller.studio";
 
 const STATIC_ROUTES = [
   { path: "", priority: 1, changeFrequency: "daily" as const },

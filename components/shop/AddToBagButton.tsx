@@ -13,8 +13,8 @@ type AddToBagButtonProps = {
   currency: string;
   image?: string;
   shopBadge: ShopBadge;
+  tier: "collection" | "signature";
   piecesRemaining?: number;
-  totalPieces?: number;
   // Set when the visitor arrived via a private waitlist link — lets this one
   // person buy a sold-out color without changing the public Shop Badge.
   forceUnlocked?: boolean;
@@ -28,17 +28,11 @@ export function AddToBagButton({
   currency,
   image,
   shopBadge,
+  tier,
   piecesRemaining,
-  totalPieces,
   forceUnlocked,
 }: AddToBagButtonProps) {
   const { addItem } = useCart();
-  // A numbered edition (totalPieces set) is a Limited Edition — once its
-  // pieces run out it's sold out for good (Notify Me / Restock). A
-  // non-numbered color marked sold_out is a regular print-on-demand piece —
-  // it *could* still be printed, so it gets Request This Piece instead,
-  // which pings the team rather than promising a restock.
-  const isNumbered = totalPieces !== undefined;
   const wouldBeSoldOut =
     shopBadge.kind === "sold_out" || (piecesRemaining !== undefined && piecesRemaining <= 0);
   const isSoldOut = wouldBeSoldOut && !forceUnlocked;
@@ -50,7 +44,12 @@ export function AddToBagButton({
           slug={slug}
           productName={productName}
           colorName={name}
-          variant={isNumbered ? "restock" : "print_request"}
+          // Collection colors are always print-to-order, never truly gone —
+          // "sold out" just means not ready right now, so this reads as a
+          // request rather than a wait for restock. Signature pieces are a
+          // real numbered edition that closes for good, so Notify Me (for
+          // the next drop) is the honest framing there.
+          variant={tier === "collection" ? "print_request" : "restock"}
         />
       </div>
     );

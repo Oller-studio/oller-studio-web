@@ -10,6 +10,7 @@ import {
   OrdersIcon,
   CustomersIcon,
   ProductsIcon,
+  PagesIcon,
   MarketingIcon,
   SettingsIcon,
   FinanceIcon,
@@ -23,6 +24,13 @@ type Section = {
   icon: (props: { className?: string }) => React.ReactElement;
   comingSoon?: boolean;
   children?: { href: string; label: string }[];
+  // True when the section's own page is nothing but a menu of these same
+  // children (see app/admin/production, /pages, /marketing) — clicking
+  // just lands you on a second menu to pick from, so the click expands the
+  // sidebar instead of navigating there. Customers keeps normal navigation
+  // since its own page has real content (customer list, map), not just a
+  // link to "Waitlist".
+  landingPageIsMenu?: boolean;
 };
 
 const sections: Section[] = [
@@ -31,6 +39,7 @@ const sections: Section[] = [
     href: "/admin/production",
     label: "Production",
     icon: ProductionIcon,
+    landingPageIsMenu: true,
     children: [
       { href: "/admin/production/orders", label: "Paid orders" },
       { href: "/admin/production/packaging", label: "Packaging" },
@@ -46,25 +55,26 @@ const sections: Section[] = [
   },
   { href: "/admin/products", label: "Products", icon: ProductsIcon },
   {
+    href: "/admin/pages",
+    label: "Pages",
+    icon: PagesIcon,
+    landingPageIsMenu: true,
+    children: [{ href: "/admin/pages/home", label: "Home" }],
+  },
+  {
     href: "/admin/marketing",
     label: "Marketing",
     icon: MarketingIcon,
+    landingPageIsMenu: true,
     children: [
       { href: "/admin/marketing/partners", label: "Partners" },
       { href: "/admin/marketing/offers", label: "Offers" },
+      { href: "/admin/marketing/emails", label: "Emails" },
     ],
   },
   { href: "/admin/finance", label: "Finance", icon: FinanceIcon },
   { href: "/admin/analytics", label: "Analytics", icon: AnalyticsIcon },
-  {
-    href: "/admin/settings",
-    label: "Settings",
-    icon: SettingsIcon,
-    children: [
-      { href: "/admin/pages", label: "Pages" },
-      { href: "/admin/marketing/emails", label: "Emails" },
-    ],
-  },
+  { href: "/admin/settings", label: "Settings", icon: SettingsIcon },
   { href: "/admin/support", label: "Support", icon: SupportIcon },
 ];
 
@@ -122,21 +132,34 @@ export function AdminNav({ name }: { name: string }) {
         }
 
         const isOpen = manuallyOpen[s.href] ?? pathname.startsWith(s.href);
+        const toggle = () => setManuallyOpen((m) => ({ ...m, [s.href]: !isOpen }));
 
         return (
           <div key={s.href} className="flex flex-col">
             <div className="flex items-center rounded-lg hover:bg-border/40">
-              <Link
-                href={s.href}
-                title={s.label}
-                className="flex flex-1 items-center justify-center gap-2 px-2 py-2 text-sm font-medium lg:justify-start"
-              >
-                <s.icon />
-                <span className="hidden lg:inline">{s.label}</span>
-              </Link>
+              {s.landingPageIsMenu ? (
+                <button
+                  type="button"
+                  onClick={toggle}
+                  title={s.label}
+                  className="flex flex-1 items-center justify-center gap-2 px-2 py-2 text-sm font-medium lg:justify-start"
+                >
+                  <s.icon />
+                  <span className="hidden lg:inline">{s.label}</span>
+                </button>
+              ) : (
+                <Link
+                  href={s.href}
+                  title={s.label}
+                  className="flex flex-1 items-center justify-center gap-2 px-2 py-2 text-sm font-medium lg:justify-start"
+                >
+                  <s.icon />
+                  <span className="hidden lg:inline">{s.label}</span>
+                </Link>
+              )}
               <button
                 type="button"
-                onClick={() => setManuallyOpen((m) => ({ ...m, [s.href]: !isOpen }))}
+                onClick={toggle}
                 aria-label={isOpen ? `Collapse ${s.label}` : `Expand ${s.label}`}
                 className="hidden px-2 py-2 text-muted lg:block"
               >

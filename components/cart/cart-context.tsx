@@ -25,13 +25,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setItems(JSON.parse(raw));
-    } catch {
-      // ignore malformed/blocked storage
-    }
-    setHydrated(true);
+    // localStorage only exists in the browser — this has to run in an
+    // effect (never during render/SSR). Deferred one microtask so the
+    // setState calls happen in a callback rather than synchronously at the
+    // top of the effect body.
+    Promise.resolve().then(() => {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) setItems(JSON.parse(raw));
+      } catch {
+        // ignore malformed/blocked storage
+      }
+      setHydrated(true);
+    });
   }, []);
 
   useEffect(() => {

@@ -81,7 +81,7 @@ export default async function AdminDashboardPage({
               <code className="rounded bg-border/40 px-1">PAYPAL_CLIENT_SECRET</code> and{" "}
               <code className="rounded bg-border/40 px-1">PAYPAL_WEBHOOK_ID</code> to{" "}
               <code className="rounded bg-border/40 px-1">.env.local</code> and connect the
-              webhook on developer.paypal.com. Every real sale will record itself once it's
+              webhook on developer.paypal.com. Every real sale will record itself once it&apos;s
               connected.
             </p>
           )}

@@ -30,13 +30,30 @@ function rowToColorway(row: ColorwayRow & { product: ProductModel }): Colorway {
   // Scheduled launch: while launchedAt hasn't happened yet, the color reads
   // as Coming Soon no matter what Shop Badge is set to in the admin —
   // computed here on every read, so it flips over on its own the moment the
-  // date passes, with nothing to remember to go toggle by hand. Once that
-  // date passes, a badge that was itself "coming_soon" settles to Available
-  // (its natural end state); any other badge just takes over as stored.
-  const isScheduled = row.launchedAt != null && new Date(row.launchedAt) > new Date();
-  const effectiveBadge = isScheduled
+  // date passes, with nothing to remember to go toggle by hand. This is a
+  // strict start-of-day check: launching a color includes setting
+  // launchedAt to today, so the override only applies on days strictly
+  // before that (a badge set for today, e.g. Sold Out, takes effect today).
+  // launchedAt is nullable for rows created before it existed — treated as
+  // "no schedule", so the badge is never overridden either direction.
+  const now = new Date();
+  const isBeforeLaunch = row.launchedAt != null && new Date(row.launchedAt) > now;
+
+  // Separately: once the launch day has fully passed, a badge that's still
+  // sitting on "coming_soon" (forgotten to update) settles to Available on
+  // its own. launchedAt is a date-only string ("2026-08-01"), which parses
+  // as midnight — comparing against the END of that day instead of the
+  // start means a color that's launching today still reads Coming Soon for
+  // the rest of today if that's genuinely what's set, instead of flipping
+  // to Available by 00:00:01.
+  const launchEndOfDay = row.launchedAt != null ? new Date(row.launchedAt) : null;
+  launchEndOfDay?.setHours(23, 59, 59, 999);
+  const staleComingSoon =
+    row.shopBadge === "coming_soon" && launchEndOfDay != null && launchEndOfDay <= now;
+
+  const effectiveBadge = isBeforeLaunch
     ? "coming_soon"
-    : row.shopBadge === "coming_soon"
+    : staleComingSoon
       ? "available"
       : row.shopBadge;
 
@@ -51,9 +68,7 @@ function rowToColorway(row: ColorwayRow & { product: ProductModel }): Colorway {
             ? { kind: "limited_edition" }
             : effectiveBadge === "sold_out"
               ? { kind: "sold_out" }
-              : effectiveBadge === "back_in_stock"
-                ? { kind: "back_in_stock" }
-                : { kind: "available" };
+              : { kind: "available" };
 
   const matchedCar = row.matchedCarMake
     ? {
@@ -189,7 +204,7 @@ export type ColorwayInput = {
   campaignQuote: string | null;
   campaignName: string | null;
   campaignRole: string | null;
-  shopBadge: "available" | "new" | "in_stock" | "coming_soon" | "limited_edition" | "sold_out" | "back_in_stock";
+  shopBadge: "available" | "new" | "in_stock" | "coming_soon" | "limited_edition" | "sold_out";
   stockOnHand: number;
   isFeatured: boolean;
   launchedAt: string;
@@ -242,18 +257,36 @@ export async function createColorway(input: ColorwayInput) {
 
 export async function updateColorway(currentSlug: string, input: ColorwayInput) {
   const renamed = input.slug !== currentSlug;
-  return prisma.colorway.update({
-    where: { slug: currentSlug },
-    data: {
-      ...toRowData(input),
-      ...(renamed
-        ? {
-            slug: input.slug,
-            previousSlugs: { push: currentSlug },
-          }
-        : {}),
-    },
-  });
+  try {
+    return await prisma.colorway.update({
+      where: { slug: currentSlug },
+      data: {
+        ...toRowData(input),
+        ...(renamed
+          ? {
+              slug: input.slug,
+              previousSlugs: { push: currentSlug },
+            }
+          : {}),
+      },
+    });
+  } catch (error) {
+    // The URL now auto-follows the color's name (see ColorwayForm), so two
+    // saves close together (e.g. the product-level "Save" cascading into
+    // this color's own save around the same time) can both compute the
+    // same rename and race — the second one arrives after the row's
+    // already moved to the new slug and 404s looking for the old one.
+    // Retry against wherever it actually landed instead of surfacing a
+    // scary "this color no longer exists" error for what's really a no-op.
+    const code = typeof error === "object" && error !== null && "code" in error ? error.code : null;
+    if (code === "P2025" && renamed) {
+      return prisma.colorway.update({
+        where: { slug: input.slug },
+        data: toRowData(input),
+      });
+    }
+    throw error;
+  }
 }
 
 export async function deleteColorway(slug: string) {

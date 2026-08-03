@@ -16,7 +16,7 @@ export type VariantRow = {
   name: string;
   tier: "collection" | "signature";
   status: "draft" | "active" | "unlisted" | "inactive";
-  shopBadge: "available" | "new" | "in_stock" | "coming_soon" | "limited_edition" | "sold_out" | "back_in_stock";
+  shopBadge: "available" | "new" | "in_stock" | "coming_soon" | "limited_edition" | "sold_out";
   piecesRemaining: number | null;
   totalPieces: number | null;
   stockOnHand: number;

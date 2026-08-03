@@ -1,7 +1,6 @@
 import Link from "next/link";
 
 const CARDS = [
-  { href: "/admin/pages", label: "Pages", description: "Hero video/photo and the editorial strip." },
   { href: "/admin/marketing/emails", label: "Emails", description: "Copy for emails sent from the admin." },
 ];
 

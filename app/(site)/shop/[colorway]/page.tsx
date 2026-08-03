@@ -22,10 +22,10 @@ const DEFAULT_BULLETS = [
   "Lightweight sculptural silhouette",
 ];
 
-export async function generateStaticParams() {
-  const colorways = await getAllColorways({ publishedOnly: true });
-  return colorways.map((c) => ({ colorway: c.slug }));
-}
+// Price/availability have to be correct on every load — verified locally
+// that without this, a color's page could serve a stale cached shopBadge
+// (e.g. still showing Sold Out after switching to Coming Soon in admin).
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
@@ -35,9 +35,26 @@ export async function generateMetadata({
   const { colorway: slug } = await params;
   const colorway = await getColorwayBySlug(slug);
   if (!colorway) return {};
+  const title = colorwaySeoTitle(colorway);
+  const description = colorwaySeoDescription(colorway);
+  const image = colorway.images[0];
   return {
-    title: colorwaySeoTitle(colorway),
-    description: colorwaySeoDescription(colorway),
+    title,
+    description,
+    alternates: { canonical: `/shop/${colorway.slug}` },
+    openGraph: {
+      title,
+      description,
+      url: `https://www.oller.studio/shop/${colorway.slug}`,
+      images: image ? [image] : undefined,
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: image ? [image] : undefined,
+    },
   };
 }
 
@@ -100,11 +117,25 @@ export default async function ColorwayPage({
     brand: { "@type": "Brand", name: "OLLER" },
     offers: {
       "@type": "Offer",
-      url: `https://oller.studio/shop/${colorway.slug}`,
+      url: `https://www.oller.studio/shop/${colorway.slug}`,
       priceCurrency: colorway.product.currency,
       price: colorway.price,
       availability,
     },
+  };
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: "https://www.oller.studio" },
+      { "@type": "ListItem", position: 2, name: "Bags", item: "https://www.oller.studio/shop" },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: colorway.product.name,
+        item: `https://www.oller.studio/shop/${colorway.slug}`,
+      },
+    ],
   };
 
   const accordionItems: { label: string; content: ReactNode }[] = [];
@@ -155,6 +186,10 @@ export default async function ColorwayPage({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
       />
       {isAdmin && colorway.status !== "active" && colorway.status !== "unlisted" && (
         <div className="bg-foreground px-6 py-2 text-center text-xs font-semibold uppercase tracking-wide text-background">
@@ -239,8 +274,8 @@ export default async function ColorwayPage({
               currency={colorway.product.currency}
               image={colorway.images[0]}
               shopBadge={colorway.shopBadge}
+              tier={colorway.tier}
               piecesRemaining={colorway.piecesRemaining}
-              totalPieces={colorway.totalPieces}
               forceUnlocked={hasWaitlistAccess}
             />
 
