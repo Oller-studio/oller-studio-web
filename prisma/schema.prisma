@@ -224,6 +224,9 @@ model Colorway {
   stockOnHand            Int      @default(0)
   status                 String   @default("draft")
   isFeatured             Boolean  @default(false)
+  // Null = no scheduled launch — a "coming_soon" badge just holds until
+  // changed by hand. A real date schedules it: forces "coming_soon" until
+  // that day, then auto-resolves to "available" (see lib/colorways.ts).
   launchedAt             String?
   sortOrder              Int      @default(0)
   // Overrides for the <title>/meta description Google shows for this

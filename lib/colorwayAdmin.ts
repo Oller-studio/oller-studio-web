@@ -67,7 +67,7 @@ export function rowToVariantRow(
         | "sold_out",
       stockOnHand: row.stockOnHand.toString(),
       isFeatured: row.isFeatured,
-      launchedAt: row.launchedAt ?? undefined,
+      launchedAt: row.launchedAt ?? "",
       sortOrder: row.sortOrder.toString(),
       seoTitle: row.seoTitle ?? "",
       seoDescription: row.seoDescription ?? "",

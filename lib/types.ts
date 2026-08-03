@@ -71,7 +71,9 @@ export type Colorway = {
   campaignNote?: { quote: string; name: string; role: string };
   shopBadge: ShopBadge;
   isFeatured?: boolean;
-  launchedAt: string;
+  // Null = no scheduled launch (a Coming Soon badge holds until changed by
+  // hand). See lib/colorways.ts's rowToColorway for the resolution logic.
+  launchedAt: string | null;
   // Internal-only — how many are actually sitting printed in the studio.
   // Never shown to customers directly; shopBadge's "in_stock" count (above)
   // is the customer-facing number and can differ on purpose.
