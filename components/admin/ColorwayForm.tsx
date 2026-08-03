@@ -113,7 +113,10 @@ function initialState(existing?: Partial<ColorwayFormState>): ColorwayFormState 
     shopBadge: existing?.shopBadge ?? "available",
     stockOnHand: existing?.stockOnHand ?? "0",
     isFeatured: existing?.isFeatured ?? false,
-    launchedAt: existing?.launchedAt ?? new Date().toISOString().slice(0, 10),
+    // No default date — an empty Launch Date means "no schedule", so a
+    // Coming Soon badge holds until changed by hand instead of silently
+    // auto-resolving the next day if this were left at today's date.
+    launchedAt: existing?.launchedAt ?? "",
     sortOrder: existing?.sortOrder ?? "0",
     seoTitle: existing?.seoTitle ?? "",
     seoDescription: existing?.seoDescription ?? "",
@@ -163,7 +166,7 @@ function toInput(form: ColorwayFormState, productSlug: string): ColorwayInput {
     shopBadge: form.shopBadge,
     stockOnHand: Number(form.stockOnHand) || 0,
     isFeatured: form.isFeatured,
-    launchedAt: form.launchedAt,
+    launchedAt: form.launchedAt.trim() || null,
     sortOrder: Number(form.sortOrder) || 0,
     seoTitle: form.seoTitle.trim() || null,
     seoDescription: form.seoDescription.trim() || null,
@@ -826,7 +829,7 @@ export const ColorwayForm = forwardRef<
           </select>
           {form.shopBadge === "coming_soon" && (
             <label className="flex items-center gap-2 text-xs text-muted">
-              Launch date
+              Launch date (optional)
               <input
                 type="date"
                 value={form.launchedAt}
@@ -849,7 +852,9 @@ export const ColorwayForm = forwardRef<
               : form.shopBadge === "in_stock"
                 ? "Shows Stock on hand (set in Inventory) as the count — goes down as it actually sells."
                 : form.shopBadge === "coming_soon"
-                  ? 'Button reads "Reserve Yours" until the launch date, then this switches to Available on its own — no need to come back and change it.'
+                  ? form.launchedAt.trim()
+                    ? 'Button reads "Reserve Yours" until the launch date, then this switches to Available on its own — no need to come back and change it.'
+                    : 'Button reads "Reserve Yours". No launch date set, so this holds as Coming Soon until you change it by hand — add a date above to have it switch to Available automatically instead.'
                   : "What customers see on the shop grid and product page."}
           </p>
         )}
