@@ -49,6 +49,50 @@ function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+// Second, separate ask for the same consent — never inferred from having
+// just paid. Only shown when they didn't already opt in at checkout, and
+// only once (or after successfully joining), so it's not nagging.
+function PostPurchaseNewsletter({ email }: { email: string }) {
+  const [status, setStatus] = useState<"idle" | "saving" | "done" | "error">("idle");
+
+  if (!email) return null;
+
+  async function subscribe() {
+    setStatus("saving");
+    const res = await fetch("/api/newsletter-signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    }).catch(() => null);
+    setStatus(res && res.ok ? "done" : "error");
+  }
+
+  if (status === "done") {
+    return (
+      <p className="rounded-xl border border-border px-5 py-4 text-sm text-muted">
+        You&apos;re on the list — we&apos;ll email you first about new drops and restocks.
+      </p>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-2 rounded-xl border border-border px-5 py-4 text-sm">
+      <p>Want first access to new drops and restocks?</p>
+      <button
+        type="button"
+        onClick={subscribe}
+        disabled={status === "saving"}
+        className="w-fit rounded-full border border-foreground bg-foreground px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-background hover:opacity-90 disabled:opacity-50"
+      >
+        {status === "saving" ? "Joining…" : "Join the list"}
+      </button>
+      {status === "error" && (
+        <p className="text-xs text-red-600">Something went wrong — try again.</p>
+      )}
+    </div>
+  );
+}
+
 // Who's paying, and where to reach them — separate from the shipping
 // address below (which is where the piece goes, not who's buying it).
 // Signed-in customers skip retyping this; guests get the same "Sign In"
@@ -106,7 +150,7 @@ function ContactSection({
           checked={newsletter}
           onChange={(e) => setNewsletter(e.target.checked)}
         />
-        Email me with news and offers
+        Get first access to new drops and restocks
       </label>
     </div>
   );
@@ -194,14 +238,26 @@ function DeliverySection({
           className={inputClass}
         />
       </div>
-      <input
-        type="tel"
-        autoComplete="tel"
-        value={value.phone}
-        onChange={(e) => set("phone", e.target.value)}
-        placeholder="Phone"
-        className={inputClass}
-      />
+      <div className="relative">
+        {value.countryCode && DIAL_CODES[value.countryCode] && (
+          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted">
+            +{DIAL_CODES[value.countryCode]}
+          </span>
+        )}
+        <input
+          type="tel"
+          autoComplete="tel"
+          value={value.phone}
+          onChange={(e) => set("phone", e.target.value)}
+          placeholder="Phone"
+          className={`${inputClass} w-full`}
+          style={
+            value.countryCode && DIAL_CODES[value.countryCode]
+              ? { paddingLeft: `${12 + (DIAL_CODES[value.countryCode].length + 1) * 8 + 10}px` }
+              : undefined
+          }
+        />
+      </div>
     </div>
   );
 }
@@ -211,20 +267,30 @@ export function CheckoutForm() {
   const { isLoaded, isSignedIn, user } = useUser();
   const [completed, setCompleted] = useState(false);
   const [accountCreated, setAccountCreated] = useState(false);
-  const [createAccount, setCreateAccount] = useState(false);
+  // Checked by default — this isn't marketing consent, it's a service
+  // perk tied directly to the purchase (order tracking), so defaulting it
+  // on is fine. The newsletter checkbox below stays unchecked by default;
+  // bundling that consent into this one would violate GDPR's "specific
+  // consent" requirement (see e.g. the Planet49 ruling).
+  const [createAccount, setCreateAccount] = useState(true);
   const [email, setEmail] = useState("");
   const [newsletter, setNewsletter] = useState(false);
   const [shipping, setShipping] = useState<ShippingAddress>(EMPTY_SHIPPING);
   const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
   const currency = items[0]?.currency ?? "USD";
+  const signedIn = clerkConfigured && isLoaded && isSignedIn;
+  const contactEmail = signedIn ? user.primaryEmailAddress?.emailAddress ?? "" : email;
 
   if (completed) {
     return (
-      <p className="rounded-xl border border-border px-5 py-4 text-sm font-medium">
-        Thank you — your order is confirmed. You&apos;ll receive a receipt from PayPal by email.
-        {accountCreated &&
-          " Log in with the same email you used to pay to track your order."}
-      </p>
+      <div className="flex flex-col gap-4">
+        <p className="rounded-xl border border-border px-5 py-4 text-sm font-medium">
+          Thank you — your order is confirmed. You&apos;ll receive a receipt from PayPal by email.
+          {accountCreated &&
+            " Log in with the same email you used to pay to track your order."}
+        </p>
+        {!newsletter && <PostPurchaseNewsletter email={contactEmail} />}
+      </div>
     );
   }
 
@@ -236,8 +302,6 @@ export function CheckoutForm() {
     );
   }
 
-  const signedIn = clerkConfigured && isLoaded && isSignedIn;
-  const contactEmail = signedIn ? user.primaryEmailAddress?.emailAddress ?? "" : email;
   const shippingReady = isShippingComplete(shipping);
   const emailReady = signedIn || isValidEmail(email);
   const shippingName = `${shipping.firstName} ${shipping.lastName}`.trim();
