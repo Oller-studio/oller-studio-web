@@ -26,7 +26,7 @@ function rowToColorwayProduct(row: ProductModel): ColorwayProduct {
   };
 }
 
-function rowToColorway(row: ColorwayRow & { product: ProductModel }): Colorway {
+async function rowToColorway(row: ColorwayRow & { product: ProductModel }): Promise<Colorway> {
   // Scheduled launch: while launchedAt hasn't happened yet, the color reads
   // as Coming Soon no matter what Shop Badge is set to in the admin —
   // computed here on every read, so it flips over on its own the moment the
@@ -38,12 +38,11 @@ function rowToColorway(row: ColorwayRow & { product: ProductModel }): Colorway {
   const isBeforeLaunch = new Date(row.launchedAt) > now;
 
   // Separately: once the launch day has fully passed, a badge that's still
-  // sitting on "coming_soon" (forgotten to update) settles to Available on
-  // its own. launchedAt is a date-only string ("2026-08-01"), which parses
-  // as midnight — comparing against the END of that day instead of the
-  // start means a color that's launching today still reads Coming Soon for
-  // the rest of today if that's genuinely what's set, instead of flipping
-  // to Available by 00:00:01.
+  // sitting on "coming_soon" (forgotten to update, or the Launch Date field
+  // was just left at its default instead of a real future date) settles to
+  // Available on its own. This now writes the change back to the database
+  // (not just what's displayed) so the admin's own Shop Badge field always
+  // matches reality instead of silently disagreeing with the storefront.
   const launchEndOfDay = new Date(row.launchedAt);
   launchEndOfDay.setHours(23, 59, 59, 999);
   const staleComingSoon = row.shopBadge === "coming_soon" && launchEndOfDay <= now;
@@ -53,6 +52,12 @@ function rowToColorway(row: ColorwayRow & { product: ProductModel }): Colorway {
     : staleComingSoon
       ? "available"
       : row.shopBadge;
+
+  if (staleComingSoon) {
+    await prisma.colorway
+      .update({ where: { slug: row.slug }, data: { shopBadge: "available" } })
+      .catch(() => {});
+  }
 
   const shopBadge: Colorway["shopBadge"] =
     effectiveBadge === "new"
@@ -121,7 +126,7 @@ export async function getAllColorways(options?: { publishedOnly?: boolean }): Pr
     include: { product: true },
     orderBy: { sortOrder: "asc" },
   });
-  return rows.map(rowToColorway);
+  return Promise.all(rows.map(rowToColorway));
 }
 
 export async function getColorwaysByProduct(productSlug: string): Promise<Colorway[]> {
@@ -130,7 +135,7 @@ export async function getColorwaysByProduct(productSlug: string): Promise<Colorw
     include: { product: true },
     orderBy: { sortOrder: "asc" },
   });
-  return rows.map(rowToColorway);
+  return Promise.all(rows.map(rowToColorway));
 }
 
 // Public-facing lookup (storefront product page) — resolves active AND
@@ -167,7 +172,7 @@ export async function getFeaturedColorway(): Promise<Colorway> {
     include: { product: true },
     orderBy: { sortOrder: "asc" },
   });
-  const colorways = rows.map(rowToColorway);
+  const colorways = await Promise.all(rows.map(rowToColorway));
   return colorways.find((c) => c.isFeatured) ?? colorways[0];
 }
 
