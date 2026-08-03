@@ -240,6 +240,7 @@ export default async function ColorwayPage({
               image={colorway.images[0]}
               shopBadge={colorway.shopBadge}
               piecesRemaining={colorway.piecesRemaining}
+              totalPieces={colorway.totalPieces}
               forceUnlocked={hasWaitlistAccess}
             />
 

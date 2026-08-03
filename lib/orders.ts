@@ -80,6 +80,74 @@ export async function getOrderList(since: Date) {
   };
 }
 
+// "Recovered" = an order that got the abandoned-checkout email and later
+// completed anyway — either that same PENDING row went on to pay (rare,
+// only if the buyer resumes the exact same PayPal session), or a different
+// order under the same email completed afterward (the common case, since
+// clicking through starts a fresh PayPal order). Best-effort by email,
+// same reasoning as markWaitlistPurchased.
+export async function getAbandonedCheckoutRecoveryStats() {
+  const sentOrders = await prisma.order.findMany({
+    where: { abandonedEmailSentAt: { not: null } },
+    select: {
+      id: true,
+      payerEmail: true,
+      abandonedEmailSentAt: true,
+      completedAt: true,
+      amountCents: true,
+      currency: true,
+    },
+  });
+
+  let recovered = 0;
+  let recoveredRevenueCents = 0;
+  let currency = "USD";
+  const recoveredOrders: {
+    orderId: string;
+    email: string;
+    amountCents: number;
+    currency: string;
+    completedAt: Date;
+  }[] = [];
+
+  for (const order of sentOrders) {
+    if (order.completedAt) {
+      recovered += 1;
+      recoveredRevenueCents += order.amountCents;
+      currency = order.currency;
+      recoveredOrders.push({
+        orderId: order.id,
+        email: order.payerEmail ?? "—",
+        amountCents: order.amountCents,
+        currency: order.currency,
+        completedAt: order.completedAt,
+      });
+      continue;
+    }
+    if (!order.payerEmail || !order.abandonedEmailSentAt) continue;
+    const laterCompleted = await prisma.order.findFirst({
+      where: { payerEmail: order.payerEmail, completedAt: { gt: order.abandonedEmailSentAt } },
+      orderBy: { completedAt: "asc" },
+    });
+    if (laterCompleted) {
+      recovered += 1;
+      recoveredRevenueCents += laterCompleted.amountCents;
+      currency = laterCompleted.currency;
+      recoveredOrders.push({
+        orderId: laterCompleted.id,
+        email: order.payerEmail,
+        amountCents: laterCompleted.amountCents,
+        currency: laterCompleted.currency,
+        completedAt: laterCompleted.completedAt!,
+      });
+    }
+  }
+
+  recoveredOrders.sort((a, b) => b.completedAt.getTime() - a.completedAt.getTime());
+
+  return { sent: sentOrders.length, recovered, recoveredRevenueCents, currency, recoveredOrders };
+}
+
 // Powers the public, no-login order-tracking page — the link in the
 // confirmation email, never a guessable customer-facing surface otherwise.
 export async function getOrderById(id: string) {

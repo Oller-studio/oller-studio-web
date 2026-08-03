@@ -35,6 +35,8 @@ model Order {
   // Same coarse bucket as PageView.channel — powers "Sales attributed to
   // marketing" on the Analytics dashboard.
   channel           String?
+  device            String?
+  paymentMethod     String?
   fulfillmentStatus String      @default("NEW_ORDER")
   startedPrintingAt DateTime?
   rawPayload        String?
@@ -43,6 +45,16 @@ model Order {
   refundedAt        DateTime?
   shippedAt         DateTime?
   deliveredAt       DateTime?
+  // Timestamp of the last abandoned-checkout email sent (any step) — used
+  // both as the cron's guard against re-sending the same step twice, and
+  // by the recovery metric (an order completed after this timestamp counts
+  // as recovered by the sequence).
+  abandonedEmailSentAt DateTime?
+  // 0 = nothing sent yet, 1 = Reminder sent, 2 = Emotional Reminder sent,
+  // 3 = Final Reminder sent. The cron only ever moves this forward by one
+  // step at a time, and only for orders still not completed — a completed
+  // order simply stops matching the cron's query, ending the sequence.
+  abandonedEmailStep   Int       @default(0)
   items             OrderItem[]
 }
 
@@ -208,7 +220,7 @@ model Colorway {
   stockOnHand            Int      @default(0)
   status                 String   @default("draft")
   isFeatured             Boolean  @default(false)
-  launchedAt             String
+  launchedAt             String?
   sortOrder              Int      @default(0)
   // Overrides for the <title>/meta description Google shows for this
   // color's page — blank means fall back to an auto-generated one (see
@@ -269,7 +281,17 @@ model WaitlistEntry {
   colorwaySlug String
   colorName    String
   productName  String
+  // Optional — rows created before this field existed have no name on file,
+  // so sends fall back to a generic greeting for those.
+  firstName    String?
   email        String
+  // "notify" (default) = Limited Edition sold out or Coming Soon signup —
+  // gets auto-emailed the Restock template the moment the colorway becomes
+  // available. "print_request" = regular (non-numbered) print-on-demand
+  // color that's sold out — gets an immediate confirmation + an internal
+  // notification instead, and only gets the Restock email if an admin
+  // decides to fulfill it manually from the Waitlist page.
+  kind         String    @default("notify")
   // waiting -> invited (admin sent the private restock link) -> purchased
   // (matched to a completed order by email, see the PayPal webhook).
   status       String    @default("waiting")
@@ -284,15 +306,39 @@ model WaitlistEntry {
   @@index([colorwaySlug])
 }
 
-// Editable copy for admin-triggered emails (currently just the waitlist
-// restock notice). {{product}} / {{color}} in subject/message get filled in
-// per-send — the "Get yours" button + link are always appended automatically.
+// Editable copy for admin-triggered/automatic emails. {{variable}} tokens in
+// subject/message get filled in per-send — buttons/links are always appended
+// automatically, never editable here.
+// `active` and `delayMinutes` only apply to time-delayed automations (e.g.
+// abandoned checkout) — null for instant, event-triggered emails like
+// order confirmation, which can't meaningfully be "delayed" or toggled off
+// from here.
 model EmailTemplate {
-  id        String   @id @default(cuid())
-  key       String   @unique
-  subject   String
-  message   String
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(cuid())
+  key        String   @unique
+  subject    String
+  message    String
+  active     Boolean?
+  delayMinutes Int?
+  updatedAt  DateTime @updatedAt
+}
+
+// One row per email actually sent via Resend — capture only, no UI on this
+// yet. `type` matches an EmailTemplate key ("order_confirmation", etc.) or
+// a fixed string for the non-template sends ("welcome", "contact_inquiry",
+// "collab_inquiry", "newsletter_signup"). Timestamps fill in as Resend's
+// webhook reports delivery/opens/clicks — most rows will have nulls for a
+// while, that's expected, not a bug.
+model EmailLog {
+  id          String    @id @default(cuid())
+  resendId    String    @unique
+  type        String
+  to          String
+  sentAt      DateTime  @default(now())
+  deliveredAt DateTime?
+  openedAt    DateTime?
+  clickedAt   DateTime?
+  bouncedAt   DateTime?
 }
 
 // A referral, influencer, or collaborator (brand) partner. People use
@@ -357,5 +403,26 @@ model Offer {
   // Optional — null means it never expires. Same as `active`, this isn't
   // enforced anywhere yet (no checkout redemption), just tracked here.
   expiresAt DateTime?
+  createdAt DateTime @default(now())
+}
+
+// Phase 1 of the Support inbox — every Contact form / Collab-with-us
+// submission, so there's a record beyond just the email that went out.
+// `resolved` is null until the customer answers the "did this answer your
+// question?" poll (only sent for Order Status / Returns & Exchanges, the
+// two subjects whose auto-reply actually contains a real answer) — true
+// means they said yes, false means a human needs to follow up from the
+// Support admin page, null covers both "no poll for this one" and "poll
+// sent, no answer yet".
+model Inquiry {
+  id        String   @id @default(cuid())
+  kind      String
+  firstName String
+  lastName  String
+  email     String
+  phone     String?
+  subject   String?
+  message   String
+  resolved  Boolean?
   createdAt DateTime @default(now())
 }

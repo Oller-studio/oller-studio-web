@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getAdminViewer } from "@/lib/admin";
 import { updateColorway, deleteColorway, type ColorwayInput } from "@/lib/colorways";
+import { prisma } from "@/lib/db";
+import { autoFireRestockEmails } from "@/lib/waitlist";
 
 export async function PATCH(
   request: Request,
@@ -14,6 +16,11 @@ export async function PATCH(
   const { slug: productSlug, variantSlug } = await params;
   const input = (await request.json()) as ColorwayInput;
 
+  const before = await prisma.colorway.findUnique({
+    where: { slug: variantSlug },
+    select: { shopBadge: true, totalPieces: true, piecesRemaining: true },
+  });
+
   try {
     await updateColorway(variantSlug, { ...input, productSlug });
   } catch (error) {
@@ -26,6 +33,21 @@ export async function PATCH(
           : "Something went wrong saving this color variant.";
     return NextResponse.json({ ok: false, reason }, { status: code === "P2025" ? 404 : 500 });
   }
+
+  if (before) {
+    const origin = new URL(request.url).origin;
+    // Waitlist entries are keyed to whatever slug this color had when
+    // someone signed up (variantSlug, the pre-save identifier) — even if
+    // this save also renames the color, previousSlugs redirects keep their
+    // stored links working.
+    await autoFireRestockEmails(
+      variantSlug,
+      origin,
+      before,
+      { shopBadge: input.shopBadge, totalPieces: input.totalPieces, piecesRemaining: input.piecesRemaining },
+    ).catch((error) => console.error("autoFireRestockEmails error", error));
+  }
+
   return NextResponse.json({ ok: true });
 }
 

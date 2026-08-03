@@ -33,7 +33,7 @@ function rowToColorway(row: ColorwayRow & { product: ProductModel }): Colorway {
   // date passes, with nothing to remember to go toggle by hand. Once that
   // date passes, a badge that was itself "coming_soon" settles to Available
   // (its natural end state); any other badge just takes over as stored.
-  const isScheduled = new Date(row.launchedAt) > new Date();
+  const isScheduled = row.launchedAt != null && new Date(row.launchedAt) > new Date();
   const effectiveBadge = isScheduled
     ? "coming_soon"
     : row.shopBadge === "coming_soon"
@@ -96,7 +96,7 @@ function rowToColorway(row: ColorwayRow & { product: ProductModel }): Colorway {
     campaignNote,
     shopBadge,
     isFeatured: row.isFeatured,
-    launchedAt: row.launchedAt,
+    launchedAt: row.launchedAt ?? row.createdAt.toISOString(),
     stockOnHand: row.stockOnHand,
     seoTitle: row.seoTitle ?? undefined,
     seoDescription: row.seoDescription ?? undefined,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { RichTextEditor } from "./RichTextEditor";
 
 // Kept as a literal (not imported from lib/emailTemplates.ts) so this client
 // component doesn't pull the Prisma-backed module into the browser bundle.
@@ -50,9 +51,8 @@ export function OrderShippedEmailEditor({
     <div className="flex w-full max-w-xl flex-col gap-3 rounded-xl border border-border bg-background p-4 shadow-sm">
       <p className="text-sm font-semibold uppercase tracking-wide">Order shipped</p>
       <p className="text-xs text-muted">
-        Sent when you mark an order as Sent in Production, with the option to skip it that time.
-        Use {"{{firstName}}"} anywhere below — it gets filled in per order. The tracking button is
-        added automatically under your message.
+        Sent when you mark an order as Sent in Production. Use {"{{firstName}}"} anywhere below —
+        it gets filled in per order.
       </p>
       <label className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-wide text-muted">
         Subject
@@ -62,15 +62,10 @@ export function OrderShippedEmailEditor({
           className="rounded-md border border-border px-3 py-2 text-sm font-normal normal-case text-foreground outline-none"
         />
       </label>
-      <label className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-wide text-muted">
+      <div className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-wide text-muted">
         Message
-        <textarea
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          rows={4}
-          className="rounded-md border border-border px-3 py-2 text-sm font-normal normal-case text-foreground outline-none"
-        />
-      </label>
+        <RichTextEditor value={message} onChange={setMessage} rows={4} />
+      </div>
       <div className="flex items-center gap-3">
         <button
           type="button"

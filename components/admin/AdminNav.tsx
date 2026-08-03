@@ -65,7 +65,7 @@ const sections: Section[] = [
       { href: "/admin/marketing/emails", label: "Emails" },
     ],
   },
-  { href: "/admin/support", label: "Support", icon: SupportIcon, comingSoon: true },
+  { href: "/admin/support", label: "Support", icon: SupportIcon },
 ];
 
 function Chevron({ open }: { open: boolean }) {

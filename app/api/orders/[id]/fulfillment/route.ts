@@ -43,9 +43,18 @@ export async function POST(
       ...(targetIndex < FULFILLMENT_STAGES.indexOf("SENT") ? { shippedAt: null } : {}),
       ...(targetIndex < FULFILLMENT_STAGES.indexOf("DELIVERED") ? { deliveredAt: null } : {}),
     },
+    include: { items: true },
   });
 
   if (isNewlyShipped && sendEmail !== false && order.payerEmail) {
+    const colorways = await prisma.colorway.findMany({
+      where: { slug: { in: order.items.map((i) => i.colorwaySlug) } },
+      select: { slug: true, images: true },
+    });
+    const itemImages = Object.fromEntries(
+      colorways.map((c) => [c.slug, (JSON.parse(c.images) as string[])[0] ?? null])
+    );
+
     const template = await getEmailTemplate(ORDER_SHIPPED_TEMPLATE_KEY);
     const firstName = order.payerName?.split(" ")[0] ?? "there";
     await sendOrderShippedEmail(
@@ -53,6 +62,8 @@ export async function POST(
       template.subject,
       fillTemplate(template.message, { firstName }),
       formatOrderNumber(order.id),
+      order,
+      itemImages,
       `${getSiteUrl()}/orders/track/${order.id}`
     ).catch((err) => console.error("Failed to send order shipped email:", err));
   }

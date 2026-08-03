@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { currentUser } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/db";
 
 type StartOrderBody = {
@@ -22,6 +23,12 @@ export async function POST(request: Request) {
   );
   const source = (await cookies()).get("oller_src")?.value ?? null;
 
+  // If they're signed in, we already know their email before payment even
+  // starts — no reason to wait for PayPal to hand it back. Lets a signed-in
+  // customer's abandoned cart still be recoverable, unlike a guest's.
+  const user = await currentUser();
+  const payerEmail = user?.primaryEmailAddress?.emailAddress ?? body.payerEmail ?? null;
+
   await prisma.order.create({
     data: {
       paypalOrderId: body.paypalOrderId,
@@ -29,7 +36,7 @@ export async function POST(request: Request) {
       amountCents,
       currency: body.currency,
       source,
-      payerEmail: body.payerEmail || null,
+      payerEmail,
       items: {
         create: body.items.map((i) => ({
           colorwaySlug: i.slug,

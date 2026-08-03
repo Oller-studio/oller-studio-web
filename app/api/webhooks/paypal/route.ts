@@ -3,7 +3,12 @@ import { verifyPaypalWebhook, getOrderDetails } from "@/lib/paypal";
 import { prisma } from "@/lib/db";
 import { markWaitlistPurchased } from "@/lib/waitlist";
 import { sendOrderConfirmationEmail } from "@/lib/resend";
-import { getEmailTemplate, fillTemplate, ORDER_CONFIRMATION_TEMPLATE_KEY } from "@/lib/emailTemplates";
+import {
+  getEmailTemplate,
+  fillTemplate,
+  pieceVars,
+  ORDER_CONFIRMATION_TEMPLATE_KEY,
+} from "@/lib/emailTemplates";
 import { formatOrderNumber } from "@/lib/format";
 import { getSiteUrl } from "@/lib/siteUrl";
 
@@ -168,11 +173,12 @@ async function sendOrderConfirmation(
   const template = await getEmailTemplate(ORDER_CONFIRMATION_TEMPLATE_KEY);
   const siteUrl = getSiteUrl();
   const firstName = order.payerName?.split(" ")[0] ?? "there";
+  const totalQuantity = order.items.reduce((sum, i) => sum + i.quantity, 0);
 
   await sendOrderConfirmationEmail(
     payerEmail,
     template.subject,
-    fillTemplate(template.message, { firstName }),
+    fillTemplate(template.message, { firstName, ...pieceVars(totalQuantity) }),
     formatOrderNumber(order.id),
     order,
     itemImages,

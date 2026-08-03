@@ -12,11 +12,19 @@ export async function PATCH(request: Request) {
     key?: string;
     subject?: string;
     message?: string;
+    active?: boolean;
+    delayMinutes?: number;
   };
   if (!body.key || !body.subject?.trim() || !body.message?.trim()) {
     return NextResponse.json({ ok: false, reason: "missing fields" }, { status: 400 });
   }
 
-  await saveEmailTemplate(body.key, body.subject.trim(), body.message.trim());
+  const extra: { active?: boolean; delayMinutes?: number } = {};
+  if (typeof body.active === "boolean") extra.active = body.active;
+  if (typeof body.delayMinutes === "number" && Number.isFinite(body.delayMinutes)) {
+    extra.delayMinutes = Math.max(1, Math.round(body.delayMinutes));
+  }
+
+  await saveEmailTemplate(body.key, body.subject.trim(), body.message.trim(), extra);
   return NextResponse.json({ ok: true });
 }

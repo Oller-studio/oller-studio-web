@@ -69,7 +69,7 @@ export function rowToVariantRow(
         | "back_in_stock",
       stockOnHand: row.stockOnHand.toString(),
       isFeatured: row.isFeatured,
-      launchedAt: row.launchedAt,
+      launchedAt: row.launchedAt ?? undefined,
       sortOrder: row.sortOrder.toString(),
       seoTitle: row.seoTitle ?? "",
       seoDescription: row.seoDescription ?? "",
