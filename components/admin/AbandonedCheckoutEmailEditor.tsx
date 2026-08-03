@@ -18,6 +18,55 @@ type RecoveredOrder = {
   completedAt: Date;
 };
 
+type DelayUnit = "minutes" | "hours" | "days";
+
+const UNIT_MINUTES: Record<DelayUnit, number> = { minutes: 1, hours: 60, days: 1440 };
+
+// Picks the largest unit that divides the stored value evenly, so e.g. 1440
+// shows as "1 day" instead of "1440 minutes" — falls back to minutes for
+// anything odd (like a value someone typed in raw minutes on purpose).
+function pickUnit(totalMinutes: number): DelayUnit {
+  if (totalMinutes > 0 && totalMinutes % 1440 === 0) return "days";
+  if (totalMinutes > 0 && totalMinutes % 60 === 0) return "hours";
+  return "minutes";
+}
+
+// Storage stays in minutes (matches EmailTemplate.delayMinutes) — this is
+// just a friendlier way to enter/read that number. Switching the unit
+// re-reads the same total, it doesn't re-interpret the typed number.
+function DelayInput({
+  totalMinutes,
+  onChange,
+}: {
+  totalMinutes: string;
+  onChange: (minutes: string) => void;
+}) {
+  const [unit, setUnit] = useState<DelayUnit>(() => pickUnit(Number(totalMinutes) || 0));
+  const displayValue = (Number(totalMinutes) || 0) / UNIT_MINUTES[unit];
+
+  return (
+    <div className="flex max-w-[14rem] gap-2">
+      <input
+        type="number"
+        min={1}
+        step="any"
+        value={Number.isFinite(displayValue) ? displayValue : ""}
+        onChange={(e) => onChange(String(Math.round((Number(e.target.value) || 0) * UNIT_MINUTES[unit])))}
+        className="w-20 rounded-md border border-border px-3 py-2 text-sm font-normal normal-case text-foreground outline-none"
+      />
+      <select
+        value={unit}
+        onChange={(e) => setUnit(e.target.value as DelayUnit)}
+        className="rounded-md border border-border px-2 py-2 text-sm font-normal normal-case text-foreground outline-none"
+      >
+        <option value="minutes">Minutes</option>
+        <option value="hours">Hours</option>
+        <option value="days">Days</option>
+      </select>
+    </div>
+  );
+}
+
 function EditorFields({
   label,
   helpText,
@@ -62,16 +111,10 @@ function EditorFields({
         />
         Active
       </label>
-      <label className="flex max-w-[10rem] flex-col gap-1 text-xs font-semibold uppercase tracking-wide text-muted">
-        Send after (minutes)
-        <input
-          type="number"
-          min={1}
-          value={delayMinutes}
-          onChange={(e) => setDelayMinutes(e.target.value)}
-          className="rounded-md border border-border px-3 py-2 text-sm font-normal normal-case text-foreground outline-none"
-        />
-      </label>
+      <div className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-wide text-muted">
+        Send after
+        <DelayInput totalMinutes={delayMinutes} onChange={setDelayMinutes} />
+      </div>
       <label className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-wide text-muted">
         Subject
         <input

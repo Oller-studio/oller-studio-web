@@ -23,13 +23,25 @@ export async function getAccessToken(): Promise<string> {
   return data.access_token;
 }
 
+export type ShippingAddressInput = {
+  fullName: string;
+  addressLine1: string;
+  addressLine2: string;
+  city: string;
+  postalCode: string;
+  countryCode: string;
+};
+
 // Server-side order creation — used by the Apple Pay button, which needs a
 // real order id up front (before the ApplePaySession payment sheet opens),
 // unlike the regular PayPalButtons which creates its order client-side via
-// the JS SDK.
+// the JS SDK. Takes the same merchant-collected shipping address as that
+// flow, so both payment methods lock the same address instead of Apple Pay
+// separately prompting for its own.
 export async function createOrder(
   currency: string,
-  items: { name: string; price: number; quantity: number }[]
+  items: { name: string; price: number; quantity: number }[],
+  shipping?: ShippingAddressInput
 ): Promise<string> {
   const itemTotal = items
     .reduce((sum, i) => sum + i.price * i.quantity, 0)
@@ -44,6 +56,7 @@ export async function createOrder(
     },
     body: JSON.stringify({
       intent: "CAPTURE",
+      ...(shipping ? { application_context: { shipping_preference: "SET_PROVIDED_ADDRESS" } } : {}),
       purchase_units: [
         {
           amount: {
@@ -56,6 +69,20 @@ export async function createOrder(
             unit_amount: { currency_code: currency, value: i.price.toFixed(2) },
             quantity: String(i.quantity),
           })),
+          ...(shipping
+            ? {
+                shipping: {
+                  name: { full_name: shipping.fullName },
+                  address: {
+                    address_line_1: shipping.addressLine1,
+                    address_line_2: shipping.addressLine2 || undefined,
+                    admin_area_2: shipping.city,
+                    postal_code: shipping.postalCode,
+                    country_code: shipping.countryCode,
+                  },
+                },
+              }
+            : {}),
         },
       ],
     }),

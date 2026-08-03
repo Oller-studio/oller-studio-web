@@ -3,7 +3,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCart } from "./cart-context";
-import { CartCheckout } from "./CartCheckout";
 import { formatPrice } from "@/lib/format";
 
 export function CartDrawer() {
@@ -106,10 +105,16 @@ export function CartDrawer() {
 
             <div className="border-t border-border px-6 py-6">
               <div className="mb-4 flex items-center justify-between text-sm font-semibold uppercase tracking-wide">
-                <span>Subtotal</span>
+                <span>Total</span>
                 <span>{formatPrice(subtotal, items[0]?.currency ?? "USD")}</span>
               </div>
-              <CartCheckout />
+              <Link
+                href="/checkout"
+                onClick={close}
+                className="block w-full rounded-full bg-foreground py-3.5 text-center text-sm font-semibold uppercase tracking-wide text-background hover:opacity-90"
+              >
+                Checkout
+              </Link>
             </div>
           </>
         )}

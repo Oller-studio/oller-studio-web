@@ -82,7 +82,10 @@ export async function POST(request: Request) {
           trackingUrl,
         );
       case "welcome":
-        return renderWelcomeHtml(fillTemplate(body.message, { firstName: "Alicia" }));
+        return renderWelcomeHtml(
+          fillTemplate(body.message, { firstName: "Alicia" }),
+          `${siteUrl}/account`,
+        );
       case "restock":
         return renderRestockHtml(
           fillTemplate(body.message, { product: "ONDINE", color: sampleColorName, firstName: "Alicia" }),

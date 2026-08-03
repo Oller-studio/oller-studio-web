@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useCart } from "./cart-context";
+import type { ShippingAddressInput } from "@/lib/paypal";
 
 // PayPal's JS SDK attaches a low-level Apple Pay API to window.paypal when
 // the "applepay" component is loaded (see PayPalScriptProvider's options in
-// CartCheckout.tsx) — there's no React wrapper for this the way there is
+// CheckoutForm.tsx) — there's no React wrapper for this the way there is
 // for the regular PayPalButtons, so this talks to it directly.
 type PayPalApplePay = {
   config: () => Promise<{
@@ -44,7 +45,13 @@ type ApplePaySessionInstance = {
   oncancel: () => void;
 };
 
-export function ApplePayButton({ onCaptured }: { onCaptured: () => void }) {
+export function ApplePayButton({
+  shipping,
+  onCaptured,
+}: {
+  shipping: ShippingAddressInput;
+  onCaptured: () => void;
+}) {
   const { subtotal, items } = useCart();
   const [eligible, setEligible] = useState(false);
   const applePayRef = useRef<PayPalApplePay | null>(null);
@@ -85,7 +92,7 @@ export function ApplePayButton({ onCaptured }: { onCaptured: () => void }) {
     const res = await fetch("/api/orders/create-applepay", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ currency, items }),
+      body: JSON.stringify({ currency, items, shipping }),
     });
     const { orderId } = (await res.json()) as { orderId: string };
 

@@ -257,8 +257,8 @@ function renderSimpleEmailHtml(params: {
   </div>`;
 }
 
-export function renderWelcomeHtml(message: string) {
-  return renderSimpleEmailHtml({ message });
+export function renderWelcomeHtml(message: string, accountUrl: string) {
+  return renderSimpleEmailHtml({ message, cta: { label: "Visit your account", url: accountUrl } });
 }
 
 export function renderRestockHtml(
@@ -453,7 +453,7 @@ export async function sendWelcomeEmail(email: string, firstName?: string) {
       from: FROM,
       to: email,
       subject: template.subject,
-      html: renderWelcomeHtml(message),
+      html: renderWelcomeHtml(message, `${getSiteUrl()}/account`),
       tags: [{ name: "type", value: "welcome" }],
     });
     if (data?.id) await logEmailSent("welcome", email, data.id);

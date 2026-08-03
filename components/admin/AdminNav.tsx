@@ -69,12 +69,17 @@ const sections: Section[] = [
     children: [
       { href: "/admin/marketing/partners", label: "Partners" },
       { href: "/admin/marketing/offers", label: "Offers" },
-      { href: "/admin/marketing/emails", label: "Emails" },
     ],
   },
   { href: "/admin/finance", label: "Finance", icon: FinanceIcon },
   { href: "/admin/analytics", label: "Analytics", icon: AnalyticsIcon },
-  { href: "/admin/settings", label: "Settings", icon: SettingsIcon },
+  {
+    href: "/admin/settings",
+    label: "Settings",
+    icon: SettingsIcon,
+    landingPageIsMenu: true,
+    children: [{ href: "/admin/marketing/emails", label: "Emails" }],
+  },
   { href: "/admin/support", label: "Support", icon: SupportIcon },
 ];
 

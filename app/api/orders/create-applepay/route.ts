@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
-import { createOrder } from "@/lib/paypal";
+import { createOrder, type ShippingAddressInput } from "@/lib/paypal";
 import { classifyDevice } from "@/lib/device";
 
 type CreateApplePayOrderBody = {
   currency: string;
   items: { slug: string; name: string; price: number; quantity: number }[];
+  shipping?: ShippingAddressInput;
 };
 
 export async function POST(request: Request) {
@@ -16,7 +17,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, reason: "invalid body" }, { status: 400 });
   }
 
-  const paypalOrderId = await createOrder(body.currency, body.items);
+  const paypalOrderId = await createOrder(body.currency, body.items, body.shipping);
   const amountCents = body.items.reduce(
     (sum, i) => sum + Math.round(i.price * 100) * i.quantity,
     0
