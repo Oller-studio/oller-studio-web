@@ -40,22 +40,24 @@ export type CarouselSlide = {
   href?: string;
 };
 
-// 4-up product carousel below the hero. Real colorways fill the first slots;
-// remaining slots preview as "Coming soon" until more colorways exist.
+// Product carousel below the hero — one slide per published colorway, in
+// whatever order they're sorted in the admin, however many that is (the
+// arrows wrap around regardless of count). Padded up to a minimum of 4 with
+// "Coming soon" placeholders only when the real catalog is smaller than
+// that, so a brand-new small catalog still fills the row visually.
 export async function getHomeCarouselSlides(): Promise<CarouselSlide[]> {
   const colorways = await getAllColorways({ publishedOnly: true });
-  return Array.from({ length: 4 }, (_, i) => {
-    const colorway = colorways[i];
-    if (colorway) {
-      return {
-        images: colorway.images,
-        hoverImageUrl: colorway.hoverImageUrl,
-        alt: `${colorway.product.name} — ${colorway.name} sculptural handbag by OLLER`,
-        href: `/shop/${colorway.slug}`,
-      };
-    }
-    return { images: [], alt: "New colorway" };
-  });
+  const slides: CarouselSlide[] = colorways.map((colorway) => ({
+    images: colorway.images,
+    hoverImageUrl: colorway.hoverImageUrl,
+    alt: `${colorway.product.name} — ${colorway.name} sculptural handbag by OLLER`,
+    href: `/shop/${colorway.slug}`,
+  }));
+  const MIN_SLIDES = 4;
+  while (slides.length < MIN_SLIDES) {
+    slides.push({ images: [], alt: "New colorway" });
+  }
+  return slides;
 }
 
 export type EditorialMedia = { type: "video" | "image"; src: string; href?: string };
