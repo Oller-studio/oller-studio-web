@@ -27,25 +27,32 @@ function rowToColorwayProduct(row: ProductModel): ColorwayProduct {
 }
 
 async function rowToColorway(row: ColorwayRow & { product: ProductModel }): Promise<Colorway> {
-  // Scheduled launch: while launchedAt hasn't happened yet, the color reads
-  // as Coming Soon no matter what Shop Badge is set to in the admin —
-  // computed here on every read, so it flips over on its own the moment the
-  // date passes, with nothing to remember to go toggle by hand. This is a
-  // strict start-of-day check: launching a color includes setting
-  // launchedAt to today, so the override only applies on days strictly
-  // before that (a badge set for today, e.g. Sold Out, takes effect today).
+  // launchedAt is optional — null means "no scheduled launch", so a
+  // "coming_soon" badge just holds exactly as set until changed by hand
+  // (isBeforeLaunch/staleComingSoon below both stay false, no override).
+  // A real date means a genuine forward schedule: forces Coming Soon while
+  // launchedAt hasn't happened yet, computed here on every read so it flips
+  // over on its own the moment the date passes — this is a strict
+  // start-of-day check: launching a color includes setting launchedAt to
+  // today, so the override only applies on days strictly before that (a
+  // badge set for today, e.g. Sold Out, takes effect today).
   const now = new Date();
-  const isBeforeLaunch = new Date(row.launchedAt) > now;
+  const isBeforeLaunch = row.launchedAt !== null && new Date(row.launchedAt) > now;
 
-  // Separately: once the launch day has fully passed, a badge that's still
-  // sitting on "coming_soon" (forgotten to update, or the Launch Date field
-  // was just left at its default instead of a real future date) settles to
-  // Available on its own. This now writes the change back to the database
-  // (not just what's displayed) so the admin's own Shop Badge field always
-  // matches reality instead of silently disagreeing with the storefront.
-  const launchEndOfDay = new Date(row.launchedAt);
-  launchEndOfDay.setHours(23, 59, 59, 999);
-  const staleComingSoon = row.shopBadge === "coming_soon" && launchEndOfDay <= now;
+  // Separately: once a real scheduled launch day has fully passed, a badge
+  // that's still sitting on "coming_soon" settles to Available on its own.
+  // launchEndOfDay (not launchedAt's start-of-day parse) means a color
+  // launching today still reads Coming Soon for the rest of today. Writes
+  // the change back to the database (not just what's displayed) so the
+  // admin's own Shop Badge field always matches reality.
+  const staleComingSoon =
+    row.launchedAt !== null &&
+    row.shopBadge === "coming_soon" &&
+    (() => {
+      const launchEndOfDay = new Date(row.launchedAt);
+      launchEndOfDay.setHours(23, 59, 59, 999);
+      return launchEndOfDay <= now;
+    })();
 
   const effectiveBadge = isBeforeLaunch
     ? "coming_soon"
@@ -209,7 +216,7 @@ export type ColorwayInput = {
   shopBadge: "available" | "new" | "in_stock" | "coming_soon" | "limited_edition" | "sold_out";
   stockOnHand: number;
   isFeatured: boolean;
-  launchedAt: string;
+  launchedAt: string | null;
   sortOrder: number;
   seoTitle: string | null;
   seoDescription: string | null;
