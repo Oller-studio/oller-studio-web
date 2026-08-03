@@ -120,7 +120,7 @@ async function rowToColorway(row: ColorwayRow & { product: ProductModel }): Prom
     campaignNote,
     shopBadge,
     isFeatured: row.isFeatured,
-    launchedAt: row.launchedAt,
+    launchedAt: row.launchedAt ?? row.createdAt.toISOString(),
     stockOnHand: row.stockOnHand,
     seoTitle: row.seoTitle ?? undefined,
     seoDescription: row.seoDescription ?? undefined,

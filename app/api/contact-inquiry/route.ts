@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { sendContactInquiry } from "@/lib/resend";
+import { sendContactInquiry, sendContactConfirmation } from "@/lib/resend";
 import { isRateLimited, clientIp } from "@/lib/rateLimit";
+import { prisma } from "@/lib/db";
 
 export async function POST(request: Request) {
   if (isRateLimited(`contact:${clientIp(request.headers)}`, 5, 60_000)) {
@@ -28,6 +29,12 @@ export async function POST(request: Request) {
   if (!sent) {
     return NextResponse.json({ ok: false, error: "Failed to send" }, { status: 500 });
   }
+
+  const inquiry = await prisma.inquiry.create({
+    data: { kind: "contact", firstName, lastName, email, subject, message },
+  });
+
+  await sendContactConfirmation(firstName, email, subject, inquiry.id);
 
   return NextResponse.json({ ok: true });
 }

@@ -3,7 +3,6 @@ import Link from "next/link";
 const CARDS = [
   { href: "/admin/marketing/partners", label: "Partners", description: "Referrals and influencers, with tracked links." },
   { href: "/admin/marketing/offers", label: "Offers", description: "Discount codes and promotions." },
-  { href: "/admin/marketing/emails", label: "Emails", description: "Copy for emails sent from the admin." },
 ];
 
 export default function MarketingPage() {

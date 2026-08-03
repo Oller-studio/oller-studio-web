@@ -49,7 +49,7 @@ export function AddToBagButton({
           // request rather than a wait for restock. Signature pieces are a
           // real numbered edition that closes for good, so Notify Me (for
           // the next drop) is the honest framing there.
-          mode={tier === "collection" ? "request" : "notify"}
+          variant={tier === "collection" ? "print_request" : "restock"}
         />
       </div>
     );
@@ -72,6 +72,9 @@ export function AddToBagButton({
       >
         {shopBadge.kind === "coming_soon" ? "Reserve Yours" : "Add to Bag"}
       </button>
+      {shopBadge.kind === "coming_soon" && (
+        <NotifyMeForm slug={slug} productName={productName} colorName={name} variant="coming_soon" />
+      )}
     </div>
   );
 }

@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { getAdminViewer } from "@/lib/admin";
 import { prisma } from "@/lib/db";
 import { FULFILLMENT_STAGES } from "@/lib/fulfillment";
+import { sendOrderShippedEmail } from "@/lib/resend";
+import { getEmailTemplate, fillTemplate, ORDER_SHIPPED_TEMPLATE_KEY } from "@/lib/emailTemplates";
+import { formatOrderNumber } from "@/lib/format";
+import { getSiteUrl } from "@/lib/siteUrl";
 
 export async function POST(
   request: Request,
@@ -12,7 +16,7 @@ export async function POST(
     return NextResponse.json({ ok: false, reason: "not authorized" }, { status: 403 });
   }
 
-  const { stage } = (await request.json()) as { stage?: string };
+  const { stage, sendEmail } = (await request.json()) as { stage?: string; sendEmail?: boolean };
   if (!stage || !FULFILLMENT_STAGES.includes(stage as (typeof FULFILLMENT_STAGES)[number])) {
     return NextResponse.json({ ok: false, reason: "invalid stage" }, { status: 400 });
   }
@@ -20,7 +24,13 @@ export async function POST(
   const targetIndex = FULFILLMENT_STAGES.indexOf(stage as (typeof FULFILLMENT_STAGES)[number]);
 
   const { id } = await params;
-  await prisma.order.update({
+
+  // Only a genuine PACKED -> SENT move should trigger the shipped email —
+  // not a re-save at the same stage or an "undo" past it.
+  const existing = await prisma.order.findUnique({ where: { id } });
+  const isNewlyShipped = stage === "SENT" && !existing?.shippedAt;
+
+  const order = await prisma.order.update({
     where: { id },
     data: {
       fulfillmentStatus: stage,
@@ -33,7 +43,30 @@ export async function POST(
       ...(targetIndex < FULFILLMENT_STAGES.indexOf("SENT") ? { shippedAt: null } : {}),
       ...(targetIndex < FULFILLMENT_STAGES.indexOf("DELIVERED") ? { deliveredAt: null } : {}),
     },
+    include: { items: true },
   });
+
+  if (isNewlyShipped && sendEmail !== false && order.payerEmail) {
+    const colorways = await prisma.colorway.findMany({
+      where: { slug: { in: order.items.map((i) => i.colorwaySlug) } },
+      select: { slug: true, images: true },
+    });
+    const itemImages = Object.fromEntries(
+      colorways.map((c) => [c.slug, (JSON.parse(c.images) as string[])[0] ?? null])
+    );
+
+    const template = await getEmailTemplate(ORDER_SHIPPED_TEMPLATE_KEY);
+    const firstName = order.payerName?.split(" ")[0] ?? "there";
+    await sendOrderShippedEmail(
+      order.payerEmail,
+      template.subject,
+      fillTemplate(template.message, { firstName }),
+      formatOrderNumber(order.id),
+      order,
+      itemImages,
+      `${getSiteUrl()}/orders/track/${order.id}`
+    ).catch((err) => console.error("Failed to send order shipped email:", err));
+  }
 
   return NextResponse.json({ ok: true });
 }

@@ -2,6 +2,15 @@ import { NextResponse } from "next/server";
 import { verifyPaypalWebhook, getOrderDetails } from "@/lib/paypal";
 import { prisma } from "@/lib/db";
 import { markWaitlistPurchased } from "@/lib/waitlist";
+import { sendOrderConfirmationEmail } from "@/lib/resend";
+import {
+  getEmailTemplate,
+  fillTemplate,
+  pieceVars,
+  ORDER_CONFIRMATION_TEMPLATE_KEY,
+} from "@/lib/emailTemplates";
+import { formatOrderNumber } from "@/lib/format";
+import { getSiteUrl } from "@/lib/siteUrl";
 
 type PaypalCaptureCompletedEvent = {
   event_type: "PAYMENT.CAPTURE.COMPLETED";
@@ -131,9 +140,52 @@ async function handleCaptureCompleted(event: PaypalCaptureCompletedEvent) {
         await markWaitlistPurchased(item.colorwaySlug, payerEmail);
       }
     }
+
+    if (payerEmail) {
+      await sendOrderConfirmation(order, payerEmail).catch((err) =>
+        console.error("Failed to send order confirmation email:", err)
+      );
+    }
   }
 
   return NextResponse.json({ received: true });
+}
+
+async function sendOrderConfirmation(
+  order: {
+    id: string;
+    amountCents: number;
+    currency: string;
+    payerName: string | null;
+    shippingName: string | null;
+    shippingAddress: string | null;
+    shippingCity: string | null;
+    items: { name: string; quantity: number; unitAmountCents: number; colorwaySlug: string }[];
+  },
+  payerEmail: string
+) {
+  const colorways = await prisma.colorway.findMany({
+    where: { slug: { in: order.items.map((i) => i.colorwaySlug) } },
+    select: { slug: true, images: true },
+  });
+  const itemImages = Object.fromEntries(
+    colorways.map((c) => [c.slug, (JSON.parse(c.images) as string[])[0] ?? null])
+  );
+
+  const template = await getEmailTemplate(ORDER_CONFIRMATION_TEMPLATE_KEY);
+  const siteUrl = getSiteUrl();
+  const firstName = order.payerName?.split(" ")[0] ?? "there";
+  const totalQuantity = order.items.reduce((sum, i) => sum + i.quantity, 0);
+
+  await sendOrderConfirmationEmail(
+    payerEmail,
+    template.subject,
+    fillTemplate(template.message, { firstName, ...pieceVars(totalQuantity) }),
+    formatOrderNumber(order.id),
+    order,
+    itemImages,
+    `${siteUrl}/orders/track/${order.id}`
+  );
 }
 
 async function handleRefund(event: PaypalRefundEvent) {

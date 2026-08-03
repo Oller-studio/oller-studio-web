@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { RichTextEditor } from "./RichTextEditor";
 
 // Kept as a literal (not imported from lib/emailTemplates.ts) so this client
 // component doesn't pull the Prisma-backed module into the browser bundle.
@@ -16,6 +17,7 @@ export function RestockEmailEditor({
   const [subject, setSubject] = useState(initialSubject);
   const [message, setMessage] = useState(initialMessage);
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [previewError, setPreviewError] = useState(false);
 
   async function save() {
     setStatus("saving");
@@ -27,13 +29,32 @@ export function RestockEmailEditor({
     setStatus(res && res.ok ? "saved" : "error");
   }
 
+  async function preview() {
+    setPreviewError(false);
+    const win = window.open("", "_blank");
+    const res = await fetch("/api/admin/email-templates/preview", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: RESTOCK_TEMPLATE_KEY, subject, message }),
+    }).catch(() => null);
+    if (!res || !res.ok || !win) {
+      win?.close();
+      setPreviewError(true);
+      return;
+    }
+    const html = await res.text();
+    win.document.write(html);
+    win.document.close();
+  }
+
   return (
     <div className="flex w-full max-w-xl flex-col gap-3 rounded-xl border border-border bg-background p-4 shadow-sm">
       <p className="text-sm font-semibold uppercase tracking-wide">Restock email</p>
       <p className="text-xs text-muted">
-        Sent from the Waitlist page when you notify someone a sold-out color is ready for them.
-        Use {"{{product}}"} and {"{{color}}"} anywhere below — they get filled in per person. The
-        &quot;Get yours&quot; button and private link are added automatically under your message.
+        Sent automatically when a waitlisted color becomes available, or manually from the
+        Waitlist page. Use {"{{product}}"} and {"{{color}}"} anywhere below — they get filled in
+        per person. The &ldquo;Get yours&rdquo; button and private link are added automatically under your
+        message.
       </p>
       <label className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-wide text-muted">
         Subject
@@ -43,15 +64,10 @@ export function RestockEmailEditor({
           className="rounded-md border border-border px-3 py-2 text-sm font-normal normal-case text-foreground outline-none"
         />
       </label>
-      <label className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-wide text-muted">
+      <div className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-wide text-muted">
         Message
-        <textarea
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          rows={4}
-          className="rounded-md border border-border px-3 py-2 text-sm font-normal normal-case text-foreground outline-none"
-        />
-      </label>
+        <RichTextEditor value={message} onChange={setMessage} rows={4} />
+      </div>
       <div className="flex items-center gap-3">
         <button
           type="button"
@@ -61,8 +77,16 @@ export function RestockEmailEditor({
         >
           {status === "saving" ? "Saving…" : "Save"}
         </button>
+        <button
+          type="button"
+          onClick={preview}
+          className="w-fit rounded-full border border-border px-4 py-1.5 text-xs font-semibold uppercase tracking-wide hover:bg-border/40"
+        >
+          Preview
+        </button>
         {status === "saved" && <span className="text-xs text-green-700">Saved</span>}
         {status === "error" && <span className="text-xs text-red-600">Something went wrong</span>}
+        {previewError && <span className="text-xs text-red-600">Couldn&apos;t load preview</span>}
       </div>
     </div>
   );

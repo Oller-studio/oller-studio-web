@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { sendCollabInquiry } from "@/lib/resend";
+import { sendCollabInquiry, sendCollabConfirmation } from "@/lib/resend";
 import { isRateLimited, clientIp } from "@/lib/rateLimit";
+import { prisma } from "@/lib/db";
 
 export async function POST(request: Request) {
   if (isRateLimited(`collab:${clientIp(request.headers)}`, 5, 60_000)) {
@@ -26,6 +27,12 @@ export async function POST(request: Request) {
   if (!sent) {
     return NextResponse.json({ ok: false, error: "Failed to send" }, { status: 500 });
   }
+
+  await prisma.inquiry.create({
+    data: { kind: "collab", firstName, lastName, email, phone, message },
+  });
+
+  await sendCollabConfirmation(firstName, email);
 
   return NextResponse.json({ ok: true });
 }

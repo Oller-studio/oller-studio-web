@@ -116,6 +116,17 @@ export function PagesIcon({ className = "" }: IconProps) {
   );
 }
 
+export function SettingsIcon({ className = "" }: IconProps) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className={`${base} ${className}`} aria-hidden="true">
+      <path d="M2 4.5h5M9.5 4.5H14M2 8h8M12.5 8H14M2 11.5h3M7.5 11.5H14" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      <circle cx="7" cy="4.5" r="1.5" stroke="currentColor" strokeWidth="1.4" />
+      <circle cx="10.5" cy="8" r="1.5" stroke="currentColor" strokeWidth="1.4" />
+      <circle cx="5" cy="11.5" r="1.5" stroke="currentColor" strokeWidth="1.4" />
+    </svg>
+  );
+}
+
 export function SupportIcon({ className = "" }: IconProps) {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className={`${base} ${className}`} aria-hidden="true">
