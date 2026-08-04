@@ -385,6 +385,14 @@ export function CheckoutForm() {
                 application_context: { shipping_preference: "SET_PROVIDED_ADDRESS" },
                 payer: {
                   ...(contactEmail ? { email_address: contactEmail } : {}),
+                  ...(shipping.firstName || shipping.lastName
+                    ? {
+                        name: {
+                          given_name: shipping.firstName || undefined,
+                          surname: shipping.lastName || undefined,
+                        },
+                      }
+                    : {}),
                   ...(shipping.phone.replace(/\D/g, "")
                     ? {
                         phone: {
