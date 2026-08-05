@@ -3,7 +3,6 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { getColorwayBySlug } from "@/lib/colorways";
 import { formatOrderNumber, formatPrice } from "@/lib/format";
-import { site } from "@/content/site";
 import { OrderConfirmationExtras } from "@/components/cart/OrderConfirmationExtras";
 
 // Never indexed — shows real order/shipping data keyed off a guessable-ish
@@ -96,7 +95,15 @@ export default async function OrderConfirmationPage({
             </div>
           )}
 
-          <p className="text-center text-sm text-muted">{site.deliveryPolicy[0]}</p>
+          <div className="flex flex-col items-center gap-2 pt-2 text-center">
+            <p className="text-sm text-muted">You can view the state of your order here</p>
+            <Link
+              href={`/orders/track/${order.id}`}
+              className="rounded-full border border-foreground px-6 py-2.5 text-xs font-semibold uppercase tracking-wide hover:bg-foreground hover:text-background"
+            >
+              View Order
+            </Link>
+          </div>
         </div>
       )}
 
