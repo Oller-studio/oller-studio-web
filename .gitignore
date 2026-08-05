@@ -58,3 +58,7 @@ next-env.d.ts
 # local sqlite database
 /prisma/dev.db
 /prisma/dev.db-journal
+
+# per-worktree dev server port (see scripts/dev-port.mjs) — deliberately
+# untracked, each worktree sets its own
+/.devport

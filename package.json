@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "predev": "node scripts/generate-hero-poster.mjs",
-    "dev": "next dev",
+    "dev": "node scripts/dev-port.mjs",
     "prebuild": "node scripts/generate-hero-poster.mjs",
     "build": "next build",
     "start": "next start",
