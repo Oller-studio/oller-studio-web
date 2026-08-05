@@ -23,12 +23,12 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/admin", "/api", "/account", "/wishlist"],
+        disallow: ["/admin", "/api", "/account", "/wishlist", "/checkout", "/order-confirmation"],
       },
       ...AI_CRAWLERS.map((userAgent) => ({
         userAgent,
         allow: "/",
-        disallow: ["/admin", "/api", "/account", "/wishlist"],
+        disallow: ["/admin", "/api", "/account", "/wishlist", "/checkout", "/order-confirmation"],
       })),
     ],
     sitemap: "https://www.oller.studio/sitemap.xml",

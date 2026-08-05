@@ -6,8 +6,11 @@ import { formatOrderNumber, formatPrice } from "@/lib/format";
 import { site } from "@/content/site";
 import { OrderConfirmationExtras } from "@/components/cart/OrderConfirmationExtras";
 
+// Never indexed — shows real order/shipping data keyed off a guessable-ish
+// query param, and there's no reason a search visitor should land here.
 export const metadata = {
   title: "Order Confirmed",
+  robots: { index: false, follow: false },
 };
 
 export default async function OrderConfirmationPage({
