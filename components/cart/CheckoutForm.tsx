@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { PayPalButtons, PayPalScriptProvider } from "@paypal/react-paypal-js";
 import { useCart } from "./cart-context";
@@ -55,49 +56,6 @@ function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-// Second, separate ask for the same consent — never inferred from having
-// just paid. Only shown when they didn't already opt in at checkout, and
-// only once (or after successfully joining), so it's not nagging.
-function PostPurchaseNewsletter({ email }: { email: string }) {
-  const [status, setStatus] = useState<"idle" | "saving" | "done" | "error">("idle");
-
-  if (!email) return null;
-
-  async function subscribe() {
-    setStatus("saving");
-    const res = await fetch("/api/newsletter-signup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
-    }).catch(() => null);
-    setStatus(res && res.ok ? "done" : "error");
-  }
-
-  if (status === "done") {
-    return (
-      <p className="rounded-xl border border-border px-5 py-4 text-sm text-muted">
-        You&apos;re on the list — we&apos;ll email you first about new drops and restocks.
-      </p>
-    );
-  }
-
-  return (
-    <div className="flex flex-col gap-2 rounded-xl border border-border px-5 py-4 text-sm">
-      <p>Want first access to new drops and restocks?</p>
-      <button
-        type="button"
-        onClick={subscribe}
-        disabled={status === "saving"}
-        className="w-fit rounded-full border border-foreground bg-foreground px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-background hover:opacity-90 disabled:opacity-50"
-      >
-        {status === "saving" ? "Joining…" : "Join the list"}
-      </button>
-      {status === "error" && (
-        <p className="text-xs text-red-600">Something went wrong — try again.</p>
-      )}
-    </div>
-  );
-}
 
 // Who's paying, and where to reach them — separate from the shipping
 // address below (which is where the piece goes, not who's buying it).
@@ -273,8 +231,8 @@ function DeliverySection({
 export function CheckoutForm() {
   const { items, subtotal, clear } = useCart();
   const { isLoaded, isSignedIn, user } = useUser();
-  const [completed, setCompleted] = useState(false);
-  const [accountCreated, setAccountCreated] = useState(false);
+  const router = useRouter();
+  const [redirecting, setRedirecting] = useState(false);
   // Checked by default — this isn't marketing consent, it's a service
   // perk tied directly to the purchase (order tracking), so defaulting it
   // on is fine. The newsletter checkbox below stays unchecked by default;
@@ -289,17 +247,23 @@ export function CheckoutForm() {
   const signedIn = clerkConfigured && isLoaded && isSignedIn;
   const contactEmail = signedIn ? user.primaryEmailAddress?.emailAddress ?? "" : email;
 
-  if (completed) {
-    return (
-      <div className="flex flex-col gap-4">
-        <p className="rounded-xl border border-border px-5 py-4 text-sm font-medium">
-          Thank you — your order is confirmed. You&apos;ll receive a receipt from PayPal by email.
-          {accountCreated &&
-            " Log in with the same email you used to pay to track your order."}
-        </p>
-        {!newsletter && <PostPurchaseNewsletter email={contactEmail} />}
-      </div>
+  // Stashes what the confirmation page needs (it can't read this component's
+  // React state — it's reached via a full navigation) then redirects there.
+  // Navigating away, rather than swapping in a "thank you" view in place,
+  // means a successful order is never at the mercy of the checkout page's
+  // own "cart is empty" guard once `clear()` runs.
+  function goToConfirmation(orderId: string, accountCreated: boolean) {
+    sessionStorage.setItem(
+      "oller_last_order",
+      JSON.stringify({ email: contactEmail, accountCreated, newsletter })
     );
+    setRedirecting(true);
+    clear();
+    router.push(`/order-confirmation?order=${encodeURIComponent(orderId)}`);
+  }
+
+  if (redirecting) {
+    return <p className="text-sm text-muted">Finishing up…</p>;
   }
 
   if (!clientId) {
@@ -363,7 +327,7 @@ export function CheckoutForm() {
                 postalCode: shipping.postalCode,
                 countryCode: shipping.countryCode,
               }}
-              onCaptured={() => {
+              onCaptured={(orderId) => {
                 if (newsletter && contactEmail) {
                   fetch("/api/newsletter-signup", {
                     method: "POST",
@@ -371,8 +335,7 @@ export function CheckoutForm() {
                     body: JSON.stringify({ email: contactEmail }),
                   }).catch(() => {});
                 }
-                setCompleted(true);
-                clear();
+                goToConfirmation(orderId, false);
               }}
             />
             <PayPalButtons
@@ -458,10 +421,11 @@ export function CheckoutForm() {
 
               return paypalOrderId;
             }}
-            onApprove={async (_, actions) => {
+            onApprove={async (data, actions) => {
               if (!actions.order) return;
               const capture = await actions.order.capture();
 
+              let accountCreated = false;
               if (createAccount) {
                 const payer = (capture as { payer?: Record<string, unknown> }).payer;
                 const payerEmail = (payer?.email_address as string) ?? undefined;
@@ -477,7 +441,7 @@ export function CheckoutForm() {
                         lastName: name?.surname,
                       }),
                     });
-                    if (res.ok) setAccountCreated(true);
+                    accountCreated = res.ok;
                   } catch (error) {
                     console.error("Failed to create account after purchase", error);
                   }
@@ -492,8 +456,7 @@ export function CheckoutForm() {
                 }).catch(() => {});
               }
 
-              setCompleted(true);
-              clear();
+              goToConfirmation(data.orderID, accountCreated);
             }}
             />
           </div>
