@@ -86,23 +86,26 @@ export default async function OrderConfirmationPage({
             <span>{formatPrice(order.amountCents / 100, order.currency)}</span>
           </div>
 
-          {shippingLines.length > 0 && (
+          <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-                Shipping to
-              </p>
-              <p className="mt-1 text-sm">{shippingLines.join(", ")}</p>
+              {shippingLines.length > 0 && (
+                <>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+                    Shipping to
+                  </p>
+                  <p className="mt-1 text-sm">{shippingLines.join(", ")}</p>
+                </>
+              )}
             </div>
-          )}
 
-          <div className="flex flex-col items-center gap-2 pt-2 text-center">
-            <p className="text-sm text-muted">You can view the state of your order here</p>
-            <Link
-              href={`/orders/track/${order.id}`}
-              className="rounded-full border border-foreground px-6 py-2.5 text-xs font-semibold uppercase tracking-wide hover:bg-foreground hover:text-background"
-            >
-              View Order
-            </Link>
+            <p className="max-w-[220px] text-right text-sm text-muted">
+              An email will be sent to you once we&apos;ve shipped your order. If you created an
+              account with us, you can view the state of your order{" "}
+              <Link href={`/orders/track/${order.id}`} className="underline hover:text-foreground">
+                here
+              </Link>
+              .
+            </p>
           </div>
         </div>
       )}
