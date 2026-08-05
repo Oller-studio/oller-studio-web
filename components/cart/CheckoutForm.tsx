@@ -19,6 +19,11 @@ type ShippingAddress = {
   postalCode: string;
   city: string;
   countryCode: string;
+  // The buyer's phone number can be from a different country than where
+  // they're shipping to (e.g. living in Andorra with a Spanish number) —
+  // defaults to matching countryCode but is independently editable. Empty
+  // means "not yet picked, fall back to countryCode's dial code".
+  phoneCountryCode: string;
   phone: string;
 };
 
@@ -30,6 +35,7 @@ const EMPTY_SHIPPING: ShippingAddress = {
   postalCode: "",
   city: "",
   countryCode: "",
+  phoneCountryCode: "",
   phone: "",
 };
 
@@ -238,12 +244,19 @@ function DeliverySection({
           className={inputClass}
         />
       </div>
-      <div className="relative">
-        {value.countryCode && DIAL_CODES[value.countryCode] && (
-          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted">
-            +{DIAL_CODES[value.countryCode]}
-          </span>
-        )}
+      <div className="flex gap-2">
+        <select
+          aria-label="Phone country code"
+          value={value.phoneCountryCode || value.countryCode}
+          onChange={(e) => set("phoneCountryCode", e.target.value)}
+          className={`${inputClass} w-24 shrink-0`}
+        >
+          {COUNTRIES.map((c) => (
+            <option key={c.code} value={c.code} disabled={!DIAL_CODES[c.code]}>
+              {DIAL_CODES[c.code] ? `+${DIAL_CODES[c.code]} ${c.code}` : c.code}
+            </option>
+          ))}
+        </select>
         <input
           type="tel"
           autoComplete="tel"
@@ -251,11 +264,6 @@ function DeliverySection({
           onChange={(e) => set("phone", e.target.value)}
           placeholder="Phone"
           className={`${inputClass} w-full`}
-          style={
-            value.countryCode && DIAL_CODES[value.countryCode]
-              ? { paddingLeft: `${12 + (DIAL_CODES[value.countryCode].length + 1) * 8 + 10}px` }
-              : undefined
-          }
         />
       </div>
     </div>
@@ -377,11 +385,19 @@ export function CheckoutForm() {
                 application_context: { shipping_preference: "SET_PROVIDED_ADDRESS" },
                 payer: {
                   ...(contactEmail ? { email_address: contactEmail } : {}),
+                  ...(shipping.firstName || shipping.lastName
+                    ? {
+                        name: {
+                          given_name: shipping.firstName || undefined,
+                          surname: shipping.lastName || undefined,
+                        },
+                      }
+                    : {}),
                   ...(shipping.phone.replace(/\D/g, "")
                     ? {
                         phone: {
                           phone_number: {
-                            country_code: DIAL_CODES[shipping.countryCode] ?? "",
+                            country_code: DIAL_CODES[shipping.phoneCountryCode || shipping.countryCode] ?? "",
                             national_number: shipping.phone.replace(/\D/g, ""),
                           },
                         },
