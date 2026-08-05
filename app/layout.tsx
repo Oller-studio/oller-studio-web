@@ -27,13 +27,13 @@ const SITE_DESCRIPTION =
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.oller.studio"),
   title: {
-    default: "OLLER — Sculptural Objects d'Art",
+    default: "OLLER — Objects d'Art",
     template: "%s | OLLER",
   },
   description: SITE_DESCRIPTION,
   alternates: { canonical: "/" },
   openGraph: {
-    title: "OLLER — Sculptural Objects d'Art",
+    title: "OLLER — Objects d'Art",
     description: SITE_DESCRIPTION,
     url: "https://www.oller.studio",
     siteName: "OLLER",
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "OLLER — Sculptural Objects d'Art",
+    title: "OLLER — Objects d'Art",
     description: SITE_DESCRIPTION,
     images: ["/images/home/hero.jpg"],
   },
