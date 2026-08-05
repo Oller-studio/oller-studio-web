@@ -50,7 +50,7 @@ export function ApplePayButton({
   onCaptured,
 }: {
   shipping: ShippingAddressInput;
-  onCaptured: () => void;
+  onCaptured: (orderId: string) => void;
 }) {
   const { subtotal, items } = useCart();
   const [eligible, setEligible] = useState(false);
@@ -125,7 +125,7 @@ export function ApplePayButton({
           shippingContact: event.payment.shippingContact,
         });
         session.completePayment(window.ApplePaySession!.STATUS_SUCCESS);
-        onCaptured();
+        onCaptured(orderId);
       } catch {
         session.completePayment(window.ApplePaySession!.STATUS_FAILURE);
       }
