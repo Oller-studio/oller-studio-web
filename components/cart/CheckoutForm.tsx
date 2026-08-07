@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { PayPalButtons, PayPalScriptProvider } from "@paypal/react-paypal-js";
@@ -246,6 +246,35 @@ export function CheckoutForm() {
   const currency = items[0]?.currency ?? "USD";
   const signedIn = clerkConfigured && isLoaded && isSignedIn;
   const contactEmail = signedIn ? user.primaryEmailAddress?.emailAddress ?? "" : email;
+
+  // Best-effort capture of intent to buy well before payment — Order rows
+  // (and the abandoned-checkout recovery emails they drive) only exist once
+  // someone clicks a payment button, so without this, anyone who fills in
+  // their email but never gets that far is invisible to us. Debounced so it
+  // doesn't fire on every keystroke, and only re-sent if the email actually
+  // changes.
+  const lastCapturedEmail = useRef<string | null>(null);
+  useEffect(() => {
+    if (!isValidEmail(contactEmail) || contactEmail === lastCapturedEmail.current) return;
+    const timeout = setTimeout(() => {
+      lastCapturedEmail.current = contactEmail;
+      fetch("/api/checkout-lead", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: contactEmail,
+          items: items.map((i) => ({
+            slug: i.slug,
+            name: i.name,
+            price: i.price,
+            quantity: i.quantity,
+          })),
+          currency,
+        }),
+      }).catch(() => {});
+    }, 1500);
+    return () => clearTimeout(timeout);
+  }, [contactEmail, items, currency]);
 
   // Stashes what the confirmation page needs (it can't read this component's
   // React state — it's reached via a full navigation) then redirects there.
