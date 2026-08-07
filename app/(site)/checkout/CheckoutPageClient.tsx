@@ -7,7 +7,14 @@ import { CheckoutForm } from "@/components/cart/CheckoutForm";
 import { formatPrice } from "@/lib/format";
 
 export function CheckoutPageClient() {
-  const { items, subtotal } = useCart();
+  const { items, subtotal, hydrated } = useCart();
+
+  // Cart state comes from localStorage, read in an effect after mount — on
+  // the very first render items is always [], hydrated or not. Waiting
+  // avoids flashing "Your bag is empty" for a frame on every fresh
+  // navigation here (a full-page redirect, e.g. after Google sign-in,
+  // rather than an in-app Link click) before the real cart loads in.
+  if (!hydrated) return null;
 
   if (items.length === 0) {
     return (

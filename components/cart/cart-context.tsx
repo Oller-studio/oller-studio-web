@@ -5,6 +5,11 @@ import type { CartItem } from "@/lib/types";
 
 type CartContextValue = {
   items: CartItem[];
+  // False until the cart has finished reading localStorage — pages that
+  // branch on "cart is empty" (checkout) should wait for this instead of
+  // trusting items.length on the very first render, which is always []
+  // before hydration and would otherwise flash an incorrect empty state.
+  hydrated: boolean;
   isOpen: boolean;
   open: () => void;
   close: () => void;
@@ -81,6 +86,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     <CartContext.Provider
       value={{
         items,
+        hydrated,
         isOpen,
         open: () => setIsOpen(true),
         close: () => setIsOpen(false),
