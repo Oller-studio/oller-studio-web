@@ -164,9 +164,9 @@ export default async function AnalyticsPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-3xl font-semibold">Analytics</h1>
-        <div className="flex w-fit gap-1 rounded-full border border-border p-1 text-sm">
+        <div className="flex w-fit max-w-full gap-1 overflow-x-auto rounded-full border border-border p-1 text-sm">
           {DATE_RANGES.map((r) => (
             <Link
               key={r.key}
@@ -184,7 +184,7 @@ export default async function AnalyticsPage({
       </div>
 
       {/* 1. Top-line outcomes — the numbers that answer "how's the business doing". */}
-      <div className="grid grid-cols-3 gap-4 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
         {[
           {
             label: "Visitors",
@@ -283,7 +283,7 @@ export default async function AnalyticsPage({
 
       {/* 3. Diagnostics — where people drop off and which channels convert. */}
       <div className="flex flex-wrap gap-4">
-        <div className={`${boxClass} w-72 shrink-0`}>
+        <div className={`${boxClass} w-full sm:w-72 sm:shrink-0`}>
           <MetricLabel
             label="Funnel"
             description="Same visitors, tracked through each step from Home visit to purchase."
@@ -328,7 +328,7 @@ export default async function AnalyticsPage({
           </div>
         </div>
 
-        <div className={`${boxClass} w-72 shrink-0`}>
+        <div className={`${boxClass} w-full sm:w-72 sm:shrink-0`}>
           <MetricLabel
             label="Traffic channels"
             description="Where sessions came from on their first visit, grouped into Direct, Search, Social, Ads, and Referral."
@@ -357,7 +357,7 @@ export default async function AnalyticsPage({
           )}
         </div>
 
-        <div className="flex min-w-[320px] flex-1 flex-col gap-2 rounded-xl border border-border bg-background p-3">
+        <div className="flex w-full min-w-0 flex-1 flex-col gap-2 rounded-xl border border-border bg-background p-3 sm:min-w-[320px]">
           <MetricLabel
             label="Traffic by source"
             description="Same as Traffic channels, but broken out by the exact source (Instagram, Google, a UTM tag…) instead of the coarse bucket."
@@ -462,7 +462,7 @@ export default async function AnalyticsPage({
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className={boxClass}>
           <MetricLabel
             label="Conversion rate over time"
@@ -493,7 +493,7 @@ export default async function AnalyticsPage({
       </div>
 
       {/* 4. Timing patterns — when people show up, useful for content/social scheduling. */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className={boxClass}>
           <MetricLabel
             label="Traffic by day of week"
@@ -528,7 +528,7 @@ export default async function AnalyticsPage({
       {/* Buyers specifically — different question than "who visits" above:
           what device/payment method do the people who actually pay use. */}
       <p className="text-xs font-semibold uppercase tracking-wide text-muted">Buyers</p>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className={boxClass}>
           <MetricLabel
             label="Orders by device"
@@ -555,7 +555,7 @@ export default async function AnalyticsPage({
       </div>
 
       {/* 6. Long-tail detail tables. */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className={boxClass}>
           <MetricLabel
             label="Top pages"
@@ -564,29 +564,31 @@ export default async function AnalyticsPage({
           {topPages.length === 0 ? (
             <p className="text-sm text-muted">No page views yet in this range.</p>
           ) : (
-            <table className="border-collapse text-sm">
-              <thead>
-                <tr className="text-xs font-semibold uppercase tracking-wide text-muted">
-                  <th className="py-1 pr-4 text-left">Page</th>
-                  <th className="py-1 pr-4 text-right">Views</th>
-                  <th className="py-1 text-right">Unique</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {topPages.map((p) => (
-                  <tr key={p.path}>
-                    <td className="py-1.5 pr-4">
-                      {p.label}
-                      {p.label !== p.path && (
-                        <span className="ml-1.5 text-xs text-muted">{p.path}</span>
-                      )}
-                    </td>
-                    <td className="py-1.5 pr-4 text-right">{p.views}</td>
-                    <td className="py-1.5 text-right text-muted">{p.uniques}</td>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-sm">
+                <thead>
+                  <tr className="text-xs font-semibold uppercase tracking-wide text-muted">
+                    <th className="py-1 pr-4 text-left">Page</th>
+                    <th className="py-1 pr-4 text-right">Views</th>
+                    <th className="py-1 text-right">Unique</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {topPages.map((p) => (
+                    <tr key={p.path}>
+                      <td className="py-1.5 pr-4 whitespace-nowrap">
+                        {p.label}
+                        {p.label !== p.path && (
+                          <span className="ml-1.5 text-xs text-muted">{p.path}</span>
+                        )}
+                      </td>
+                      <td className="py-1.5 pr-4 text-right">{p.views}</td>
+                      <td className="py-1.5 text-right text-muted">{p.uniques}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
 
@@ -598,28 +600,30 @@ export default async function AnalyticsPage({
           {topProducts.length === 0 ? (
             <p className="text-sm text-muted">No bag views yet in this range.</p>
           ) : (
-            <table className="border-collapse text-sm">
-              <thead>
-                <tr className="text-xs font-semibold uppercase tracking-wide text-muted">
-                  <th className="py-1 pr-4 text-left">Bag</th>
-                  <th className="py-1 pr-4 text-right">Views</th>
-                  <th className="py-1 text-right">Unique</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {topProducts.map((p) => (
-                  <tr key={p.slug}>
-                    <td className="py-1.5 pr-4">
-                      <Link href={`/shop/${p.slug}`} target="_blank" className="hover:underline">
-                        {p.name}
-                      </Link>
-                    </td>
-                    <td className="py-1.5 pr-4 text-right">{p.views}</td>
-                    <td className="py-1.5 text-right text-muted">{p.uniques}</td>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-sm">
+                <thead>
+                  <tr className="text-xs font-semibold uppercase tracking-wide text-muted">
+                    <th className="py-1 pr-4 text-left">Bag</th>
+                    <th className="py-1 pr-4 text-right">Views</th>
+                    <th className="py-1 text-right">Unique</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {topProducts.map((p) => (
+                    <tr key={p.slug}>
+                      <td className="py-1.5 pr-4 whitespace-nowrap">
+                        <Link href={`/shop/${p.slug}`} target="_blank" className="hover:underline">
+                          {p.name}
+                        </Link>
+                      </td>
+                      <td className="py-1.5 pr-4 text-right">{p.views}</td>
+                      <td className="py-1.5 text-right text-muted">{p.uniques}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>
