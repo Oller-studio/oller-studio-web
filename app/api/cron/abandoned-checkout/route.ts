@@ -43,10 +43,13 @@ const STEPS = [
   },
 ] as const;
 
-// Meant to be hit every 15-30 min by something external — Vercel Cron on a
-// Pro plan, or a free pinger (cron-job.org etc.) on Hobby, since Hobby only
-// allows once-daily Vercel Crons. Not a Vercel-specific route on purpose:
-// auth is just a shared secret, so any scheduler works.
+// Ideally hit every 15-30 min so the ~60min Reminder step actually fires
+// close to abandonment, but this account is on Vercel's Hobby plan, which
+// only allows once-daily Cron Jobs (see vercel.json) — so for now every
+// step effectively runs on a daily sweep instead. Not a Vercel-specific
+// route on purpose: auth is just a shared secret, so a free external pinger
+// (cron-job.org etc.) can hit this on a tighter schedule without needing a
+// Pro upgrade, whenever tighter timing is worth setting that up.
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;
   const auth = request.headers.get("authorization");
