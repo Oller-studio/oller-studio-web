@@ -126,7 +126,7 @@ export function AccountControl({ className, variant = "dropdown" }: AccountContr
 
   return (
     <button type="button" onClick={open} className={className}>
-      Account
+      Login
     </button>
   );
 }
