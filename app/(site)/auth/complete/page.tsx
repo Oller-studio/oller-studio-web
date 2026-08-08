@@ -42,11 +42,21 @@ function AuthCompleteInner() {
     signIn
       .ticket({ ticket })
       .then(async ({ error: ticketError }) => {
-        if (ticketError || signIn.status !== "complete") {
+        if (ticketError) {
           setError("ticket_failed");
           return;
         }
-        await signIn.finalize();
+        // No manual signIn.status check here — same as AuthModal.tsx's
+        // email-code flow, which trusts finalize()'s own error instead.
+        // signIn is a stale closure reference at this point (it's from the
+        // effect's render, not a live re-render), so its .status can still
+        // read the pre-ticket value even though the ticket exchange
+        // genuinely succeeded — checking it here caused false failures.
+        const { error: finalizeError } = await signIn.finalize();
+        if (finalizeError) {
+          setError("ticket_failed");
+          return;
+        }
         router.replace(redirectTo);
       })
       .catch(() => setError("ticket_failed"));
