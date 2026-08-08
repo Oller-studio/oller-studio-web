@@ -2,7 +2,7 @@
 
 // Note: metadata (noindex) for this route lives in ./layout.tsx — a "use
 // client" page can't export it directly.
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSignIn } from "@clerk/nextjs";
 
@@ -22,9 +22,14 @@ function AuthCompleteInner() {
   const searchParams = useSearchParams();
   const { signIn } = useSignIn();
   const [error, setError] = useState<string | null>(searchParams.get("error"));
+  // Sign-in tokens are single-use — Clerk rejects a second redemption. React
+  // Strict Mode double-invokes effects in dev, and without this guard the
+  // second call would fail right after the first one actually succeeded,
+  // showing an error even though the sign-in already went through.
+  const consumedRef = useRef(false);
 
   useEffect(() => {
-    if (!signIn || error) return;
+    if (!signIn || error || consumedRef.current) return;
 
     const ticket = searchParams.get("ticket");
     const redirectTo = searchParams.get("redirect_to") || "/";
@@ -33,6 +38,7 @@ function AuthCompleteInner() {
       return;
     }
 
+    consumedRef.current = true;
     signIn
       .ticket({ ticket })
       .then(async ({ error: ticketError }) => {
