@@ -62,6 +62,24 @@ model Order {
   items             OrderItem[]
 }
 
+// Captured the moment a checkout visitor types a valid email — before they
+// ever click a payment button. Order rows only get created once someone
+// actually starts a real PayPal transaction (see Order's own comment
+// above), so without this, anyone who fills in their email/address but
+// never clicks pay is completely invisible to us, with no way to follow
+// up. Gets one soft nudge only (not the full 3-step Order sequence) — a
+// colder signal deserves a lighter touch — and is skipped entirely once a
+// matching real Order shows up for the same email, so nobody gets
+// double-emailed.
+model CheckoutLead {
+  id         String    @id @default(cuid())
+  email      String    @unique
+  items      String
+  currency   String
+  createdAt  DateTime  @default(now())
+  notifiedAt DateTime?
+}
+
 model OrderItem {
   id              String @id @default(cuid())
   order           Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
@@ -432,4 +450,30 @@ model Inquiry {
   message   String
   resolved  Boolean?
   createdAt DateTime @default(now())
+  messages  SupportMessage[]
+  // Small fixed set (see TAGS in lib/inquiries.ts) — defaults from `kind`/
+  // `subject` at creation, but always admin-editable from Support after.
+  // Null on a raw inbound email means "not triaged yet".
+  tag       String?
+}
+
+// One row per email in a ticket's thread — the original submission (Contact
+// form, Collab form, or a cold email that came straight to hello@) plus
+// every reply after it, in and out. `direction` is "inbound" (from the
+// customer) or "outbound" (from us).
+model SupportMessage {
+  id         String   @id @default(cuid())
+  inquiry    Inquiry  @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+  inquiryId  String
+  direction  String
+  fromEmail  String
+  fromName   String?
+  subject    String?
+  body       String
+  // Resend's id for this message — the outbound send id, or the inbound
+  // email's id (used to de-duplicate if the webhook ever redelivers).
+  resendId   String?  @unique
+  createdAt  DateTime @default(now())
+
+  @@index([inquiryId])
 }
