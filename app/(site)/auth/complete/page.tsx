@@ -4,7 +4,7 @@
 // client" page can't export it directly.
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useSignIn } from "@clerk/nextjs";
+import { useSignIn, useUser } from "@clerk/nextjs";
 
 const ERROR_MESSAGES: Record<string, string> = {
   google_denied: "Google sign-in was cancelled.",
@@ -21,6 +21,7 @@ function AuthCompleteInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { signIn } = useSignIn();
+  const { isLoaded: userLoaded, isSignedIn } = useUser();
   const [error, setError] = useState<string | null>(searchParams.get("error"));
   // Sign-in tokens are single-use — Clerk rejects a second redemption. React
   // Strict Mode double-invokes effects in dev, and without this guard the
@@ -29,18 +30,35 @@ function AuthCompleteInner() {
   const consumedRef = useRef(false);
 
   useEffect(() => {
-    if (!signIn || error || consumedRef.current) return;
+    if (!signIn || !userLoaded || error || consumedRef.current) return;
+
+    const redirectTo = searchParams.get("redirect_to") || "/";
+
+    // Already signed in (e.g. clicking "Continue with Google" again with an
+    // existing session, or Strict Mode's first pass having already
+    // finished the real work) — nothing left to do, and attempting another
+    // ticket exchange on top of a live session is what was producing
+    // spurious failures here.
+    if (isSignedIn) {
+      consumedRef.current = true;
+      router.replace(redirectTo);
+      return;
+    }
 
     const ticket = searchParams.get("ticket");
-    const redirectTo = searchParams.get("redirect_to") || "/";
     if (!ticket) {
       Promise.resolve().then(() => setError("missing_params"));
       return;
     }
 
     consumedRef.current = true;
+    // Clears any stale/incomplete attempt left over from a previous try —
+    // same as AuthModal.tsx's email flow, which always resets before
+    // starting fresh. Without this, a half-finished prior attempt could
+    // block this one from ever reaching "complete".
     signIn
-      .ticket({ ticket })
+      .reset()
+      .then(() => signIn.ticket({ ticket }))
       .then(async ({ error: ticketError }) => {
         if (ticketError) {
           setError("ticket_failed");
@@ -60,7 +78,7 @@ function AuthCompleteInner() {
         router.replace(redirectTo);
       })
       .catch(() => setError("ticket_failed"));
-  }, [signIn, searchParams, router, error]);
+  }, [signIn, userLoaded, isSignedIn, searchParams, router, error]);
 
   return (
     <main className="mx-auto flex max-w-md flex-col items-center gap-4 px-6 py-24 text-center">
