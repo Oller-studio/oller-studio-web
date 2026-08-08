@@ -223,7 +223,8 @@ function AuthModalDialog({ close }: { close: () => void }) {
           <>
             <h2 className="font-display text-3xl font-semibold">My account</h2>
             <p className="mt-2 text-sm text-muted">
-              Access your favorites and orders with your email — no passwords.
+              Sign in or create an account with just your email — no passwords, no account
+              needed beforehand.
             </p>
             <a
               href={`/api/auth/google?redirect_to=${encodeURIComponent(
