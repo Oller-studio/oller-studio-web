@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { sendContactInquiry, sendContactConfirmation } from "@/lib/resend";
 import { isRateLimited, clientIp } from "@/lib/rateLimit";
 import { prisma } from "@/lib/db";
+import { defaultTagFor } from "@/lib/inquiries";
 
 export async function POST(request: Request) {
   if (isRateLimited(`contact:${clientIp(request.headers)}`, 5, 60_000)) {
@@ -31,7 +32,7 @@ export async function POST(request: Request) {
   }
 
   const inquiry = await prisma.inquiry.create({
-    data: { kind: "contact", firstName, lastName, email, subject, message },
+    data: { kind: "contact", firstName, lastName, email, subject, message, tag: defaultTagFor("contact", subject) },
   });
 
   await sendContactConfirmation(firstName, email, subject, inquiry.id);

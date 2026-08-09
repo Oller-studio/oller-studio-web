@@ -10,6 +10,21 @@ datasource db {
   provider = "postgresql"
 }
 
+// From feature/checkout-lead-capture (not yet merged) — this table already
+// exists on the shared dev database because that branch applied its
+// migration directly. Model kept here just so this branch's migration
+// history stays consistent with reality; the actual capture logic
+// (app/api/checkout-lead, CheckoutForm changes) lives on that branch, not
+// here — do not build against this model until that PR merges.
+model CheckoutLead {
+  id         String    @id @default(cuid())
+  email      String    @unique
+  items      String
+  currency   String
+  createdAt  DateTime  @default(now())
+  notifiedAt DateTime?
+}
+
 // Created PENDING the moment checkout starts (so we can see abandoned
 // checkouts), then flipped to COMPLETED by the PayPal webhook — never by the
 // browser — so "sales" reflects money that actually moved.
@@ -432,4 +447,64 @@ model Inquiry {
   message   String
   resolved  Boolean?
   createdAt DateTime @default(now())
+  messages  SupportMessage[]
+  // Small fixed set (see TAGS in lib/inquiries.ts) — defaults from `kind`/
+  // `subject` at creation, but always admin-editable from Support after.
+  // Null on a raw inbound email means "not triaged yet".
+  tag       String?
+  // Unread until opened in Support, or bulk-marked — same idea as any
+  // email client, independent of `resolved` (a read ticket can still be
+  // unresolved, and vice versa).
+  read      Boolean  @default(false)
+  // Pinned for follow-up — its own sidebar view in Support, independent of
+  // tag/resolved/read.
+  starred   Boolean  @default(false)
+}
+
+// An email address marked spam from Support — future inbound emails from
+// it are auto-tagged "spam" on arrival (see the webhook) instead of
+// showing up untriaged. Un-spamming a ticket removes the sender from here
+// too, so they're not silently stuck being auto-spammed after a correction.
+model BlockedSender {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
+
+// A real newsletter subscriber, captured from /api/newsletter-signup (the
+// footer form and the checkout opt-in both hit that one route). Kept even
+// after unsubscribing — with `unsubscribedAt` set — so re-signup just
+// clears it instead of hitting the unique constraint, and so we never
+// accidentally re-email someone who opted out.
+model Subscriber {
+  id               String    @id @default(cuid())
+  email            String    @unique
+  // Unguessable, used in the one-click unsubscribe link — not the row id,
+  // so that alone can't be used to probe/enumerate subscriber rows.
+  unsubscribeToken String    @unique @default(cuid())
+  createdAt        DateTime  @default(now())
+  unsubscribedAt   DateTime?
+}
+
+// One row per email in a ticket's thread — the original submission (Contact
+// form, Collab form, or a cold email that came straight to hello@) plus
+// every reply after it, in and out. `direction` is "inbound" (from the
+// customer, via the Resend inbound webhook or the original form submit) or
+// "outbound" (sent from the admin's reply box). Lets /admin/support show a
+// real conversation instead of just the first message.
+model SupportMessage {
+  id         String   @id @default(cuid())
+  inquiry    Inquiry  @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+  inquiryId  String
+  direction  String
+  fromEmail  String
+  fromName   String?
+  subject    String?
+  body       String
+  // Resend's id for this message — the outbound send id, or the inbound
+  // email's id (used to de-duplicate if the webhook ever redelivers).
+  resendId   String?  @unique
+  createdAt  DateTime @default(now())
+
+  @@index([inquiryId])
 }
