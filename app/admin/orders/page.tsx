@@ -212,6 +212,14 @@ export default async function AdminOrdersPage({
                   <tr key={o.id}>
                     <td className="whitespace-nowrap py-3 pl-5 pr-7 text-xs font-semibold text-muted">
                       {formatOrderNumber(o.id)}
+                      {o.paymentFailedAt && (
+                        <span
+                          className="ml-2 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent"
+                          title={`PayPal declined this payment on ${o.paymentFailedAt.toLocaleString()}`}
+                        >
+                          Payment declined
+                        </span>
+                      )}
                     </td>
                     <td className="whitespace-nowrap py-3 pr-7 text-xs text-muted">
                       {o.createdAt.toLocaleDateString()}

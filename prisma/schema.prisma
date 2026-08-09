@@ -59,6 +59,13 @@ model Order {
   // step at a time, and only for orders still not completed — a completed
   // order simply stops matching the cron's query, ending the sequence.
   abandonedEmailStep   Int       @default(0)
+  // Set when PayPal reports a capture was denied (declined card, failed
+  // risk review, etc.) — deliberately doesn't change `status`, so the
+  // order stays "PENDING" and keeps getting the normal abandoned-checkout
+  // recovery sequence (a failed attempt is still real purchase intent,
+  // arguably more so than a plain abandon). Purely for admin visibility:
+  // distinguishes "never tried to pay" from "tried and it was declined".
+  paymentFailedAt      DateTime?
   items             OrderItem[]
 }
 
@@ -455,6 +462,34 @@ model Inquiry {
   // `subject` at creation, but always admin-editable from Support after.
   // Null on a raw inbound email means "not triaged yet".
   tag       String?
+  // Unread until opened in Support, or bulk-marked — same idea as any
+  // email client, independent of `resolved` (a read ticket can still be
+  // unresolved, and vice versa).
+  read      Boolean  @default(false)
+  // Pinned for follow-up — its own sidebar view in Support, independent of
+  // tag/resolved/read.
+  starred   Boolean  @default(false)
+}
+
+model BlockedSender {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
+
+// A real newsletter subscriber, captured from /api/newsletter-signup (the
+// footer form and the checkout opt-in both hit that one route). Kept even
+// after unsubscribing — with `unsubscribedAt` set — so re-signup just
+// clears it instead of hitting the unique constraint, and so we never
+// accidentally re-email someone who opted out.
+model Subscriber {
+  id               String    @id @default(cuid())
+  email            String    @unique
+  // Unguessable, used in the one-click unsubscribe link — not the row id,
+  // so that alone can't be used to probe/enumerate subscriber rows.
+  unsubscribeToken String    @unique @default(cuid())
+  createdAt        DateTime  @default(now())
+  unsubscribedAt   DateTime?
 }
 
 // One row per email in a ticket's thread — the original submission (Contact
