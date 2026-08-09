@@ -3,6 +3,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { getOrderById } from "@/lib/orders";
 import { getOrderStatus } from "@/lib/fulfillment";
 import { formatOrderNumber } from "@/lib/format";
+import { getPrintMinutes } from "@/lib/finance";
 
 // Gated by sign-in, not just an unguessable link — the order-confirmation
 // email always points here, whether or not the buyer had an account when
@@ -25,6 +26,11 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   }
 
   const status = getOrderStatus(order.status, order.fulfillmentStatus);
+  // Same convention as the admin production queue: print time is a spec of
+  // the product, not the order, so it's looked up by the first item's
+  // colorway rather than stored per-order.
+  const printMinutesBySlug = await getPrintMinutes();
+  const printMinutes = printMinutesBySlug[order.items[0]?.colorwaySlug] ?? null;
 
   return NextResponse.json({
     ok: true,
@@ -34,6 +40,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       amountCents: order.amountCents,
       currency: order.currency,
       status: status.label,
+      startedPrintingAt: order.startedPrintingAt,
+      printMinutes,
       items: order.items.map((i) => ({
         id: i.id,
         name: i.name,

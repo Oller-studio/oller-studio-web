@@ -65,7 +65,7 @@ export default async function Home() {
             const cell = (
               <div className="relative aspect-[2/3] overflow-hidden bg-border">
                 {media?.type === "video" ? (
-                  <AutoplayVideo className="h-full w-full object-cover" src={media.src} />
+                  <AutoplayVideo className="h-full w-full object-cover" src={media.src} lazy />
                 ) : media?.type === "image" ? (
                   <Image
                     src={media.src}

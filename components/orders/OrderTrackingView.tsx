@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useAuthModal } from "@/components/auth/auth-modal-context";
-import { formatMoneyCents } from "@/lib/format";
+import { formatMoneyCents, formatPrintTime } from "@/lib/format";
 
 const STAGES = ["Ordered", "Printing", "Packaging", "Sending", "Completed"];
+const PRINTING_STAGE_INDEX = STAGES.indexOf("Printing");
 
 type TrackedOrder = {
   orderNumber: string;
@@ -13,6 +14,8 @@ type TrackedOrder = {
   amountCents: number;
   currency: string;
   status: string;
+  startedPrintingAt: string | null;
+  printMinutes: number | null;
   items: { id: string; name: string; quantity: number; unitAmountCents: number }[];
 };
 
@@ -21,6 +24,9 @@ export function OrderTrackingView({ orderId }: { orderId: string }) {
   const { open } = useAuthModal();
   const [order, setOrder] = useState<TrackedOrder | null>(null);
   const [error, setError] = useState<"not_found" | "not_yours" | null>(null);
+  // Ticks while printing is live so the fill bar and time-left estimate move
+  // on their own, without the buyer needing to refresh the page.
+  const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     if (!isSignedIn) return;
@@ -39,6 +45,12 @@ export function OrderTrackingView({ orderId }: { orderId: string }) {
       })
       .catch(() => setError("not_found"));
   }, [isSignedIn, orderId]);
+
+  useEffect(() => {
+    if (!order?.startedPrintingAt || order.printMinutes == null) return;
+    const interval = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(interval);
+  }, [order?.startedPrintingAt, order?.printMinutes]);
 
   if (!isLoaded) return null;
 
@@ -88,6 +100,18 @@ export function OrderTrackingView({ orderId }: { orderId: string }) {
 
   const currentStep = STAGES.indexOf(order.status);
 
+  const isPrintingLive =
+    currentStep === PRINTING_STAGE_INDEX && order.startedPrintingAt != null && order.printMinutes != null;
+  const printElapsedMinutes = isPrintingLive
+    ? (now - new Date(order.startedPrintingAt!).getTime()) / 60_000
+    : 0;
+  const printPct = isPrintingLive
+    ? Math.min(100, Math.max(0, Math.round((printElapsedMinutes / order.printMinutes!) * 100)))
+    : null;
+  const printMinutesLeft = isPrintingLive
+    ? Math.max(0, order.printMinutes! - printElapsedMinutes)
+    : null;
+
   return (
     <main className="mx-auto max-w-2xl px-6 py-20">
       <h1 className="font-display text-4xl font-bold">Order {order.orderNumber}</h1>
@@ -96,23 +120,40 @@ export function OrderTrackingView({ orderId }: { orderId: string }) {
       {order.status === "Refunded" ? (
         <p className="mt-8 text-sm font-semibold uppercase tracking-wide text-muted">Refunded</p>
       ) : (
-        <div className="mt-10 flex items-center justify-between gap-1">
-          {STAGES.map((stage, i) => (
-            <div key={stage} className="flex flex-1 flex-col items-center gap-2">
-              <div
-                className={`h-2 w-full ${
-                  i <= currentStep ? "bg-foreground" : "bg-border"
-                } ${i === 0 ? "rounded-l-full" : ""} ${i === STAGES.length - 1 ? "rounded-r-full" : ""}`}
-              />
-              <span
-                className={`text-xs uppercase tracking-wide ${
-                  i === currentStep ? "font-semibold text-foreground" : "text-muted"
-                }`}
-              >
-                {stage}
-              </span>
-            </div>
-          ))}
+        <div className="mt-10 flex items-start justify-between gap-1">
+          {STAGES.map((stage, i) => {
+            const isCurrentPrinting = i === PRINTING_STAGE_INDEX && isPrintingLive;
+            return (
+              <div key={stage} className="flex flex-1 flex-col items-center gap-2">
+                <div
+                  className={`h-2 w-full overflow-hidden ${
+                    isCurrentPrinting ? "bg-border" : i <= currentStep ? "bg-foreground" : "bg-border"
+                  } ${i === 0 ? "rounded-l-full" : ""} ${i === STAGES.length - 1 ? "rounded-r-full" : ""}`}
+                >
+                  {isCurrentPrinting && (
+                    <div
+                      className="h-full bg-foreground transition-all"
+                      style={{ width: `${printPct}%` }}
+                    />
+                  )}
+                </div>
+                <span
+                  className={`text-xs uppercase tracking-wide ${
+                    i === currentStep ? "font-semibold text-foreground" : "text-muted"
+                  }`}
+                >
+                  {stage}
+                </span>
+                {isCurrentPrinting && printMinutesLeft !== null && (
+                  <span className="text-[10px] text-muted">
+                    {printMinutesLeft > 0
+                      ? `${formatPrintTime(Math.round(printMinutesLeft))} left`
+                      : "Almost there"}
+                  </span>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 

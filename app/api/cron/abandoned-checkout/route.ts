@@ -43,10 +43,13 @@ const STEPS = [
   },
 ] as const;
 
-// Meant to be hit every 15-30 min by something external — Vercel Cron on a
-// Pro plan, or a free pinger (cron-job.org etc.) on Hobby, since Hobby only
-// allows once-daily Vercel Crons. Not a Vercel-specific route on purpose:
-// auth is just a shared secret, so any scheduler works.
+// Ideally hit every 15-30 min so the ~60min Reminder step actually fires
+// close to abandonment, but this account is on Vercel's Hobby plan, which
+// only allows once-daily Cron Jobs (see vercel.json) — so for now every
+// step effectively runs on a daily sweep instead. Not a Vercel-specific
+// route on purpose: auth is just a shared secret, so a free external pinger
+// (cron-job.org etc.) can hit this on a tighter schedule without needing a
+// Pro upgrade, whenever tighter timing is worth setting that up.
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;
   const auth = request.headers.get("authorization");
@@ -120,6 +123,83 @@ export async function GET(request: Request) {
 
     results[stepConfig.type] = { checked: orders.length, sent };
   }
+
+  // Softer, single-touch nudge for people who typed an email but never
+  // clicked pay at all — those never get an Order row, so the 3-step
+  // sequence above never sees them. Reuses the Reminder template/copy
+  // rather than adding a whole separate one to manage. Skipped (but still
+  // marked notified, so it's not re-checked forever) once a matching real
+  // Order shows up for the same email — they progressed further, so that
+  // sequence owns their follow-up instead of double-emailing.
+  const leadTemplate = await getEmailTemplate(ABANDONED_CHECKOUT_TEMPLATE_KEY);
+  let leadsSent = 0;
+  let leadsChecked = 0;
+  if (leadTemplate.active !== false) {
+    const leadDelayMinutes = leadTemplate.delayMinutes ?? DEFAULT_ABANDONED_CHECKOUT_DELAY_MINUTES;
+    const leadCutoff = new Date(Date.now() - leadDelayMinutes * 60 * 1000);
+    const leads = await prisma.checkoutLead.findMany({
+      where: { notifiedAt: null, createdAt: { lte: leadCutoff } },
+    });
+    leadsChecked = leads.length;
+
+    for (const lead of leads) {
+      const hasRealOrder = await prisma.order.findFirst({
+        where: { payerEmail: lead.email, createdAt: { gte: lead.createdAt } },
+      });
+      if (hasRealOrder) {
+        await prisma.checkoutLead.update({
+          where: { id: lead.id },
+          data: { notifiedAt: new Date() },
+        });
+        continue;
+      }
+
+      const leadItems = JSON.parse(lead.items) as {
+        slug: string;
+        name: string;
+        price: number;
+        quantity: number;
+      }[];
+      if (leadItems.length === 0) continue;
+
+      const totalQuantity = leadItems.reduce((sum, i) => sum + i.quantity, 0);
+      const vars = { firstName: "there", ...pieceVars(totalQuantity) };
+      const subject = fillTemplate(leadTemplate.subject, vars);
+      const message = fillTemplate(leadTemplate.message, vars);
+
+      const colorways = await prisma.colorway.findMany({
+        where: { slug: { in: leadItems.map((i) => i.slug) } },
+        select: { slug: true, images: true },
+      });
+      const itemImages = Object.fromEntries(
+        colorways.map((c) => [c.slug, (JSON.parse(c.images) as string[])[0] ?? null]),
+      );
+      const link = `${siteUrl}/shop/${leadItems[0].slug}`;
+
+      const ok = await sendAbandonedCheckoutEmail(
+        lead.email,
+        subject,
+        message,
+        leadItems.map((i) => ({
+          name: i.name,
+          quantity: i.quantity,
+          unitAmountCents: Math.round(i.price * 100),
+          colorwaySlug: i.slug,
+        })),
+        itemImages,
+        lead.currency,
+        link,
+        "checkout_lead",
+        "COMPLETE YOUR ORDER",
+      );
+      if (ok) leadsSent += 1;
+      await prisma.checkoutLead.update({
+        where: { id: lead.id },
+        data: { notifiedAt: new Date() },
+      });
+    }
+  }
+  results.checkout_lead = { checked: leadsChecked, sent: leadsSent };
 
   return NextResponse.json({ ok: true, results });
 }
