@@ -233,6 +233,11 @@ export function CheckoutForm() {
   const { isLoaded, isSignedIn, user } = useUser();
   const router = useRouter();
   const [redirecting, setRedirecting] = useState(false);
+  // A declined card, cancelled PayPal popup, or network hiccup during
+  // capture all used to fail completely silently — the buyer just saw the
+  // button reset with zero explanation. This surfaces something actionable
+  // instead, without losing what they've already typed into the form.
+  const [paymentError, setPaymentError] = useState<string | null>(null);
   // Checked by default — this isn't marketing consent, it's a service
   // perk tied directly to the purchase (order tracking), so defaulting it
   // on is fine. The newsletter checkbox below stays unchecked by default;
@@ -347,6 +352,11 @@ export function CheckoutForm() {
           }}
         >
           <div className="flex flex-col gap-3 pt-2">
+            {paymentError && (
+              <p className="rounded-lg border border-accent/40 bg-accent/5 px-3 py-2 text-sm text-accent">
+                {paymentError}
+              </p>
+            )}
             <ApplePayButton
               shipping={{
                 fullName: shippingName,
@@ -356,6 +366,11 @@ export function CheckoutForm() {
                 postalCode: shipping.postalCode,
                 countryCode: shipping.countryCode,
               }}
+              onError={() =>
+                setPaymentError(
+                  "Apple Pay couldn't complete this payment — please try again or use a different payment method."
+                )
+              }
               onCaptured={(orderId) => {
                 if (newsletter && contactEmail) {
                   fetch("/api/newsletter-signup", {
@@ -369,6 +384,18 @@ export function CheckoutForm() {
             />
             <PayPalButtons
               style={{ layout: "vertical", shape: "pill", label: "pay", height: 48 }}
+            onClick={() => setPaymentError(null)}
+            onCancel={() => {
+              // The buyer closed PayPal's popup/redirect partway through —
+              // a real, common choice (changed their mind, wrong account),
+              // not an error. Just let them try again with no scary message.
+              setPaymentError(null);
+            }}
+            onError={() => {
+              setPaymentError(
+                "Something went wrong loading PayPal. Please try again, or use a different payment method."
+              );
+            }}
             createOrder={async (_, actions) => {
               const paypalOrderId = await actions.order.create({
                 intent: "CAPTURE",
@@ -452,7 +479,22 @@ export function CheckoutForm() {
             }}
             onApprove={async (data, actions) => {
               if (!actions.order) return;
-              const capture = await actions.order.capture();
+
+              let capture: Awaited<ReturnType<typeof actions.order.capture>>;
+              try {
+                capture = await actions.order.capture();
+              } catch (error) {
+                console.error("PayPal capture failed", error);
+                // PayPal's own recommended recovery for a declined card —
+                // resets the buttons so the buyer can pick a different
+                // funding source without leaving the page or losing the
+                // shipping details they already filled in.
+                actions.restart();
+                setPaymentError(
+                  "That payment method didn't go through — please try again or use a different card."
+                );
+                return;
+              }
 
               let accountCreated = false;
               if (createAccount) {

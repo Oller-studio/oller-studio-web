@@ -48,9 +48,11 @@ type ApplePaySessionInstance = {
 export function ApplePayButton({
   shipping,
   onCaptured,
+  onError,
 }: {
   shipping: ShippingAddressInput;
   onCaptured: (orderId: string) => void;
+  onError?: () => void;
 }) {
   const { subtotal, items } = useCart();
   const [eligible, setEligible] = useState(false);
@@ -113,6 +115,7 @@ export function ApplePayButton({
         session.completeMerchantValidation(merchantSession);
       } catch {
         session.completePayment(window.ApplePaySession!.STATUS_FAILURE);
+        onError?.();
       }
     };
 
@@ -128,6 +131,7 @@ export function ApplePayButton({
         onCaptured(orderId);
       } catch {
         session.completePayment(window.ApplePaySession!.STATUS_FAILURE);
+        onError?.();
       }
     };
 
