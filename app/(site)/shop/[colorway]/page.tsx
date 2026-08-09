@@ -38,6 +38,14 @@ export async function generateMetadata({
   const title = colorwaySeoTitle(colorway);
   const description = colorwaySeoDescription(colorway);
   const image = colorway.images[0];
+  // Pinterest Rich (Product) Pins read these as plain meta tags regardless
+  // of og:type — same availability mapping as the Product JSON-LD below.
+  const availability =
+    colorway.shopBadge.kind === "sold_out"
+      ? "out of stock"
+      : colorway.shopBadge.kind === "coming_soon"
+        ? "preorder"
+        : "in stock";
   return {
     title,
     description,
@@ -54,6 +62,11 @@ export async function generateMetadata({
       title,
       description,
       images: image ? [image] : undefined,
+    },
+    other: {
+      "product:price:amount": String(colorway.price),
+      "product:price:currency": colorway.product.currency,
+      "product:availability": availability,
     },
   };
 }
