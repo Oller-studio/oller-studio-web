@@ -10,21 +10,6 @@ datasource db {
   provider = "postgresql"
 }
 
-// From feature/checkout-lead-capture (not yet merged) — this table already
-// exists on the shared dev database because that branch applied its
-// migration directly. Model kept here just so this branch's migration
-// history stays consistent with reality; the actual capture logic
-// (app/api/checkout-lead, CheckoutForm changes) lives on that branch, not
-// here — do not build against this model until that PR merges.
-model CheckoutLead {
-  id         String    @id @default(cuid())
-  email      String    @unique
-  items      String
-  currency   String
-  createdAt  DateTime  @default(now())
-  notifiedAt DateTime?
-}
-
 // Created PENDING the moment checkout starts (so we can see abandoned
 // checkouts), then flipped to COMPLETED by the PayPal webhook — never by the
 // browser — so "sales" reflects money that actually moved.
