@@ -3,7 +3,14 @@ import path from "node:path";
 import { getAllColorways } from "@/lib/colorways";
 import { getHomePageRow } from "@/lib/homePage";
 
-export type HeroMedia = { videoSrc: string | null; posterSrc: string | null };
+export type HeroMedia = {
+  videoSrc: string | null;
+  // A vertical/portrait cut for narrow viewports — the landscape videoSrc
+  // looks cropped/off-center on phones. Falls back to videoSrc itself when
+  // no mobile-specific cut has been uploaded.
+  videoSrcMobile: string | null;
+  posterSrc: string | null;
+};
 
 // Hero video/poster — whatever's set from Admin > Pages > Home always wins;
 // an empty field falls back to the original file-drop convention (drop a
@@ -30,7 +37,11 @@ export async function getHeroMedia(): Promise<HeroMedia> {
     }
   }
 
-  return { videoSrc, posterSrc: posterSrc ?? null };
+  return {
+    videoSrc,
+    videoSrcMobile: row.heroVideoMobileUrl ?? videoSrc,
+    posterSrc: posterSrc ?? null,
+  };
 }
 
 export type CarouselSlide = {

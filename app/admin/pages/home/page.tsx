@@ -13,6 +13,7 @@ export default async function AdminHomePagePage() {
       </p>
       <HomePageForm
         initialHeroVideoUrl={row.heroVideoUrl}
+        initialHeroVideoMobileUrl={row.heroVideoMobileUrl}
         initialHeroPosterUrl={row.heroPosterUrl}
         initialEditorial={row.editorial}
       />
