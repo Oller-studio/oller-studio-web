@@ -10,8 +10,7 @@ import {
   getSalesAttribution,
   getTrafficTable,
   getSessionsOverTime,
-  getSessionsByDayOfWeek,
-  getSessionsByHourOfDay,
+  getSessionsByDayAndHourOfDay,
   getConversionRateOverTime,
   getSessionsByDevice,
   getSessionsByLocation,
@@ -103,8 +102,7 @@ export default async function AnalyticsPage({
     trafficTable,
     sessionsOverTime,
     previousSessionsOverTime,
-    dayOfWeek,
-    hourOfDay,
+    dayAndHour,
     conversionOverTime,
     byDevice,
     byLocation,
@@ -124,8 +122,7 @@ export default async function AnalyticsPage({
     getTrafficTable(since),
     getSessionsOverTime(since, hourly),
     getSessionsOverTime(previousSince, hourly, since),
-    getSessionsByDayOfWeek(since),
-    getSessionsByHourOfDay(since),
+    getSessionsByDayAndHourOfDay(since),
     getConversionRateOverTime(since, hourly),
     getSessionsByDevice(since),
     getSessionsByLocation(since),
@@ -499,7 +496,7 @@ export default async function AnalyticsPage({
             label="Traffic by day of week"
             description="Sessions summed by weekday across this whole range — which days actually bring visitors."
           />
-          <CategoryBarChart data={dayOfWeek} />
+          <CategoryBarChart data={dayAndHour.byDayOfWeek} />
         </div>
 
         <div className={boxClass}>
@@ -507,7 +504,7 @@ export default async function AnalyticsPage({
             label="Traffic by hour of day"
             description="Sessions summed by hour (your local time) across this whole range — when people actually show up."
           />
-          <CategoryBarChart data={hourOfDay} />
+          <CategoryBarChart data={dayAndHour.byHourOfDay} />
         </div>
       </div>
 
