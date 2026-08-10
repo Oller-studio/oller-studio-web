@@ -477,8 +477,13 @@ function localParts(date: Date): { hour: number; weekday: number } {
   return { hour: hour % 24, weekday: WEEKDAY_INDEX[weekdayLabel] ?? 0 };
 }
 
-// Groups pageviews into sessions (by first-seen timestamp) once, shared by
-// both the day-of-week and hour-of-day breakdowns below.
+// Groups pageviews into sessions (by first-seen timestamp) once — this is
+// the one genuinely expensive part (fetches every PageView row in range),
+// so getSessionsByDayAndHourOfDay below fetches it exactly once and derives
+// both breakdowns from the same result. (Previously each of those two had
+// its own copy of this function and both called it independently, so the
+// same full-table fetch ran twice per Analytics page load for no reason —
+// a real, measured multi-second chunk of the page's load time.)
 async function firstSeenBySession(since: Date): Promise<Date[]> {
   const rows = await prisma.pageView.findMany({
     where: { createdAt: { gte: since } },
@@ -492,35 +497,35 @@ async function firstSeenBySession(since: Date): Promise<Date[]> {
   return [...seen.values()];
 }
 
-// Buckets each session (by its first pageview) into the day of the week it
-// happened on, summed across the whole range — answers "which days of the
-// week bring the most visitors" as opposed to a single day-by-day trend.
-export async function getSessionsByDayOfWeek(
-  since: Date
-): Promise<{ label: string; value: number }[]> {
+// Buckets each session (by its first pageview) into the day of the week and
+// the hour of day (0-23, in BUSINESS_TIMEZONE) it happened in, summed across
+// the whole range — "which days/times actually bring visitors", as opposed
+// to a single day-by-day or hour-by-hour trend.
+export async function getSessionsByDayAndHourOfDay(since: Date): Promise<{
+  byDayOfWeek: { label: string; value: number }[];
+  byHourOfDay: { label: string; value: number }[];
+}> {
   const firstSeen = await firstSeenBySession(since);
-  const counts = new Array(7).fill(0) as number[];
-  for (const d of firstSeen) counts[localParts(d).weekday] += 1;
-  return DOW_ORDER.map((i, idx) => ({ label: DOW_LABELS[idx], value: counts[i] }));
-}
 
-// Same idea, bucketed by hour of day (0-23, in BUSINESS_TIMEZONE) — answers
-// "what time of day do people actually show up", summed across the whole
-// range rather than a single day's hourly trend.
-export async function getSessionsByHourOfDay(
-  since: Date
-): Promise<{ label: string; value: number }[]> {
-  const firstSeen = await firstSeenBySession(since);
-  const counts = new Array(24).fill(0) as number[];
-  for (const d of firstSeen) counts[localParts(d).hour] += 1;
-  // `hour` is already the correct BUSINESS_TIMEZONE bucket (0-23) — just
-  // format it as a 12h label directly, no further timezone conversion
-  // (running it back through Intl+timeZone here would shift it a second time).
-  return counts.map((value, hour) => {
-    const period = hour < 12 ? "AM" : "PM";
-    const displayHour = hour % 12 === 0 ? 12 : hour % 12;
-    return { label: `${displayHour} ${period}`, value };
-  });
+  const dayCounts = new Array(7).fill(0) as number[];
+  const hourCounts = new Array(24).fill(0) as number[];
+  for (const d of firstSeen) {
+    const parts = localParts(d);
+    dayCounts[parts.weekday] += 1;
+    hourCounts[parts.hour] += 1;
+  }
+
+  return {
+    byDayOfWeek: DOW_ORDER.map((i, idx) => ({ label: DOW_LABELS[idx], value: dayCounts[i] })),
+    // `hour` is already the correct BUSINESS_TIMEZONE bucket (0-23) — just
+    // format it as a 12h label directly, no further timezone conversion
+    // (running it back through Intl+timeZone here would shift it a second time).
+    byHourOfDay: hourCounts.map((value, hour) => {
+      const period = hour < 12 ? "AM" : "PM";
+      const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+      return { label: `${displayHour} ${period}`, value };
+    }),
+  };
 }
 
 export async function getConversionRateOverTime(
