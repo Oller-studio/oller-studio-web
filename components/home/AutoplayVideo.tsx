@@ -55,6 +55,21 @@ export function AutoplayVideo({
     if (!el) return;
     el.muted = true;
     el.play().catch(() => {});
+
+    // Mobile browsers (Safari in particular) silently pause a playing video
+    // when the tab/app is backgrounded — e.g. the phone locks, or the
+    // visitor switches apps — and don't resume it on their own. Without
+    // this, coming back to the tab leaves the hero frozen on whatever frame
+    // it stopped at instead of picking the loop back up.
+    function resume() {
+      if (document.visibilityState === "visible") el?.play().catch(() => {});
+    }
+    document.addEventListener("visibilitychange", resume);
+    window.addEventListener("pageshow", resume);
+    return () => {
+      document.removeEventListener("visibilitychange", resume);
+      window.removeEventListener("pageshow", resume);
+    };
   }, [src, shouldLoad]);
 
   return (
