@@ -196,15 +196,21 @@ const CHANNEL_ORDER = [
 
 // One row per session (its first-touch channel).
 export async function getTrafficChannels(since: Date) {
-  const rows = await prisma.pageView.findMany({
-    where: { createdAt: { gte: since } },
-    distinct: ["sessionId"],
-    select: { channel: true },
-  });
+  // Same DISTINCT ON approach as getSessionsByDevice — one row per session,
+  // its earliest pageview's channel.
+  const rows = await prisma.$queryRaw<{ channel: string | null; visitors: bigint }[]>`
+    SELECT channel, COUNT(*) as visitors FROM (
+      SELECT DISTINCT ON ("sessionId") channel
+      FROM "PageView"
+      WHERE "createdAt" >= ${since}
+      ORDER BY "sessionId", "createdAt" ASC
+    ) first_pv
+    GROUP BY channel
+  `;
   const counts = new Map<string, number>();
   for (const r of rows) {
     const key = r.channel || "Direct";
-    counts.set(key, (counts.get(key) ?? 0) + 1);
+    counts.set(key, (counts.get(key) ?? 0) + Number(r.visitors));
   }
   return CHANNEL_ORDER
     .map((channel) => ({ channel, visitors: counts.get(channel) ?? 0 }))
@@ -347,17 +353,18 @@ const STATIC_PAGE_LABELS: Record<string, string> = {
 };
 
 export async function getTopPages(since: Date, limit = 10) {
-  const rows = await prisma.pageView.findMany({
-    where: { createdAt: { gte: since } },
-    select: { path: true, sessionId: true },
-  });
-  const stats = new Map<string, { views: number; sessions: Set<string> }>();
-  for (const r of rows) {
-    const entry = stats.get(r.path) ?? { views: 0, sessions: new Set<string>() };
-    entry.views += 1;
-    entry.sessions.add(r.sessionId);
-    stats.set(r.path, entry);
-  }
+  // Was fetching every single PageView row in range just to count them in
+  // JS — for a page with real traffic that's every pageview transferred
+  // over the network for a number we only needed the aggregate of. Postgres
+  // already has the createdAt index this filters on; GROUP BY does the
+  // counting where the data already lives.
+  const rows = await prisma.$queryRaw<{ path: string; views: bigint; uniques: bigint }[]>`
+    SELECT path, COUNT(*) as views, COUNT(DISTINCT "sessionId") as uniques
+    FROM "PageView"
+    WHERE "createdAt" >= ${since}
+    GROUP BY path
+  `;
+  const stats = new Map(rows.map((r) => [r.path, { views: Number(r.views), sessions: Number(r.uniques) }]));
 
   const productSlugs = [...stats.keys()]
     .filter((p) => p.startsWith("/shop/"))
@@ -374,7 +381,7 @@ export async function getTopPages(since: Date, limit = 10) {
     .map(([path, v]) => {
       const slug = path.startsWith("/shop/") ? path.replace(/^\/shop\//, "").split("/")[0] : null;
       const label = STATIC_PAGE_LABELS[path] ?? (slug && nameBySlug.get(slug)) ?? path;
-      return { path, label, views: v.views, uniques: v.sessions.size };
+      return { path, label, views: v.views, uniques: v.sessions };
     })
     .sort((a, b) => b.views - a.views)
     .slice(0, limit);
@@ -427,19 +434,26 @@ export async function getSessionsOverTime(
   hourly: boolean,
   until?: Date
 ): Promise<TimelinePoint[]> {
-  const rows = await prisma.pageView.findMany({
-    where: { createdAt: until ? { gte: since, lt: until } : { gte: since } },
-    select: { sessionId: true, createdAt: true },
-  });
-  const seen = new Set<string>();
-  const counts = new Map<string, number>();
-  for (const r of rows) {
-    const bucket = bucketKey(r.createdAt, hourly);
-    const dedupeKey = `${bucket}:${r.sessionId}`;
-    if (seen.has(dedupeKey)) continue;
-    seen.add(dedupeKey);
-    counts.set(bucket, (counts.get(bucket) ?? 0) + 1);
-  }
+  // Was fetching every PageView row in range to dedupe sessions per bucket
+  // in JS — the exact same thing COUNT(DISTINCT ...) GROUP BY does, just
+  // done by Postgres instead of after transferring every row over the
+  // network. date_trunc's unit truncates the raw stored timestamp with no
+  // timezone shift, matching bucketKey()'s toISOString()-based (UTC) keys.
+  const unit = hourly ? "hour" : "day";
+  const rows = until
+    ? await prisma.$queryRaw<{ bucket: Date; sessions: bigint }[]>`
+        SELECT date_trunc(${unit}, "createdAt") as bucket, COUNT(DISTINCT "sessionId") as sessions
+        FROM "PageView"
+        WHERE "createdAt" >= ${since} AND "createdAt" < ${until}
+        GROUP BY bucket
+      `
+    : await prisma.$queryRaw<{ bucket: Date; sessions: bigint }[]>`
+        SELECT date_trunc(${unit}, "createdAt") as bucket, COUNT(DISTINCT "sessionId") as sessions
+        FROM "PageView"
+        WHERE "createdAt" >= ${since}
+        GROUP BY bucket
+      `;
+  const counts = new Map(rows.map((r) => [bucketKey(r.bucket, hourly), Number(r.sessions)]));
   return buildTimeline(since, hourly, counts, until);
 }
 
@@ -532,33 +546,26 @@ export async function getConversionRateOverTime(
   since: Date,
   hourly: boolean
 ): Promise<TimelinePoint[]> {
+  // Same GROUP BY / COUNT(DISTINCT ...) approach as getSessionsOverTime —
+  // see its comment.
+  const unit = hourly ? "hour" : "day";
   const [pageViewRows, orderRows] = await Promise.all([
-    prisma.pageView.findMany({
-      where: { createdAt: { gte: since } },
-      select: { sessionId: true, createdAt: true },
-    }),
-    prisma.order.findMany({
-      where: { completedAt: { gte: since } },
-      select: { completedAt: true },
-    }),
+    prisma.$queryRaw<{ bucket: Date; sessions: bigint }[]>`
+      SELECT date_trunc(${unit}, "createdAt") as bucket, COUNT(DISTINCT "sessionId") as sessions
+      FROM "PageView"
+      WHERE "createdAt" >= ${since}
+      GROUP BY bucket
+    `,
+    prisma.$queryRaw<{ bucket: Date; orders: bigint }[]>`
+      SELECT date_trunc(${unit}, "completedAt") as bucket, COUNT(*) as orders
+      FROM "Order"
+      WHERE "completedAt" >= ${since}
+      GROUP BY bucket
+    `,
   ]);
 
-  const seen = new Set<string>();
-  const sessionCounts = new Map<string, number>();
-  for (const r of pageViewRows) {
-    const bucket = bucketKey(r.createdAt, hourly);
-    const dedupeKey = `${bucket}:${r.sessionId}`;
-    if (seen.has(dedupeKey)) continue;
-    seen.add(dedupeKey);
-    sessionCounts.set(bucket, (sessionCounts.get(bucket) ?? 0) + 1);
-  }
-
-  const orderCounts = new Map<string, number>();
-  for (const o of orderRows) {
-    if (!o.completedAt) continue;
-    const bucket = bucketKey(o.completedAt, hourly);
-    orderCounts.set(bucket, (orderCounts.get(bucket) ?? 0) + 1);
-  }
+  const sessionCounts = new Map(pageViewRows.map((r) => [bucketKey(r.bucket, hourly), Number(r.sessions)]));
+  const orderCounts = new Map(orderRows.map((r) => [bucketKey(r.bucket, hourly), Number(r.orders)]));
 
   return buildTimeline(since, hourly, sessionCounts).map((p) => {
     const sessions = sessionCounts.get(p.key) ?? 0;
@@ -568,19 +575,24 @@ export async function getConversionRateOverTime(
 }
 
 export async function getTopProducts(since: Date, limit = 8) {
-  const rows = await prisma.pageView.findMany({
-    where: { createdAt: { gte: since }, path: { startsWith: "/shop/" } },
-    select: { path: true, sessionId: true },
-  });
-  const stats = new Map<string, { views: number; sessions: Set<string> }>();
-  for (const r of rows) {
-    const slug = r.path.replace(/^\/shop\//, "").split("/")[0];
-    if (!slug) continue;
-    const entry = stats.get(slug) ?? { views: 0, sessions: new Set<string>() };
-    entry.views += 1;
-    entry.sessions.add(r.sessionId);
-    stats.set(slug, entry);
-  }
+  // Same reasoning as getTopPages — group and count in Postgres instead of
+  // pulling every /shop/* pageview row over the wire. split_part(path, '/',
+  // 3) pulls the slug out of "/shop/<slug>" or "/shop/<slug>/anything"
+  // (splitting "/shop/foo/bar" on "/" gives ["", "shop", "foo", "bar"], so
+  // index 3 is the slug) — same extraction the original .replace()+.split()
+  // did in JS, just run once per row inside the GROUP BY instead of after
+  // fetching every row.
+  const rows = await prisma.$queryRaw<{ slug: string; views: bigint; uniques: bigint }[]>`
+    SELECT split_part(path, '/', 3) as slug, COUNT(*) as views, COUNT(DISTINCT "sessionId") as uniques
+    FROM "PageView"
+    WHERE "createdAt" >= ${since} AND path LIKE '/shop/%'
+    GROUP BY slug
+  `;
+  const stats = new Map(
+    rows
+      .filter((r) => r.slug !== "")
+      .map((r) => [r.slug, { views: Number(r.views), sessions: Number(r.uniques) }])
+  );
 
   const slugs = [...stats.keys()];
   const colorways = slugs.length
@@ -596,23 +608,31 @@ export async function getTopProducts(since: Date, limit = 8) {
       slug,
       name: nameBySlug.get(slug) ?? slug,
       views: stats.get(slug)!.views,
-      uniques: stats.get(slug)!.sessions.size,
+      uniques: stats.get(slug)!.sessions,
     }))
     .sort((a, b) => b.views - a.views)
     .slice(0, limit);
 }
 
-// One row per session (its first pageview's device).
+// One row per session (its first pageview's device). DISTINCT ON picks each
+// session's earliest row directly in Postgres (ordered by createdAt) — the
+// previous `distinct: ["sessionId"]` had no explicit orderBy, so which row
+// it kept per session wasn't actually guaranteed to be the first one despite
+// what this comment always said; this makes it true.
 export async function getSessionsByDevice(since: Date) {
-  const rows = await prisma.pageView.findMany({
-    where: { createdAt: { gte: since } },
-    distinct: ["sessionId"],
-    select: { device: true },
-  });
+  const rows = await prisma.$queryRaw<{ device: string | null; sessions: bigint }[]>`
+    SELECT device, COUNT(*) as sessions FROM (
+      SELECT DISTINCT ON ("sessionId") device
+      FROM "PageView"
+      WHERE "createdAt" >= ${since}
+      ORDER BY "sessionId", "createdAt" ASC
+    ) first_pv
+    GROUP BY device
+  `;
   const counts = new Map<string, number>();
   for (const r of rows) {
     const key = r.device || "Desktop";
-    counts.set(key, (counts.get(key) ?? 0) + 1);
+    counts.set(key, (counts.get(key) ?? 0) + Number(r.sessions));
   }
   return ["Desktop", "Mobile", "Tablet"]
     .map((device) => ({ device, sessions: counts.get(device) ?? 0 }))
@@ -623,17 +643,26 @@ export async function getSessionsByDevice(since: Date) {
 // once deployed on Vercel, since that's what sets the ip-country/region/city
 // headers proxy.ts reads from. Always empty in local dev.
 export async function getSessionsByLocation(since: Date, limit = 8) {
-  const rows = await prisma.pageView.findMany({
-    where: { createdAt: { gte: since }, country: { not: null } },
-    distinct: ["sessionId"],
-    select: { country: true, region: true, city: true },
-  });
+  // Same DISTINCT ON idea, but the null-country filter has to happen BEFORE
+  // picking each session's row (matching the original: it picks each
+  // session's earliest row *among rows that have a country set*, not
+  // necessarily that session's true first pageview).
+  const rows = await prisma.$queryRaw<
+    { country: string; region: string | null; city: string | null; sessions: bigint }[]
+  >`
+    SELECT country, region, city, COUNT(*) as sessions FROM (
+      SELECT DISTINCT ON ("sessionId") country, region, city
+      FROM "PageView"
+      WHERE "createdAt" >= ${since} AND country IS NOT NULL
+      ORDER BY "sessionId", "createdAt" ASC
+    ) first_pv
+    GROUP BY country, region, city
+  `;
   const counts = new Map<string, { country: string; region: string | null; city: string | null; sessions: number }>();
   for (const r of rows) {
-    if (!r.country) continue;
     const key = `${r.country}|${r.region ?? ""}|${r.city ?? ""}`;
     const entry = counts.get(key) ?? { country: r.country, region: r.region, city: r.city, sessions: 0 };
-    entry.sessions += 1;
+    entry.sessions += Number(r.sessions);
     counts.set(key, entry);
   }
   return [...counts.values()]
