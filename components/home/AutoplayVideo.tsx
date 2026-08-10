@@ -10,11 +10,16 @@ import { useEffect, useRef, useState } from "react";
 // shows its own controls/mute icon).
 export function AutoplayVideo({
   src,
+  mobileSrc,
   poster,
   className,
   lazy = false,
 }: {
   src: string;
+  // A vertical/portrait cut shown instead of `src` on narrow viewports.
+  // Resolved client-side after mount (via matchMedia) so only one variant
+  // is ever downloaded — never both while we figure out which one to use.
+  mobileSrc?: string;
   poster?: string;
   className?: string;
   // For below-the-fold videos (the homepage's editorial grid) — without
@@ -27,17 +32,31 @@ export function AutoplayVideo({
   lazy?: boolean;
 }) {
   const ref = useRef<HTMLVideoElement>(null);
-  const [shouldLoad, setShouldLoad] = useState(!lazy);
+  const hasMobileVariant = Boolean(mobileSrc && mobileSrc !== src);
+
+  // null until we know which variant to use — for the common case (no
+  // mobile variant) that's immediately, so behavior is unchanged.
+  const [resolvedSrc, setResolvedSrc] = useState<string | null>(
+    hasMobileVariant ? null : src
+  );
+  const [intersecting, setIntersecting] = useState(!lazy);
+  const shouldLoad = resolvedSrc !== null && intersecting;
 
   useEffect(() => {
-    if (!lazy || shouldLoad) return;
+    if (!hasMobileVariant) return;
+    const mql = window.matchMedia("(max-width: 767px)");
+    setResolvedSrc(mql.matches ? (mobileSrc as string) : src);
+  }, [hasMobileVariant, mobileSrc, src]);
+
+  useEffect(() => {
+    if (!lazy || intersecting) return;
     const el = ref.current;
     if (!el) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries.some((entry) => entry.isIntersecting)) {
-          setShouldLoad(true);
+          setIntersecting(true);
           observer.disconnect();
         }
       },
@@ -47,7 +66,7 @@ export function AutoplayVideo({
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [lazy, shouldLoad]);
+  }, [lazy, intersecting]);
 
   useEffect(() => {
     if (!shouldLoad) return;
@@ -55,12 +74,12 @@ export function AutoplayVideo({
     if (!el) return;
     el.muted = true;
     el.play().catch(() => {});
-  }, [src, shouldLoad]);
+  }, [resolvedSrc, shouldLoad]);
 
   return (
     <video
       ref={ref}
-      src={shouldLoad ? src : undefined}
+      src={shouldLoad ? (resolvedSrc as string) : undefined}
       poster={poster}
       className={className}
       autoPlay
