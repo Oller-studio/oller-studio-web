@@ -107,79 +107,102 @@ export type ChannelFunnelRow = {
 // visitor". Every step is shown as % of that channel's own home visits
 // (mirrors how getFunnel expresses steps as % of the first step), so
 // channels are comparable to each other regardless of raw volume.
+type FunnelByChannelRawRow = {
+  channel: string;
+  home_visits: bigint;
+  bag_clicks: bigint;
+  scrolled: bigint;
+  added: bigint;
+  checkouts: bigint;
+  completed: bigint;
+};
+
+// Rewritten to push the whole thing into one SQL query instead of pulling
+// every PageView/FunnelEvent/Order row in range into JS to Map/Set-reduce.
+// Preserves some easy-to-miss original behavior exactly:
+// - "first-touch channel" is each session's *earliest* PageView row in
+//   range (DISTINCT ON ... ORDER BY createdAt), defaulting to "Direct" —
+//   matches the old orderBy: "asc" + first-Map-write pattern.
+// - Scroll/cart events are INNER JOINed against that first-touch table, so
+//   a FunnelEvent whose session has no PageView row in range is silently
+//   excluded (not attributed to "Direct") — matches the old `if (channel)`
+//   guard, which skipped rather than defaulted when the session lookup
+//   came back empty.
+// - Orders use their own `channel` column directly (defaulting to
+//   "Direct"), never looked up via the PageView-derived table — matches
+//   the old code never consulting channelBySession for orders.
+// - The row set returned is exactly "channels with >=1 home visit in
+//   range" (driven by the home_visits CTE), same as the old code always
+//   iterating homeByChannel's keys.
 export async function getFunnelByChannel(since: Date): Promise<ChannelFunnelRow[]> {
-  const [pageViewRows, scrollEvents, cartEvents, orders] = await Promise.all([
-    prisma.pageView.findMany({
-      where: { createdAt: { gte: since } },
-      select: { sessionId: true, channel: true, path: true, createdAt: true },
-      orderBy: { createdAt: "asc" },
-    }),
-    prisma.funnelEvent.findMany({
-      where: { name: "scroll_50", createdAt: { gte: since } },
-      select: { sessionId: true },
-    }),
-    prisma.funnelEvent.findMany({
-      where: { name: "add_to_cart", createdAt: { gte: since } },
-      select: { sessionId: true },
-    }),
-    prisma.order.findMany({
-      where: { createdAt: { gte: since } },
-      select: { channel: true, completedAt: true },
-    }),
-  ]);
+  const rows = await prisma.$queryRaw<FunnelByChannelRawRow[]>`
+    WITH first_touch AS (
+      SELECT DISTINCT ON ("sessionId") "sessionId", COALESCE(channel, 'Direct') as channel
+      FROM "PageView"
+      WHERE "createdAt" >= ${since}
+      ORDER BY "sessionId", "createdAt" ASC
+    ),
+    session_flags AS (
+      SELECT "sessionId",
+        bool_or(path = '/') as visited_home,
+        bool_or(path LIKE '/shop/%') as visited_shop
+      FROM "PageView"
+      WHERE "createdAt" >= ${since}
+      GROUP BY "sessionId"
+    ),
+    home_bag AS (
+      SELECT ft.channel,
+        COUNT(*) FILTER (WHERE sf.visited_home) as home_visits,
+        COUNT(*) FILTER (WHERE sf.visited_shop) as bag_clicks
+      FROM first_touch ft
+      JOIN session_flags sf ON sf."sessionId" = ft."sessionId"
+      GROUP BY ft.channel
+    ),
+    scroll_by_channel AS (
+      SELECT ft.channel, COUNT(DISTINCT fe."sessionId") as scrolled
+      FROM "FunnelEvent" fe
+      JOIN first_touch ft ON ft."sessionId" = fe."sessionId"
+      WHERE fe.name = 'scroll_50' AND fe."createdAt" >= ${since}
+      GROUP BY ft.channel
+    ),
+    cart_by_channel AS (
+      SELECT ft.channel, COUNT(DISTINCT fe."sessionId") as added
+      FROM "FunnelEvent" fe
+      JOIN first_touch ft ON ft."sessionId" = fe."sessionId"
+      WHERE fe.name = 'add_to_cart' AND fe."createdAt" >= ${since}
+      GROUP BY ft.channel
+    ),
+    orders_by_channel AS (
+      SELECT COALESCE(channel, 'Direct') as channel,
+        COUNT(*) as checkouts,
+        COUNT(*) FILTER (WHERE "completedAt" IS NOT NULL) as completed
+      FROM "Order"
+      WHERE "createdAt" >= ${since}
+      GROUP BY COALESCE(channel, 'Direct')
+    )
+    SELECT hb.channel, hb.home_visits, hb.bag_clicks,
+      COALESCE(sc.scrolled, 0) as scrolled,
+      COALESCE(cb.added, 0) as added,
+      COALESCE(ob.checkouts, 0) as checkouts,
+      COALESCE(ob.completed, 0) as completed
+    FROM home_bag hb
+    LEFT JOIN scroll_by_channel sc ON sc.channel = hb.channel
+    LEFT JOIN cart_by_channel cb ON cb.channel = hb.channel
+    LEFT JOIN orders_by_channel ob ON ob.channel = hb.channel
+  `;
 
-  // First-touch channel per session — FunnelEvent/Order don't always carry
-  // their own channel, so this is the shared lookup everything below joins
-  // against.
-  const channelBySession = new Map<string, string>();
-  for (const r of pageViewRows) {
-    if (!channelBySession.has(r.sessionId)) channelBySession.set(r.sessionId, r.channel || "Direct");
-  }
-
-  function addTo(map: Map<string, Set<string>>, channel: string, sessionId: string) {
-    if (!map.has(channel)) map.set(channel, new Set());
-    map.get(channel)!.add(sessionId);
-  }
-
-  const homeByChannel = new Map<string, Set<string>>();
-  const bagByChannel = new Map<string, Set<string>>();
-  for (const r of pageViewRows) {
-    const channel = channelBySession.get(r.sessionId) ?? "Direct";
-    if (r.path === "/") addTo(homeByChannel, channel, r.sessionId);
-    if (r.path.startsWith("/shop/")) addTo(bagByChannel, channel, r.sessionId);
-  }
-
-  const scrollByChannel = new Map<string, Set<string>>();
-  for (const e of scrollEvents) {
-    const channel = channelBySession.get(e.sessionId);
-    if (channel) addTo(scrollByChannel, channel, e.sessionId);
-  }
-  const cartByChannel = new Map<string, Set<string>>();
-  for (const e of cartEvents) {
-    const channel = channelBySession.get(e.sessionId);
-    if (channel) addTo(cartByChannel, channel, e.sessionId);
-  }
-
-  const checkoutsByChannel = new Map<string, number>();
-  const completedByChannel = new Map<string, number>();
-  for (const o of orders) {
-    const channel = o.channel || "Direct";
-    checkoutsByChannel.set(channel, (checkoutsByChannel.get(channel) ?? 0) + 1);
-    if (o.completedAt) completedByChannel.set(channel, (completedByChannel.get(channel) ?? 0) + 1);
-  }
-
-  return [...homeByChannel.keys()]
-    .map((channel) => {
-      const homeVisits = homeByChannel.get(channel)?.size ?? 0;
+  return rows
+    .map((r) => {
+      const homeVisits = Number(r.home_visits);
       const pct = (n: number) => (homeVisits > 0 ? (n / homeVisits) * 100 : 0);
       return {
-        channel,
+        channel: r.channel,
         homeVisits,
-        scrolledPct: pct(scrollByChannel.get(channel)?.size ?? 0),
-        bagClicksPct: pct(bagByChannel.get(channel)?.size ?? 0),
-        addedToCartPct: pct(cartByChannel.get(channel)?.size ?? 0),
-        checkoutsStartedPct: pct(checkoutsByChannel.get(channel) ?? 0),
-        completedPct: pct(completedByChannel.get(channel) ?? 0),
+        scrolledPct: pct(Number(r.scrolled)),
+        bagClicksPct: pct(Number(r.bag_clicks)),
+        addedToCartPct: pct(Number(r.added)),
+        checkoutsStartedPct: pct(Number(r.checkouts)),
+        completedPct: pct(Number(r.completed)),
       };
     })
     .sort((a, b) => b.homeVisits - a.homeVisits);
@@ -262,36 +285,67 @@ export type TrafficTableRow = {
 // all (not just within this range). Cost/ROAS/CPA/CTR aren't here — those
 // need an ad-platform spend integration we don't have yet.
 export async function getTrafficTable(since: Date): Promise<TrafficTableRow[]> {
-  const [pageViewRows, ordersInRange, allCompletedOrders] = await Promise.all([
-    prisma.pageView.findMany({
-      where: { createdAt: { gte: since } },
-      distinct: ["sessionId"],
-      select: { source: true, channel: true },
-    }),
-    prisma.order.findMany({
-      where: { completedAt: { gte: since } },
-      select: { source: true, channel: true, amountCents: true, payerEmail: true, completedAt: true },
-    }),
-    prisma.order.findMany({
-      where: { completedAt: { not: null } },
-      select: { payerEmail: true, completedAt: true },
-    }),
+  const [pvRows, orderRows] = await Promise.all([
+    // One row per session (first pageview of that session wins on ties —
+    // same DISTINCT ON idiom as getSessionsByDevice/getTrafficChannels).
+    // A source can span sessions with different channel values (e.g. a
+    // "Direct" source can carry channel "Direct" or "Unknown" depending on
+    // each visit's own referrer signal — see lib/attribution.ts), so the
+    // per-source channel label is the most common one for that source
+    // (alphabetical tiebreak), not an arbitrary pick.
+    prisma.$queryRaw<{ source: string; sessions: bigint; channel: string }[]>`
+      WITH first_pv AS (
+        SELECT DISTINCT ON ("sessionId")
+          COALESCE(source, 'Direct') as source,
+          COALESCE(channel, 'Direct') as channel
+        FROM "PageView"
+        WHERE "createdAt" >= ${since}
+        ORDER BY "sessionId", "createdAt" ASC
+      ),
+      per_source_channel AS (
+        SELECT source, channel, COUNT(*) as cnt
+        FROM first_pv
+        GROUP BY source, channel
+      )
+      SELECT DISTINCT ON (source) source, channel,
+        SUM(cnt) OVER (PARTITION BY source) as sessions
+      FROM per_source_channel
+      ORDER BY source, cnt DESC, channel ASC
+    `,
+    // "Returning" = this order's payer had an earlier completed order at
+    // all (any source, any time) — firstEverCompletedAt is computed from
+    // every completed order ever, not just ones in range, matching the
+    // original's separate all-time lookup table.
+    prisma.$queryRaw<
+      { source: string; channel: string; revenue: bigint; orders: bigint; returningOrders: bigint }[]
+    >`
+      WITH order_history AS (
+        SELECT source, channel, "payerEmail", "completedAt", "amountCents",
+          CASE WHEN "payerEmail" IS NOT NULL
+            THEN MIN("completedAt") OVER (PARTITION BY "payerEmail")
+            ELSE NULL
+          END as "firstEverCompletedAt"
+        FROM "Order"
+        WHERE "completedAt" IS NOT NULL
+      )
+      SELECT COALESCE(source, 'Direct') as source,
+             (array_agg(COALESCE(channel, 'Direct')))[1] as channel,
+             SUM("amountCents") as revenue,
+             COUNT(*) as orders,
+             COUNT(*) FILTER (
+               WHERE "firstEverCompletedAt" IS NOT NULL AND "firstEverCompletedAt" < "completedAt"
+             ) as "returningOrders"
+      FROM order_history
+      WHERE "completedAt" >= ${since}
+      GROUP BY COALESCE(source, 'Direct')
+    `,
   ]);
-
-  const firstOrderAtByEmail = new Map<string, number>();
-  for (const o of allCompletedOrders) {
-    if (!o.payerEmail || !o.completedAt) continue;
-    const t = o.completedAt.getTime();
-    const existing = firstOrderAtByEmail.get(o.payerEmail);
-    if (existing === undefined || t < existing) firstOrderAtByEmail.set(o.payerEmail, t);
-  }
 
   const sessionsBySource = new Map<string, number>();
   const channelBySource = new Map<string, string>();
-  for (const r of pageViewRows) {
-    const key = r.source || "Direct";
-    sessionsBySource.set(key, (sessionsBySource.get(key) ?? 0) + 1);
-    if (!channelBySource.has(key)) channelBySource.set(key, r.channel || "Direct");
+  for (const r of pvRows) {
+    sessionsBySource.set(r.source, Number(r.sessions));
+    channelBySource.set(r.source, r.channel);
   }
   for (const b of BASELINE_SOURCES) {
     if (!channelBySource.has(b.source)) channelBySource.set(b.source, b.channel);
@@ -301,16 +355,14 @@ export async function getTrafficTable(since: Date): Promise<TrafficTableRow[]> {
   const ordersBySource = new Map<string, number>();
   const newOrdersBySource = new Map<string, number>();
   const returningOrdersBySource = new Map<string, number>();
-  for (const o of ordersInRange) {
-    const key = o.source || "Direct";
-    revenueBySource.set(key, (revenueBySource.get(key) ?? 0) + o.amountCents);
-    ordersBySource.set(key, (ordersBySource.get(key) ?? 0) + 1);
-    if (!channelBySource.has(key)) channelBySource.set(key, o.channel || "Direct");
-
-    const firstOrderAt = o.payerEmail ? firstOrderAtByEmail.get(o.payerEmail) : undefined;
-    const isReturning = firstOrderAt !== undefined && o.completedAt !== null && firstOrderAt < o.completedAt.getTime();
-    if (isReturning) returningOrdersBySource.set(key, (returningOrdersBySource.get(key) ?? 0) + 1);
-    else newOrdersBySource.set(key, (newOrdersBySource.get(key) ?? 0) + 1);
+  for (const o of orderRows) {
+    const orders = Number(o.orders);
+    const returning = Number(o.returningOrders);
+    revenueBySource.set(o.source, Number(o.revenue));
+    ordersBySource.set(o.source, orders);
+    returningOrdersBySource.set(o.source, returning);
+    newOrdersBySource.set(o.source, orders - returning);
+    if (!channelBySource.has(o.source)) channelBySource.set(o.source, o.channel);
   }
 
   const sources = new Set([
@@ -336,7 +388,10 @@ export async function getTrafficTable(since: Date): Promise<TrafficTableRow[]> {
         returningOrders: returningOrdersBySource.get(source) ?? 0,
       };
     })
-    .sort((a, b) => b.sessions - a.sessions);
+    // Secondary key keeps ties (e.g. two sources with 0 sessions) in a
+    // stable order — neither this nor the original query had one, so this
+    // is a determinism improvement, not a preserved behavior.
+    .sort((a, b) => b.sessions - a.sessions || a.source.localeCompare(b.source));
 }
 
 // Friendly labels for every static storefront route — anything not listed
