@@ -78,7 +78,10 @@ const sections: Section[] = [
     label: "Settings",
     icon: SettingsIcon,
     landingPageIsMenu: true,
-    children: [{ href: "/admin/marketing/emails", label: "Emails" }],
+    children: [
+      { href: "/admin/marketing/emails", label: "Emails" },
+      { href: "/admin/marketing/newsletter", label: "Newsletter" },
+    ],
   },
   { href: "/admin/support", label: "Support", icon: SupportIcon },
 ];

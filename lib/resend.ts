@@ -610,6 +610,49 @@ export async function sendNewsletterSignup(email: string) {
   }
 }
 
+// A one-off broadcast to the active subscriber list — one send per person
+// (not one email with everyone in "to") so each gets their own working
+// unsubscribe link and nobody sees anyone else's address. Sequential on
+// purpose: at this list size a batch API isn't worth the added complexity,
+// and it keeps us well clear of any per-second rate limit.
+export async function sendNewsletterCampaign(
+  subscribers: { email: string; unsubscribeToken: string }[],
+  subject: string,
+  message: string,
+) {
+  if (!resend) return { sent: 0, failed: subscribers.length };
+
+  let sent = 0;
+  let failed = 0;
+
+  for (const sub of subscribers) {
+    const unsubscribeUrl = `${getSiteUrl()}/unsubscribe?token=${sub.unsubscribeToken}`;
+    try {
+      const { data } = await resend.emails.send({
+        from: FROM,
+        to: sub.email,
+        subject,
+        html: renderSimpleEmailHtml({
+          message,
+          note: `<a href="${unsubscribeUrl}" style="color:#6b6b6b;">Unsubscribe</a>`,
+        }),
+        tags: [{ name: "type", value: "newsletter_campaign" }],
+      });
+      if (data?.id) {
+        await logEmailSent("newsletter_campaign", sub.email, data.id);
+        sent++;
+      } else {
+        failed++;
+      }
+    } catch (error) {
+      console.error("sendNewsletterCampaign error for", sub.email, error);
+      failed++;
+    }
+  }
+
+  return { sent, failed };
+}
+
 export async function sendCollabInquiry(
   firstName: string,
   lastName: string,
@@ -675,6 +718,30 @@ export async function sendContactInquiry(
   } catch (error) {
     console.error("sendContactInquiry error", error);
     return false;
+  }
+}
+
+// A human reply from the Support admin page — plain text, no template,
+// since this is a one-off written by whoever's answering, not copy that
+// gets reused. Returns the Resend id so the caller can log it as the
+// outbound SupportMessage.
+export async function sendSupportReply(to: string, subject: string, body: string) {
+  if (!resend) return null;
+
+  try {
+    const { data } = await resend.emails.send({
+      from: FROM,
+      to,
+      replyTo: "hello@oller.studio",
+      subject,
+      text: body,
+      tags: [{ name: "type", value: "support_reply" }],
+    });
+    if (data?.id) await logEmailSent("support_reply", to, data.id);
+    return data?.id ?? null;
+  } catch (error) {
+    console.error("sendSupportReply error", error);
+    return null;
   }
 }
 
