@@ -46,6 +46,9 @@ export const metadata: Metadata = {
     description: SITE_DESCRIPTION,
     images: ["/images/home/hero.jpg"],
   },
+  other: {
+    "p:domain_verify": "cf0620c88bb54e28bc9b1803b71948c6",
+  },
 };
 
 // Tells Google (and AI answer engines — this is the kind of concise, factual
@@ -59,7 +62,11 @@ const organizationJsonLd = {
     "OLLER is a founder-led studio creating sculptural, 3D-printed handbags — Objects d'Art made to order, designed by Alicia Oller.",
   url: "https://www.oller.studio",
   logo: "https://www.oller.studio/images/home/hero.jpg",
-  sameAs: ["https://www.instagram.com/oller.studio/", "https://www.tiktok.com/@ali.oller"],
+  sameAs: [
+    "https://www.instagram.com/oller.studio/",
+    "https://www.tiktok.com/@ali.oller",
+    "https://www.pinterest.com/ollerstudio/",
+  ],
 };
 
 export default function RootLayout({

@@ -33,6 +33,14 @@ type PaypalRefundEvent = {
   };
 };
 
+type PaypalCaptureDeniedEvent = {
+  event_type: "PAYMENT.CAPTURE.DENIED";
+  resource: {
+    id: string;
+    supplementary_data?: { related_ids?: { order_id?: string } };
+  };
+};
+
 type PaypalEvent = { event_type: string; resource: unknown };
 
 export async function POST(request: Request) {
@@ -56,7 +64,37 @@ export async function POST(request: Request) {
     return handleRefund(event as PaypalRefundEvent);
   }
 
+  if (event.event_type === "PAYMENT.CAPTURE.DENIED") {
+    return handleCaptureDenied(event as PaypalCaptureDeniedEvent);
+  }
+
   return NextResponse.json({ received: true, ignored: event.event_type });
+}
+
+// A declined card, failed risk review, etc. — the client already shows the
+// buyer an inline error (see CheckoutForm.tsx), but that alone isn't
+// reliable (the tab could close first) and gives Alicia no visibility.
+// Deliberately doesn't touch `status`: it stays "PENDING" so the order
+// keeps getting the normal abandoned-checkout recovery sequence — a
+// declined payment is still real purchase intent, arguably more so than a
+// plain abandon.
+async function handleCaptureDenied(event: PaypalCaptureDeniedEvent) {
+  const orderId = event.resource.supplementary_data?.related_ids?.order_id;
+  if (!orderId) {
+    return NextResponse.json({ received: false, reason: "missing order id" }, { status: 400 });
+  }
+
+  const existing = await prisma.order.findUnique({ where: { paypalOrderId: orderId } });
+  if (!existing) {
+    return NextResponse.json({ received: true, ignored: "unknown order" });
+  }
+
+  await prisma.order.update({
+    where: { paypalOrderId: orderId },
+    data: { paymentFailedAt: new Date(), rawPayload: JSON.stringify(event) },
+  });
+
+  return NextResponse.json({ received: true });
 }
 
 async function handleCaptureCompleted(event: PaypalCaptureCompletedEvent) {
