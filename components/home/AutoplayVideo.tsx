@@ -1,6 +1,24 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+
+// Subscribes to the (max-width: 767px) media query the proper React way —
+// setting state synchronously inside an effect (the previous approach) trips
+// the react-hooks/set-state-in-effect lint rule and causes an extra render
+// pass. useSyncExternalStore is what React actually intends for reading
+// external browser state like this; the server snapshot defaults to "not
+// mobile" since matchMedia doesn't exist during SSR.
+function useIsMobileViewport(): boolean {
+  return useSyncExternalStore(
+    (onChange) => {
+      const mql = window.matchMedia("(max-width: 767px)");
+      mql.addEventListener("change", onChange);
+      return () => mql.removeEventListener("change", onChange);
+    },
+    () => window.matchMedia("(max-width: 767px)").matches,
+    () => false
+  );
+}
 
 // Plain <video autoPlay muted playsInline> sometimes still doesn't
 // autoplay on mobile — some browsers only honor `muted` once it's set as a
@@ -33,20 +51,9 @@ export function AutoplayVideo({
 }) {
   const ref = useRef<HTMLVideoElement>(null);
   const hasMobileVariant = Boolean(mobileSrc && mobileSrc !== src);
-
-  // null until we know which variant to use — for the common case (no
-  // mobile variant) that's immediately, so behavior is unchanged.
-  const [resolvedSrc, setResolvedSrc] = useState<string | null>(
-    hasMobileVariant ? null : src
-  );
+  const isMobile = useIsMobileViewport();
+  const resolvedSrc = hasMobileVariant && isMobile ? (mobileSrc as string) : src;
   const [intersecting, setIntersecting] = useState(!lazy);
-  const shouldLoad = resolvedSrc !== null && intersecting;
-
-  useEffect(() => {
-    if (!hasMobileVariant) return;
-    const mql = window.matchMedia("(max-width: 767px)");
-    setResolvedSrc(mql.matches ? (mobileSrc as string) : src);
-  }, [hasMobileVariant, mobileSrc, src]);
 
   useEffect(() => {
     if (!lazy || intersecting) return;
@@ -69,24 +76,24 @@ export function AutoplayVideo({
   }, [lazy, intersecting]);
 
   useEffect(() => {
-    if (!shouldLoad) return;
+    if (!intersecting) return;
     const el = ref.current;
     if (!el) return;
     el.muted = true;
     el.play().catch(() => {});
-  }, [resolvedSrc, shouldLoad]);
+  }, [resolvedSrc, intersecting]);
 
   return (
     <video
       ref={ref}
-      src={shouldLoad ? (resolvedSrc as string) : undefined}
+      src={intersecting ? resolvedSrc : undefined}
       poster={poster}
       className={className}
       autoPlay
       muted
       loop
       playsInline
-      preload={shouldLoad ? "auto" : "none"}
+      preload={intersecting ? "auto" : "none"}
       disablePictureInPicture
     />
   );
