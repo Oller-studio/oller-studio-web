@@ -105,15 +105,20 @@ function MediaSlot({
 
 export function HomePageForm({
   initialHeroVideoUrl,
+  initialHeroVideoMobileUrl,
   initialHeroPosterUrl,
   initialEditorial,
 }: {
   initialHeroVideoUrl: string | null;
+  initialHeroVideoMobileUrl: string | null;
   initialHeroPosterUrl: string | null;
   initialEditorial: EditorialSlot[];
 }) {
   const [heroVideo, setHeroVideo] = useState<MediaValue>(
     initialHeroVideoUrl ? { type: "video", url: initialHeroVideoUrl } : null
+  );
+  const [heroVideoMobile, setHeroVideoMobile] = useState<MediaValue>(
+    initialHeroVideoMobileUrl ? { type: "video", url: initialHeroVideoMobileUrl } : null
   );
   const [heroPoster, setHeroPoster] = useState<MediaValue>(
     initialHeroPosterUrl ? { type: "image", url: initialHeroPosterUrl } : null
@@ -134,6 +139,7 @@ export function HomePageForm({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         heroVideoUrl: heroVideo?.url ?? null,
+        heroVideoMobileUrl: heroVideoMobile?.url ?? null,
         heroPosterUrl: heroPoster?.url ?? null,
         editorial,
       }),
@@ -159,6 +165,13 @@ export function HomePageForm({
             size="h-40 w-32"
           />
           <MediaSlot
+            label="Mobile video (optional, vertical)"
+            accept="video/mp4,video/quicktime"
+            value={heroVideoMobile}
+            onChange={setHeroVideoMobile}
+            size="h-40 w-32"
+          />
+          <MediaSlot
             label="Poster / fallback photo"
             accept="image/png,image/jpeg,image/webp"
             value={heroPoster}
@@ -166,6 +179,9 @@ export function HomePageForm({
             size="h-40 w-32"
           />
         </div>
+        <p className="max-w-md text-xs text-muted">
+          Leave the mobile video empty to keep showing the same video as desktop on phones.
+        </p>
       </div>
 
       <div className="flex flex-col gap-2">

@@ -32,6 +32,7 @@ export default async function Home() {
             <AutoplayVideo
               className="h-full w-full object-cover"
               src={heroMedia.videoSrc}
+              mobileSrc={heroMedia.videoSrcMobile ?? undefined}
               poster={heroImage}
             />
           ) : heroImage ? (

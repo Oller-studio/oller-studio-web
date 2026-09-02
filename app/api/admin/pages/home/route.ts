@@ -10,6 +10,7 @@ export async function PATCH(request: Request) {
 
   const body = ((await request.json().catch(() => null)) ?? {}) as {
     heroVideoUrl?: string | null;
+    heroVideoMobileUrl?: string | null;
     heroPosterUrl?: string | null;
     editorial?: EditorialSlot[];
   };
@@ -18,6 +19,7 @@ export async function PATCH(request: Request) {
 
   await saveHomePageRow({
     heroVideoUrl: body.heroVideoUrl?.trim() || null,
+    heroVideoMobileUrl: body.heroVideoMobileUrl?.trim() || null,
     heroPosterUrl: body.heroPosterUrl?.trim() || null,
     editorial,
   });

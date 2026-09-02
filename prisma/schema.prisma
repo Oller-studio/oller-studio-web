@@ -295,9 +295,14 @@ model FixedCost {
 // fields fall back to the original file-drop convention in lib/media.ts, so
 // nothing breaks until a piece is actually replaced from the admin page.
 model HomePage {
-  id            String   @id @default("home")
-  heroVideoUrl  String?
-  heroPosterUrl String?
+  id                 String   @id @default("home")
+  heroVideoUrl       String?
+  // Optional vertical/portrait cut of the hero video for narrow viewports —
+  // the landscape heroVideoUrl looks cropped/off-center on phones. Falls
+  // back to heroVideoUrl when unset, so nothing breaks for homes that
+  // haven't uploaded a mobile-specific cut.
+  heroVideoMobileUrl String?
+  heroPosterUrl      String?
   // JSON array of exactly 4 slots, in display order (left to right), each
   // either null (empty) or { type: "video" | "image", url }.
   editorial     String   @default("[]")
