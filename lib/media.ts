@@ -3,7 +3,19 @@ import path from "node:path";
 import { getAllColorways } from "@/lib/colorways";
 import { getHomePageRow } from "@/lib/homePage";
 
-export type HeroMedia = { videoSrc: string | null; posterSrc: string | null };
+export type HeroMedia = {
+  videoSrc: string | null;
+  // A vertical/portrait cut for narrow viewports — the landscape videoSrc
+  // looks cropped/off-center on phones. Falls back to videoSrc itself when
+  // no mobile-specific cut has been uploaded.
+  videoSrcMobile: string | null;
+  posterSrc: string | null;
+  // Poster for videoSrcMobile — only set when the mobile cut came from the
+  // file-drop convention, since that's the only case where we know the
+  // poster was generated from that exact video (see
+  // scripts/generate-hero-poster.mjs). Null falls back to posterSrc.
+  posterSrcMobile: string | null;
+};
 
 // Hero video/poster — whatever's set from Admin > Pages > Home always wins;
 // an empty field falls back to the original file-drop convention (drop a
@@ -19,6 +31,26 @@ export async function getHeroMedia(): Promise<HeroMedia> {
       ? "/videos/hero.mp4"
       : null);
 
+  // Same file-drop convention as the desktop hero above, so a mobile cut can
+  // ship with the code instead of having to be uploaded from the admin page.
+  const droppedVideoMobile = fs.existsSync(
+    path.join(process.cwd(), "public", "videos", "hero-mobile.mp4")
+  )
+    ? "/videos/hero-mobile.mp4"
+    : null;
+  const videoSrcMobile = row.heroVideoMobileUrl ?? droppedVideoMobile;
+
+  // Only trust the generated mobile poster when the dropped file is the one
+  // actually being played — an admin-uploaded mobile video has no poster of
+  // its own, and pairing it with a leftover local one would show a frame
+  // from a different video entirely.
+  const posterSrcMobile =
+    !row.heroVideoMobileUrl &&
+    droppedVideoMobile &&
+    fs.existsSync(path.join(process.cwd(), "public", "images", "home", "hero-mobile.jpg"))
+      ? "/images/home/hero-mobile.jpg"
+      : null;
+
   let posterSrc = row.heroPosterUrl;
   if (!posterSrc) {
     for (const ext of ["jpg", "jpeg", "png"]) {
@@ -30,7 +62,12 @@ export async function getHeroMedia(): Promise<HeroMedia> {
     }
   }
 
-  return { videoSrc, posterSrc: posterSrc ?? null };
+  return {
+    videoSrc,
+    videoSrcMobile: videoSrcMobile ?? videoSrc,
+    posterSrc: posterSrc ?? null,
+    posterSrcMobile,
+  };
 }
 
 export type CarouselSlide = {

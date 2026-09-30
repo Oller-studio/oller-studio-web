@@ -7,12 +7,14 @@ export type EditorialSlot = { type: "video" | "image"; url: string; href?: strin
 
 export type HomePageRow = {
   heroVideoUrl: string | null;
+  heroVideoMobileUrl: string | null;
   heroPosterUrl: string | null;
   editorial: EditorialSlot[]; // always length 4
 };
 
 const EMPTY: HomePageRow = {
   heroVideoUrl: null,
+  heroVideoMobileUrl: null,
   heroPosterUrl: null,
   editorial: [null, null, null, null],
 };
@@ -24,6 +26,7 @@ export async function getHomePageRow(): Promise<HomePageRow> {
   while (editorial.length < 4) editorial.push(null);
   return {
     heroVideoUrl: row.heroVideoUrl,
+    heroVideoMobileUrl: row.heroVideoMobileUrl,
     heroPosterUrl: row.heroPosterUrl,
     editorial: editorial.slice(0, 4),
   };
@@ -35,11 +38,13 @@ export async function saveHomePageRow(input: HomePageRow) {
     create: {
       id: "home",
       heroVideoUrl: input.heroVideoUrl,
+      heroVideoMobileUrl: input.heroVideoMobileUrl,
       heroPosterUrl: input.heroPosterUrl,
       editorial: JSON.stringify(input.editorial),
     },
     update: {
       heroVideoUrl: input.heroVideoUrl,
+      heroVideoMobileUrl: input.heroVideoMobileUrl,
       heroPosterUrl: input.heroPosterUrl,
       editorial: JSON.stringify(input.editorial),
     },

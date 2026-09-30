@@ -1,6 +1,24 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+
+// Subscribes to the (max-width: 767px) media query the proper React way —
+// setting state synchronously inside an effect (the previous approach) trips
+// the react-hooks/set-state-in-effect lint rule and causes an extra render
+// pass. useSyncExternalStore is what React actually intends for reading
+// external browser state like this; the server snapshot defaults to "not
+// mobile" since matchMedia doesn't exist during SSR.
+function useIsMobileViewport(): boolean {
+  return useSyncExternalStore(
+    (onChange) => {
+      const mql = window.matchMedia("(max-width: 767px)");
+      mql.addEventListener("change", onChange);
+      return () => mql.removeEventListener("change", onChange);
+    },
+    () => window.matchMedia("(max-width: 767px)").matches,
+    () => false
+  );
+}
 
 // Plain <video autoPlay muted playsInline> sometimes still doesn't
 // autoplay on mobile — some browsers only honor `muted` once it's set as a
@@ -10,12 +28,22 @@ import { useEffect, useRef, useState } from "react";
 // shows its own controls/mute icon).
 export function AutoplayVideo({
   src,
+  mobileSrc,
   poster,
+  mobilePoster,
   className,
   lazy = false,
 }: {
   src: string;
+  // A vertical/portrait cut shown instead of `src` on narrow viewports.
+  // Resolved client-side after mount (via matchMedia) so only one variant
+  // is ever downloaded — never both while we figure out which one to use.
+  mobileSrc?: string;
   poster?: string;
+  // Poster for `mobileSrc`. The mobile cut is a different edit of different
+  // footage, so reusing the desktop poster flashes a frame of the wrong
+  // video before playback starts. Falls back to `poster` when unset.
+  mobilePoster?: string;
   className?: string;
   // For below-the-fold videos (the homepage's editorial grid) — without
   // this, every video on the page starts downloading and playing the
@@ -27,17 +55,22 @@ export function AutoplayVideo({
   lazy?: boolean;
 }) {
   const ref = useRef<HTMLVideoElement>(null);
-  const [shouldLoad, setShouldLoad] = useState(!lazy);
+  const hasMobileVariant = Boolean(mobileSrc && mobileSrc !== src);
+  const isMobile = useIsMobileViewport();
+  const showMobileVariant = hasMobileVariant && isMobile;
+  const resolvedSrc = showMobileVariant ? (mobileSrc as string) : src;
+  const resolvedPoster = showMobileVariant ? (mobilePoster ?? poster) : poster;
+  const [intersecting, setIntersecting] = useState(!lazy);
 
   useEffect(() => {
-    if (!lazy || shouldLoad) return;
+    if (!lazy || intersecting) return;
     const el = ref.current;
     if (!el) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries.some((entry) => entry.isIntersecting)) {
-          setShouldLoad(true);
+          setIntersecting(true);
           observer.disconnect();
         }
       },
@@ -47,27 +80,27 @@ export function AutoplayVideo({
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [lazy, shouldLoad]);
+  }, [lazy, intersecting]);
 
   useEffect(() => {
-    if (!shouldLoad) return;
+    if (!intersecting) return;
     const el = ref.current;
     if (!el) return;
     el.muted = true;
     el.play().catch(() => {});
-  }, [src, shouldLoad]);
+  }, [resolvedSrc, intersecting]);
 
   return (
     <video
       ref={ref}
-      src={shouldLoad ? src : undefined}
-      poster={poster}
+      src={intersecting ? resolvedSrc : undefined}
+      poster={resolvedPoster}
       className={className}
       autoPlay
       muted
       loop
       playsInline
-      preload={shouldLoad ? "auto" : "none"}
+      preload={intersecting ? "auto" : "none"}
       disablePictureInPicture
     />
   );
