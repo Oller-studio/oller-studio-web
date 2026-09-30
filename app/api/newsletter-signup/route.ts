@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { sendNewsletterSignup } from "@/lib/resend";
 import { isRateLimited, clientIp } from "@/lib/rateLimit";
+import { upsertSubscriber } from "@/lib/subscribers";
 
 export async function POST(request: Request) {
   if (isRateLimited(`newsletter:${clientIp(request.headers)}`, 5, 60_000)) {
@@ -13,10 +14,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "Missing email" }, { status: 400 });
   }
 
-  const sent = await sendNewsletterSignup(email);
-  if (!sent) {
-    return NextResponse.json({ ok: false, error: "Failed to send" }, { status: 500 });
-  }
+  await upsertSubscriber(email);
+
+  // Best-effort internal notification — the signup itself is already saved
+  // above regardless of whether this send succeeds.
+  await sendNewsletterSignup(email);
 
   return NextResponse.json({ ok: true });
 }

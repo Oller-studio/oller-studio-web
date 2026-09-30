@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { sendCollabInquiry, sendCollabConfirmation } from "@/lib/resend";
 import { isRateLimited, clientIp } from "@/lib/rateLimit";
 import { prisma } from "@/lib/db";
+import { defaultTagFor } from "@/lib/inquiries";
 
 export async function POST(request: Request) {
   if (isRateLimited(`collab:${clientIp(request.headers)}`, 5, 60_000)) {
@@ -29,7 +30,7 @@ export async function POST(request: Request) {
   }
 
   await prisma.inquiry.create({
-    data: { kind: "collab", firstName, lastName, email, phone, message },
+    data: { kind: "collab", firstName, lastName, email, phone, message, tag: defaultTagFor("collab") },
   });
 
   await sendCollabConfirmation(firstName, email);

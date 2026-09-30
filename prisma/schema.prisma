@@ -471,6 +471,10 @@ model Inquiry {
   starred   Boolean  @default(false)
 }
 
+// An email address marked spam from Support — future inbound emails from
+// it are auto-tagged "spam" on arrival (see the webhook) instead of
+// showing up untriaged. Un-spamming a ticket removes the sender from here
+// too, so they're not silently stuck being auto-spammed after a correction.
 model BlockedSender {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -495,7 +499,9 @@ model Subscriber {
 // One row per email in a ticket's thread — the original submission (Contact
 // form, Collab form, or a cold email that came straight to hello@) plus
 // every reply after it, in and out. `direction` is "inbound" (from the
-// customer) or "outbound" (from us).
+// customer, via the Resend inbound webhook or the original form submit) or
+// "outbound" (sent from the admin's reply box). Lets /admin/support show a
+// real conversation instead of just the first message.
 model SupportMessage {
   id         String   @id @default(cuid())
   inquiry    Inquiry  @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
