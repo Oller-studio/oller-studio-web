@@ -34,6 +34,7 @@ export default async function Home() {
               src={heroMedia.videoSrc}
               mobileSrc={heroMedia.videoSrcMobile ?? undefined}
               poster={heroImage}
+              mobilePoster={heroMedia.posterSrcMobile ?? undefined}
             />
           ) : heroImage ? (
             <Image src={heroImage} alt="OLLER" fill priority className="object-cover" />

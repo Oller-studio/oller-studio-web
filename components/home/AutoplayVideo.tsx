@@ -30,6 +30,7 @@ export function AutoplayVideo({
   src,
   mobileSrc,
   poster,
+  mobilePoster,
   className,
   lazy = false,
 }: {
@@ -39,6 +40,10 @@ export function AutoplayVideo({
   // is ever downloaded — never both while we figure out which one to use.
   mobileSrc?: string;
   poster?: string;
+  // Poster for `mobileSrc`. The mobile cut is a different edit of different
+  // footage, so reusing the desktop poster flashes a frame of the wrong
+  // video before playback starts. Falls back to `poster` when unset.
+  mobilePoster?: string;
   className?: string;
   // For below-the-fold videos (the homepage's editorial grid) — without
   // this, every video on the page starts downloading and playing the
@@ -52,7 +57,9 @@ export function AutoplayVideo({
   const ref = useRef<HTMLVideoElement>(null);
   const hasMobileVariant = Boolean(mobileSrc && mobileSrc !== src);
   const isMobile = useIsMobileViewport();
-  const resolvedSrc = hasMobileVariant && isMobile ? (mobileSrc as string) : src;
+  const showMobileVariant = hasMobileVariant && isMobile;
+  const resolvedSrc = showMobileVariant ? (mobileSrc as string) : src;
+  const resolvedPoster = showMobileVariant ? (mobilePoster ?? poster) : poster;
   const [intersecting, setIntersecting] = useState(!lazy);
 
   useEffect(() => {
@@ -87,7 +94,7 @@ export function AutoplayVideo({
     <video
       ref={ref}
       src={intersecting ? resolvedSrc : undefined}
-      poster={poster}
+      poster={resolvedPoster}
       className={className}
       autoPlay
       muted
