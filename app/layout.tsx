@@ -21,31 +21,44 @@ const poppins = Poppins({
   weight: ["700", "800"],
 });
 
+// "OLLER Studio" is spelled out here, in the titles and in the Organization
+// block below because it's what people actually search for — it's the domain
+// (oller.studio) and the Instagram handle. Saying only "OLLER" left Google
+// with no signal tying that phrase to this site, and the query is already
+// held by an unrelated 20-year-old design firm at ollerstudios.com.
 const SITE_DESCRIPTION =
-  "Discover sculptural 3D-printed handbags by OLLER. Digitally crafted Objects d'Art designed to spark curiosity and start conversations.";
+  "OLLER Studio designs sculptural 3D-printed handbags — digitally crafted Objects d'Art, made to order, designed to spark curiosity and start conversations.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.oller.studio"),
   title: {
-    default: "OLLER — Objects d'Art",
-    template: "%s | OLLER",
+    default: "OLLER Studio — Sculptural 3D-Printed Handbags",
+    template: "%s | OLLER Studio",
   },
   description: SITE_DESCRIPTION,
   alternates: { canonical: "/" },
   openGraph: {
-    title: "OLLER — Objects d'Art",
+    title: "OLLER Studio — Sculptural 3D-Printed Handbags",
     description: SITE_DESCRIPTION,
     url: "https://www.oller.studio",
-    siteName: "OLLER",
+    siteName: "OLLER Studio",
     images: ["/images/home/hero.jpg"],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "OLLER — Objects d'Art",
+    title: "OLLER Studio — Sculptural 3D-Printed Handbags",
     description: SITE_DESCRIPTION,
     images: ["/images/home/hero.jpg"],
   },
+  // Set GOOGLE_SITE_VERIFICATION in Vercel to the token Search Console hands
+  // out for the "HTML tag" method, and this emits the meta tag it looks for.
+  // Left out entirely when unset, so an empty env var never ships a broken
+  // verification tag. Verifying the domain via DNS at Hostinger instead
+  // covers every subdomain at once and makes this unnecessary.
+  verification: process.env.GOOGLE_SITE_VERIFICATION
+    ? { google: process.env.GOOGLE_SITE_VERIFICATION }
+    : undefined,
   other: {
     "p:domain_verify": "cf0620c88bb54e28bc9b1803b71948c6",
   },
@@ -57,9 +70,13 @@ export const metadata: Metadata = {
 const organizationJsonLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
-  name: "OLLER",
+  name: "OLLER Studio",
+  // Every name the brand is searched under, so Google can tie them to one
+  // entity instead of guessing — the wordmark on the site is just "OLLER",
+  // but the domain, the Instagram handle and what people type are not.
+  alternateName: ["OLLER", "oller.studio", "OLLER | Objects d'Art"],
   description:
-    "OLLER is a founder-led studio creating sculptural, 3D-printed handbags — Objects d'Art made to order, designed by Alicia Oller.",
+    "OLLER Studio is a founder-led studio creating sculptural, 3D-printed handbags — Objects d'Art made to order, designed by Alicia Oller.",
   url: "https://www.oller.studio",
   logo: "https://www.oller.studio/images/home/hero.jpg",
   sameAs: [
