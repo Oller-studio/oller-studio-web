@@ -16,12 +16,20 @@ import { ScrollTracker } from "@/components/analytics/ScrollTracker";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const featured = await getFeaturedColorway();
-  const heroMedia = await getHeroMedia();
+  // Awaited together, not one after another. These four are independent, so
+  // running them in sequence meant four round trips to Neon stacked end to
+  // end — measured at ~2s before the page finished streaming, with the hero
+  // video not starting to download until that was over. Two of the four
+  // dedupe against the other two via cache(), so this is really two queries
+  // in parallel.
+  const [featured, heroMedia, carouselSlides, editorialImages] = await Promise.all([
+    getFeaturedColorway(),
+    getHeroMedia(),
+    getHomeCarouselSlides(),
+    getHomeEditorialImages(),
+  ]);
   const heroImage = heroMedia.posterSrc ?? featured.images[0];
   const showVideo = Boolean(heroMedia.videoSrc);
-  const carouselSlides = await getHomeCarouselSlides();
-  const editorialImages = await getHomeEditorialImages();
 
   return (
     <main>

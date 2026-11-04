@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { prisma } from "@/lib/db";
 import type { Colorway, ColorwayProduct } from "@/lib/types";
 import type { ColorwayModel as ColorwayRow, ProductModel } from "@/lib/generated/prisma/models";
@@ -127,13 +128,27 @@ async function rowToColorway(row: ColorwayRow & { product: ProductModel }): Prom
   };
 }
 
-export async function getAllColorways(options?: { publishedOnly?: boolean }): Promise<Colorway[]> {
+// Memoized per request. Keyed on a plain boolean on purpose: cache() compares
+// arguments by identity, so an options object — a fresh literal at every call
+// site — would never dedupe. The homepage runs this exact query twice (the
+// product carousel and the featured color), and so does the shop page.
+//
+// Callers get the same array instance now, so none of them may mutate it.
+// Checked at the time of writing: every caller maps/filters into a new array
+// first, which is also why the .sort() in lib/favorites.ts is safe.
+const fetchColorways = cache(async function fetchColorways(
+  publishedOnly: boolean
+): Promise<Colorway[]> {
   const rows = await prisma.colorway.findMany({
-    where: options?.publishedOnly ? { status: "active" } : undefined,
+    where: publishedOnly ? { status: "active" } : undefined,
     include: { product: true },
     orderBy: { sortOrder: "asc" },
   });
   return Promise.all(rows.map(rowToColorway));
+});
+
+export async function getAllColorways(options?: { publishedOnly?: boolean }): Promise<Colorway[]> {
+  return fetchColorways(options?.publishedOnly ?? false);
 }
 
 export async function getColorwaysByProduct(productSlug: string): Promise<Colorway[]> {
@@ -174,12 +189,9 @@ export async function getColorwaySlugByPreviousSlug(slug: string): Promise<strin
 }
 
 export async function getFeaturedColorway(): Promise<Colorway> {
-  const rows = await prisma.colorway.findMany({
-    where: { status: "active" },
-    include: { product: true },
-    orderBy: { sortOrder: "asc" },
-  });
-  const colorways = await Promise.all(rows.map(rowToColorway));
+  // Same query as getAllColorways({ publishedOnly: true }) — going through
+  // the shared memo means the homepage pays for it once instead of twice.
+  const colorways = await fetchColorways(true);
   return colorways.find((c) => c.isFeatured) ?? colorways[0];
 }
 
