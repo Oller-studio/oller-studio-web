@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { prisma } from "@/lib/db";
 
 // `href` is optional — a slot doesn't have to link anywhere, but usually
@@ -17,7 +18,13 @@ const EMPTY: HomePageRow = {
   editorial: [null, null, null, null],
 };
 
-export async function getHomePageRow(): Promise<HomePageRow> {
+// Memoized per request with React's cache(): the homepage asks for this row
+// twice on every load (getHeroMedia and getHomeEditorialImages both need it),
+// which was two separate round trips to Neon for the same single row. This is
+// request-scoped deduplication, not caching across requests — the page stays
+// force-dynamic and every new request still reads the row fresh, so admin
+// edits show up immediately, exactly as before.
+export const getHomePageRow = cache(async function getHomePageRow(): Promise<HomePageRow> {
   const row = await prisma.homePage.findUnique({ where: { id: "home" } });
   if (!row) return EMPTY;
   const editorial = JSON.parse(row.editorial) as EditorialSlot[];
@@ -27,7 +34,7 @@ export async function getHomePageRow(): Promise<HomePageRow> {
     heroPosterUrl: row.heroPosterUrl,
     editorial: editorial.slice(0, 4),
   };
-}
+});
 
 export async function saveHomePageRow(input: HomePageRow) {
   await prisma.homePage.upsert({
