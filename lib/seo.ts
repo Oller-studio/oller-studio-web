@@ -3,9 +3,8 @@ import type { Colorway } from "@/lib/types";
 // Falls back to a sensible generated title/description whenever the admin
 // leaves the SEO override fields blank for a color, instead of every page
 // sharing the same site-wide default (bad for search + duplicate-content).
-// No brand suffix here — the root layout's title template ("%s | OLLER
-// Studio") already appends it, so a manual suffix here doubled up as
-// "... | OLLER | OLLER".
+// No "| OLLER" here — the root layout's title template ("%s | OLLER")
+// already appends it, so a manual suffix here doubled up as "... | OLLER | OLLER".
 export function colorwaySeoTitle(colorway: Colorway): string {
   return colorway.seoTitle?.trim() || `${colorway.product.name} — ${colorway.name}`;
 }
@@ -23,7 +22,7 @@ export function colorwaySeoDescription(colorway: Colorway): string {
   // order as the admin's SEO field placeholder (ColorwayForm.tsx's
   // suggestSeoDescription).
   if (colorway.story?.trim()) return colorway.story.trim().slice(0, 160);
-  return `${colorway.product.name} in ${colorway.name} — a sculptural, 3D-printed handbag designed to spark curiosity, by OLLER Studio.`.slice(
+  return `${colorway.product.name} in ${colorway.name} — a sculptural, 3D-printed handbag designed to spark curiosity, by OLLER.`.slice(
     0,
     160
   );

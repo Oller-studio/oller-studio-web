@@ -21,33 +21,35 @@ const poppins = Poppins({
   weight: ["700", "800"],
 });
 
-// "OLLER Studio" is spelled out here, in the titles and in the Organization
-// block below because it's what people actually search for — it's the domain
-// (oller.studio) and the Instagram handle. Saying only "OLLER" left Google
-// with no signal tying that phrase to this site, and the query is already
-// held by an unrelated 20-year-old design firm at ollerstudios.com.
+// The brand is "OLLER" — that's the name, and it stays the name here and in
+// the Organization block. What changed is the rest of the line: the old
+// title said only "Objects d'Art", so nothing on the page matched the words
+// people actually type ("oller bags", "oller handbags"). The other forms the
+// brand gets searched under — "OLLER Studio", the domain — belong in
+// Organization.alternateName below, which is the field built for exactly
+// that, not in the brand name itself.
 const SITE_DESCRIPTION =
-  "OLLER Studio designs sculptural 3D-printed handbags — digitally crafted Objects d'Art, made to order, designed to spark curiosity and start conversations.";
+  "OLLER designs sculptural 3D-printed handbags — digitally crafted Objects d'Art, made to order, designed to spark curiosity and start conversations.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.oller.studio"),
   title: {
-    default: "OLLER Studio — Sculptural 3D-Printed Handbags",
-    template: "%s | OLLER Studio",
+    default: "OLLER — Sculptural 3D-Printed Handbags",
+    template: "%s | OLLER",
   },
   description: SITE_DESCRIPTION,
   alternates: { canonical: "/" },
   openGraph: {
-    title: "OLLER Studio — Sculptural 3D-Printed Handbags",
+    title: "OLLER — Sculptural 3D-Printed Handbags",
     description: SITE_DESCRIPTION,
     url: "https://www.oller.studio",
-    siteName: "OLLER Studio",
+    siteName: "OLLER",
     images: ["/images/home/hero.jpg"],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "OLLER Studio — Sculptural 3D-Printed Handbags",
+    title: "OLLER — Sculptural 3D-Printed Handbags",
     description: SITE_DESCRIPTION,
     images: ["/images/home/hero.jpg"],
   },
@@ -70,13 +72,14 @@ export const metadata: Metadata = {
 const organizationJsonLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
-  name: "OLLER Studio",
-  // Every name the brand is searched under, so Google can tie them to one
-  // entity instead of guessing — the wordmark on the site is just "OLLER",
-  // but the domain, the Instagram handle and what people type are not.
-  alternateName: ["OLLER", "oller.studio", "OLLER | Objects d'Art"],
+  name: "OLLER",
+  // The brand is "OLLER". These are the other forms it gets searched under —
+  // the domain, the Instagram handle, the tagline people remember it by — so
+  // Google ties them all to this one entity instead of guessing. This is what
+  // alternateName is for; the name itself stays the real name.
+  alternateName: ["OLLER Studio", "oller.studio", "OLLER | Objects d'Art", "Oller bags"],
   description:
-    "OLLER Studio is a founder-led studio creating sculptural, 3D-printed handbags — Objects d'Art made to order, designed by Alicia Oller.",
+    "OLLER is a founder-led studio creating sculptural, 3D-printed handbags — Objects d'Art made to order, designed by Alicia Oller.",
   url: "https://www.oller.studio",
   logo: "https://www.oller.studio/images/home/hero.jpg",
   sameAs: [
